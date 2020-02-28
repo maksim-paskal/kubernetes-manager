@@ -1,0 +1,30 @@
+{
+  "name": "front",
+  "version": "1.0.0",
+  "description": "Nuxt.js project",
+  "author": "",
+  "private": true,
+  "scripts": {
+    "dev": "BACKEND_URL=http://localhost:9000 node_modules/nuxt/bin/nuxt.js",
+    "build": "node_modules/nuxt/bin/nuxt.js build",
+    "start": "node_modules/nuxt/bin/nuxt.js start",
+    "generate": "node_modules/nuxt/bin/nuxt.js generate",
+    "lint": "node_modules/eslint/bin/eslint.js --ext .js,.vue --ignore-path .gitignore .",
+    "precommit": "npm run lint",
+    "update-latest": "yarn upgrade --latest"
+  },
+  "dependencies": {
+    "@nuxtjs/axios": "^5.9.5",
+    "bootstrap": "^4.4.1",
+    "bootstrap-vue": "^2.5.0",
+    "nuxt": "^2.11.0",
+    "vue": "^2.6.11"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "eslint": "^6.8.0",
+    "eslint-friendly-formatter": "^4.0.1",
+    "eslint-loader": "^3.0.3",
+    "eslint-plugin-vue": "^6.2.1"
+  }
+}
