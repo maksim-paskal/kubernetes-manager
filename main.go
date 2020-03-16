@@ -36,15 +36,6 @@ var (
 	buildTime string
 )
 
-func stringInSlice(str string, list []string) bool {
-	for _, v := range list {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
 var getInfoDBCommands = initPodCommands()
 
 type getInfoDBCommandsType struct {
@@ -53,33 +44,8 @@ type getInfoDBCommandsType struct {
 	filterStdout  func(param execContainerParams, stdout string) string
 }
 
-func logError(span opentracing.Span, level sentry.Level, request *http.Request, err error, message string) {
-	span.SetTag("error", true)
-
-	localHub := sentry.CurrentHub().Clone()
-	localHub.ConfigureScope(func(scope *sentry.Scope) {
-		scope.SetLevel(level)
-		if request != nil {
-			scope.SetExtra("Request.Header", request.Header)
-			scope.SetExtra("Request.Cookies", request.Cookies())
-			scope.SetExtra("Request.RemoteAddr", request.RemoteAddr)
-			scope.SetExtra("Request.URL", request.URL)
-			scope.SetExtra("Request.URL.Query", request.URL.Query())
-			scope.SetExtra("Request.PostForm", request.PostForm)
-		}
-	})
-	if err != nil {
-		localHub.CaptureException(err)
-		span.LogEventWithPayload("error", err)
-	} else {
-		localHub.CaptureMessage(message)
-		span.LogEventWithPayload("error", message)
-	}
-}
 func initPodCommands() map[string]getInfoDBCommandsType {
-	var m map[string]getInfoDBCommandsType
-
-	m = make(map[string]getInfoDBCommandsType)
+	m := make(map[string]getInfoDBCommandsType)
 
 	m["mongoInfo"] = getInfoDBCommandsType{
 		param: execContainerParams{
@@ -491,7 +457,11 @@ func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- http
 	req.URL.RawQuery = q.Encode()
 
 	var tracer = opentracing.GlobalTracer()
-	tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+
+	if err != nil {
+		logError(span, sentry.LevelInfo, nil, err, "")
+	}
 
 	resp, _ := http.DefaultClient.Do(req)
 	httpBody, _ := ioutil.ReadAll(resp.Body)
@@ -514,7 +484,11 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 
 	if strings.EqualFold(namespace[0], "paket-main-pp") {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
+		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logError(span, sentry.LevelInfo, r, err, "")
+		}
 		return
 	}
 
@@ -533,8 +507,8 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 
 	var q url.Values
 
-	var ch3 chan httpResponse
-	ch3 = make(chan httpResponse)
+	ch3 := make(chan httpResponse)
+	//ch3 = make(chan httpResponse)
 
 	q = make(url.Values)
 	q.Add("namespace", namespace[0])
@@ -546,8 +520,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	tag := r.URL.Query()["registry-tag"]
 
 	if len(projectID) == 1 && len(tag) == 1 {
-		var ch4 chan httpResponse
-		ch4 = make(chan httpResponse)
+		ch4 := make(chan httpResponse)
 		q = make(url.Values)
 		q.Add("projectID", r.URL.Query()["git-project-id"][0])
 		q.Add("tag", r.URL.Query()["registry-tag"][0])
@@ -561,7 +534,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	span.LogEventWithPayload("result", result)
+	span.LogKV("result", result)
 	js, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -569,7 +542,11 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 }
 
 func execCommands(w http.ResponseWriter, r *http.Request) {
@@ -625,7 +602,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		Result: execResults,
 	}
 
-	span.LogEventWithPayload("result", result)
+	span.LogKV("result", result)
 	js, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -633,7 +610,11 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 }
 
 type execContainerParams struct {
@@ -658,12 +639,12 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 	span.SetTag("params", params)
 
 	if len(params.podname) == 0 {
-		span.LogEvent("pod list start")
+		span.LogKV("event", "pod list start")
 		pods, err := clientset.CoreV1().Pods(params.namespace).List(metav1.ListOptions{
 			LabelSelector: params.labelSelector,
 			FieldSelector: "status.phase=Running",
 		})
-		span.LogEvent("pod list end")
+		span.LogKV("event", "pod list end")
 
 		if err != nil {
 			logError(span, sentry.LevelError, nil, err, "")
@@ -694,25 +675,25 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 			TTY:       false,
 		}, scheme.ParameterCodec)
 
-	span.LogEvent("remotecommand start")
+	span.LogKV("event", "remotecommand start")
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
 		logError(span, sentry.LevelError, nil, err, "")
 
 		return execContainerResults{}, err
 	}
-	span.LogEvent("remotecommand end")
+	span.LogKV("event", "remotecommand end")
 
 	var stdout, stderr bytes.Buffer
 
-	span.LogEvent("stream start")
+	span.LogKV("event", "stream start")
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    false,
 	})
-	span.LogEvent("stream end")
+	span.LogKV("event", "stream end")
 
 	results := execContainerResults{
 		Stdout: stdout.String(),
@@ -747,7 +728,11 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{status:'ok'}"))
+	_, err = w.Write([]byte("{status:'ok'}"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 }
 func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
@@ -765,7 +750,11 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	if strings.EqualFold(tag[0], "master") || strings.EqualFold(tag[0], "pp") || strings.HasPrefix(tag[0], "release-") {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{status:'ok',warning:'registry tag can not be deleted'}"))
+		_, err := w.Write([]byte("{status:'ok',warning:'registry tag can not be deleted'}"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logError(span, sentry.LevelInfo, r, err, "")
+		}
 		return
 	}
 
@@ -777,12 +766,14 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	span.LogEventWithPayload("params", fmt.Sprintf("projectID=%s,tag=%s", projectID[0], tag[0]))
+	span.LogKV("params", fmt.Sprintf("projectID=%s,tag=%s", projectID[0], tag[0]))
 
 	git := gitlab.NewClient(nil, *appConfig.gitlabToken)
-	git.SetBaseURL(*appConfig.gitlabURL)
-
-	span.LogEvent("ListRegistryRepositories")
+	err := git.SetBaseURL(*appConfig.gitlabURL)
+	if err != nil {
+		log.Panic(err)
+	}
+	span.LogKV("event", "ListRegistryRepositories")
 	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID[0], nil)
 
 	if err != nil {
@@ -792,17 +783,21 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, gitRepo := range gitRepos {
-		span.LogEventWithPayload("DeleteRegistryRepositoryTag", fmt.Sprintf("gitRepo.ID=%d", gitRepo.ID))
+		span.LogKV("DeleteRegistryRepositoryTag", fmt.Sprintf("gitRepo.ID=%d", gitRepo.ID))
 
 		_, err := git.ContainerRegistry.DeleteRegistryRepositoryTag(projectID[0], gitRepo.ID, tag[0])
 
 		if err != nil {
-			span.LogEventWithPayload("warning", err)
+			span.LogKV("warning", err)
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{status:'ok'}"))
+	_, err = w.Write([]byte("{status:'ok'}"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 }
 func executeBatch(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
@@ -813,7 +808,11 @@ func executeBatch(w http.ResponseWriter, r *http.Request) {
 	batch(span)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{status:'ok'}"))
+	_, err := w.Write([]byte("{status:'ok'}"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 }
 func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
@@ -831,7 +830,12 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 
 	if strings.EqualFold(namespace[0], "paket-main-pp") {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
+		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logError(span, sentry.LevelError, r, err, "")
+		}
 		return
 	}
 
@@ -844,7 +848,12 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{status:'ok'}"))
+	_, err = w.Write([]byte("{status:'ok'}"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
+
 }
 func deletePod(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
@@ -934,7 +943,11 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
@@ -964,7 +977,11 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "max-age=10")
 
-	w.Write([]byte(fmt.Sprintf("{\"count\":%d}", len(pods.Items))))
+	_, err = w.Write([]byte(fmt.Sprintf("{\"count\":%d}", len(pods.Items))))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 func getAPIversion(w http.ResponseWriter, r *http.Request) {
@@ -974,7 +991,11 @@ func getAPIversion(w http.ResponseWriter, r *http.Request) {
 	defer span.Finish()
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(fmt.Sprintf("{\"version\":\"%s-%s\"}", appConfig.Version, buildTime)))
+	_, err := w.Write([]byte(fmt.Sprintf("{\"version\":\"%s-%s\"}", appConfig.Version, buildTime)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 func getPods(w http.ResponseWriter, r *http.Request) {
@@ -1052,7 +1073,11 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 func getIngress(w http.ResponseWriter, r *http.Request) {
@@ -1086,9 +1111,9 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		opt = metav1.ListOptions{}
 	}
 
-	span.LogEvent("start ingress list")
+	span.LogKV("event", "start ingress list")
 	ingresss, err := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
-	span.LogEvent("end ingress list")
+	span.LogKV("event", "end ingress list")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1096,11 +1121,11 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	span.LogEvent("start range")
+	span.LogKV("event", "start range")
 	for _, ingress := range ingresss.Items {
 		var item IngressList
 
-		span.LogEvent("search namespace=" + ingress.Namespace)
+		span.LogKV("event", "search namespace="+ingress.Namespace)
 		namespace, err := clientset.CoreV1().Namespaces().Get(ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1132,8 +1157,8 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 			result.Result = append(result.Result, item)
 		}
 	}
-	span.LogEvent("end range")
-	span.LogEventWithPayload("result", result)
+	span.LogKV("event", "end range")
+	span.LogKV("result", result)
 	js, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1142,7 +1167,11 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "max-age=10")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 var clientset *kubernetes.Clientset
@@ -1335,7 +1364,11 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
 
 /* TODO: not deleted tags */
@@ -1384,8 +1417,10 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) {
 	log.Infof("tags to delete=%s", nonDelete)
 
 	git := gitlab.NewClient(nil, *appConfig.gitlabToken)
-	git.SetBaseURL(*appConfig.gitlabURL)
-
+	err := git.SetBaseURL(*appConfig.gitlabURL)
+	if err != nil {
+		log.Panic(err)
+	}
 	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID, nil)
 
 	if err != nil {
@@ -1408,7 +1443,7 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) {
 
 				if err != nil {
 					log.Error(err)
-					span.LogEventWithPayload("warning", err)
+					span.LogKV("warning", err)
 				}
 			}
 		}
@@ -1439,8 +1474,10 @@ func batch(rootSpan opentracing.Span) {
 	defer span.Finish()
 
 	git := gitlab.NewClient(nil, *appConfig.gitlabToken)
-	git.SetBaseURL(*appConfig.gitlabURL)
-
+	err := git.SetBaseURL(*appConfig.gitlabURL)
+	if err != nil {
+		log.Panic(err)
+	}
 	opt := metav1.ListOptions{
 		LabelSelector: *appConfig.ingressFilter,
 	}
@@ -1454,25 +1491,23 @@ func batch(rootSpan opentracing.Span) {
 		_, _, err := git.Branches.GetBranch(gitProjectID, gitBranch)
 		if err != nil {
 			if strings.Contains(err.Error(), "404 Branch Not Found") {
-				span.LogEventWithPayload("delete branch", gitBranch)
+				span.LogKV("delete branch", gitBranch)
 
-				var ch1 chan httpResponse
-				ch1 = make(chan httpResponse)
+				ch1 := make(chan httpResponse)
 
-				var q url.Values
-				q = make(url.Values)
+				q := make(url.Values)
 
 				q.Add("namespace", ingress.Namespace)
 
 				for k, v := range ingress.Annotations {
 					if strings.HasPrefix(k, "kubernetes-manager") {
-						q.Add(k[19:len(k)], v)
+						q.Add(k[19:], v)
 					}
 				}
 
 				go makeAPICall(span, "/api/deleteALL", q, ch1)
 
-				span.LogEventWithPayload("result", <-ch1)
+				span.LogKV("result", <-ch1)
 			}
 		}
 	}
@@ -1653,9 +1688,18 @@ users:
 		logError(span, sentry.LevelError, r, err, "")
 		return
 	}
-	tmpl.Execute(&out, params)
+	err = tmpl.Execute(&out, params)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, err, "")
+	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"kubeconfig\"")
-	w.Write(out.Bytes())
+	_, err = w.Write(out.Bytes())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelError, r, err, "")
+	}
 }
