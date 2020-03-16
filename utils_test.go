@@ -12,11 +12,11 @@ limitations under the License.
 */
 package main
 
-func stringInSlice(str string, list []string) bool {
-	for _, v := range list {
-		if v == str {
-			return true
-		}
+import "testing"
+
+func TestDependencyBuildCmd(t *testing.T) {
+
+	if stringInSlice("test", []string{"test"}) == false {
+		t.Fatal("String must contains in array")
 	}
-	return false
 }
