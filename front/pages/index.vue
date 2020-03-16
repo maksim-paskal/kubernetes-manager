@@ -74,15 +74,18 @@
             <b-card bg-variant="light" header="Pause branch" class="text-center">
               <div>branch autopause will be at 16:00 UTC</div>
               <br />
-              <b-button @click="makeAPICall('scaleNamespace','none','&replicas=0')">Pause</b-button>
+              <b-button @click="makeAPICall('scaleNamespace','none','&replicas=0',false)">Pause</b-button>
               <b-button
                 variant="success"
-                @click="makeAPICall('scaleNamespace','none','&replicas=1')"
+                @click="makeAPICall('scaleNamespace','none','&replicas=1', false)"
               >Start</b-button>
             </b-card>
             <br />
             <b-card bg-variant="light" header="Danger Zone" class="text-center">
-              <b-button variant="danger" @click="makeAPICall('deleteALL','projectID=')">Delete All</b-button>
+              <b-button
+                variant="danger"
+                @click="makeAPICall('deleteALL','projectID=', '', false)"
+              >Delete All</b-button>
             </b-card>
           </b-tab>
           <b-tab key="tab4" title="debug">
@@ -404,9 +407,14 @@ export default {
       }
       return `/api/${api}?cmd=${cmd}&pod=${this.podsNamesSelected}&namespace=${this.infoModal.content.Namespace}${args}`;
     },
-    async makeAPICall(api, cmd = "none", args = "" /* need & */) {
+    async makeAPICall(
+      api,
+      cmd = "none",
+      args = "" /* need & */,
+      podsNamesSelectedCheck = true
+    ) {
       try {
-        if (!this.podsNamesSelected) {
+        if (podsNamesSelectedCheck && !this.podsNamesSelected) {
           throw "no pod selected";
         }
         var realy = await this.$bvModal.msgBoxConfirm("Realy?");
@@ -528,8 +536,7 @@ export default {
               this.tab1Data = {
                 result: "found",
                 server: `mysql.${this.infoModal.content.Namespace}.svc.cluster.local`,
-                phpmyadminURL:
-                  "https://phpmyadmin/db_structure.php?server=1"
+                phpmyadminURL: "https://phpmyadmin/db_structure.php?server=1"
               };
             }
             break;
