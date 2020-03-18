@@ -1,5 +1,5 @@
 /*
-Copyright The Helm Authors.
+Copyright paskal.maksim@gmail.com
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -494,7 +494,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(namespace[0], "paket-main-pp") {
+	if strings.EqualFold(namespace[0], *appConfig.namespaceNotDelete) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
 		if err != nil {
@@ -840,7 +840,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(namespace[0], "paket-main-pp") {
+	if strings.EqualFold(namespace[0], *appConfig.namespaceNotDelete) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
 
@@ -1202,6 +1202,7 @@ type appConfigType struct {
 	gitlabURL           *string
 	gitlabToken         *string
 	makeAPICallServer   *string
+	namespaceNotDelete  *string
 }
 
 var appConfig = appConfigType{
@@ -1250,6 +1251,10 @@ var appConfig = appConfigType{
 		"makeAPICall.server",
 		"server for api call",
 	).Default("127.0.0.1").String(),
+	namespaceNotDelete: kingpin.Flag(
+		"namespace.not-deleted",
+		"namespace that not deleted",
+	).Default("master").String(),
 }
 
 func scaleNamespace(w http.ResponseWriter, r *http.Request) {

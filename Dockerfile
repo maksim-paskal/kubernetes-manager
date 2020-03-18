@@ -4,10 +4,9 @@ WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate
 
-
 FROM golang:1.12 as build
 
-COPY main.go /usr/src/kubernetes-manager/main.go
+COPY *.go /usr/src/kubernetes-manager/
 COPY go.mod /usr/src/kubernetes-manager/go.mod
 COPY go.sum /usr/src/kubernetes-manager/go.sum
 

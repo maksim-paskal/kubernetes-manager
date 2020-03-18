@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright The Helm Authors.
+# Copyright paskal.maksim@gmail.com
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ if (( ${#failed_license_header[@]} > 0 )); then
 fi
 
 # Use "|| :" to ignore the error code when grep returns empty
-failed_copyright_header=($(find_files | xargs grep -L 'Copyright The Helm Authors.' || :))
+failed_copyright_header=($(find_files | xargs grep -L 'Copyright paskal.maksim@gmail.com' || :))
 if (( ${#failed_copyright_header[@]} > 0 )); then
   echo "Some source files are missing the copyright header."
   printf '%s\n' "${failed_copyright_header[@]}"
