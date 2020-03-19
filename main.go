@@ -1467,69 +1467,6 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) {
 	}
 }
 
-func scheduleBatch() {
-	duration, err := time.ParseDuration("30m")
-	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
-		log.Panic(err)
-	}
-
-	var tracer = opentracing.GlobalTracer()
-
-	for {
-		<-time.After(duration)
-		span := tracer.StartSpan("scheduleBatch")
-		batch(span)
-		span.Finish()
-	}
-}
-func batch(rootSpan opentracing.Span) {
-	var tracer = opentracing.GlobalTracer()
-	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
-	defer span.Finish()
-
-	git := gitlab.NewClient(nil, *appConfig.gitlabToken)
-	err := git.SetBaseURL(*appConfig.gitlabURL)
-	if err != nil {
-		log.Panic(err)
-	}
-	opt := metav1.ListOptions{
-		LabelSelector: *appConfig.ingressFilter,
-	}
-
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
-
-	for _, ingress := range ingresss.Items {
-		gitBranch := ingress.Annotations["kubernetes-manager/git-branch"]
-		gitProjectID := ingress.Annotations["kubernetes-manager/git-project-id"]
-
-		_, _, err := git.Branches.GetBranch(gitProjectID, gitBranch)
-		if err != nil {
-			if strings.Contains(err.Error(), "404 Branch Not Found") {
-				span.LogKV("delete branch", gitBranch)
-
-				ch1 := make(chan httpResponse)
-
-				q := make(url.Values)
-
-				q.Add("namespace", ingress.Namespace)
-
-				for k, v := range ingress.Annotations {
-					if strings.HasPrefix(k, "kubernetes-manager") {
-						q.Add(k[19:], v)
-					}
-				}
-
-				go makeAPICall(span, "/api/deleteALL", q, ch1)
-
-				span.LogKV("result", <-ch1)
-			}
-		}
-	}
-}
-
 func addCacheControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "max-age=31557600")
@@ -1617,8 +1554,6 @@ func main() {
 		cleanOldTags(span)
 		return
 	}
-
-	go scheduleBatch()
 
 	log.Info(fmt.Sprintf("Starting on port %d...", *appConfig.port))
 	fs := http.FileServer(http.Dir(*appConfig.frontDist))
