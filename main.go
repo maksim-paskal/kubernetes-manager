@@ -494,7 +494,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(namespace[0], *appConfig.namespaceNotDelete) {
+	if stringInSlice(namespace[0], strings.Split(*appConfig.namespacesNotDelete, ",")) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
 		if err != nil {
@@ -840,7 +840,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(namespace[0], *appConfig.namespaceNotDelete) {
+	if stringInSlice(namespace[0], strings.Split(*appConfig.namespacesNotDelete, ",")) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
 
@@ -1202,7 +1202,7 @@ type appConfigType struct {
 	gitlabURL           *string
 	gitlabToken         *string
 	makeAPICallServer   *string
-	namespaceNotDelete  *string
+	namespacesNotDelete *string
 }
 
 var appConfig = appConfigType{
@@ -1251,9 +1251,9 @@ var appConfig = appConfigType{
 		"makeAPICall.server",
 		"server for api call",
 	).Default("127.0.0.1").String(),
-	namespaceNotDelete: kingpin.Flag(
-		"namespace.not-deleted",
-		"namespace that not deleted",
+	namespacesNotDelete: kingpin.Flag(
+		"namespaces.not-deleted",
+		"namespaces that not be deleted, comma separeted",
 	).Default("master").String(),
 }
 
