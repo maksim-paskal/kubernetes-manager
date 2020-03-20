@@ -17,11 +17,15 @@ import (
 
 	sentry "github.com/getsentry/sentry-go"
 	opentracing "github.com/opentracing/opentracing-go"
+	log "github.com/sirupsen/logrus"
 )
 
 func logError(span opentracing.Span, level sentry.Level, request *http.Request, err error, message string) {
 	span.SetTag("error", true)
 
+	if log.GetLevel() == log.DebugLevel {
+		log.Debug(err, message)
+	}
 	localHub := sentry.CurrentHub().Clone()
 	localHub.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetLevel(level)

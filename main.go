@@ -462,24 +462,6 @@ type httpResponse struct {
 	Body   string
 }
 
-func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- httpResponse) {
-	url := fmt.Sprintf("http://%s:%d%s", *appConfig.makeAPICallServer, *appConfig.port, api)
-
-	req, _ := http.NewRequest("GET", url, nil)
-	req.URL.RawQuery = q.Encode()
-
-	var tracer = opentracing.GlobalTracer()
-	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-
-	if err != nil {
-		logError(span, sentry.LevelInfo, nil, err, "")
-	}
-
-	resp, _ := http.DefaultClient.Do(req)
-	httpBody, _ := ioutil.ReadAll(resp.Body)
-
-	ch <- httpResponse{resp.Status, string(httpBody)}
-}
 func deleteALL(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -1189,74 +1171,6 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 var clientset *kubernetes.Clientset
 var restconfig *rest.Config
 
-type appConfigType struct {
-	Version             string
-	mode                *string
-	port                *int
-	kubeconfigPath      *string
-	frontDist           *string
-	ingressNoFiltration *bool
-	ingressAnotationKey *string
-	ingressFilter       *string
-	kubeconfigServer    *string
-	gitlabURL           *string
-	gitlabToken         *string
-	makeAPICallServer   *string
-	namespacesNotDelete *string
-}
-
-var appConfig = appConfigType{
-	Version: "1.0.1",
-	mode: kingpin.Flag(
-		"mode",
-		"web or batch or cleanOldTags",
-	).Default("web").String(),
-	port: kingpin.Flag(
-		"server.port",
-		"port",
-	).Default("9000").Int(),
-	kubeconfigPath: kingpin.Flag(
-		"kubeconfig.path",
-		"path to kubeconfig",
-	).Default("").String(),
-	frontDist: kingpin.Flag(
-		"front.dist",
-		"front dist",
-	).Default("front/dist").String(),
-	ingressAnotationKey: kingpin.Flag(
-		"ingress.anotationKey",
-		"ingress anotation key",
-	).Default("kubernetes-manager").String(),
-	ingressNoFiltration: kingpin.Flag(
-		"ingress.no-filtration",
-		"ingress filter",
-	).Bool(),
-	ingressFilter: kingpin.Flag(
-		"ingress.filter",
-		"ingress filter",
-	).Default("kubernetes-manager=true").String(),
-	kubeconfigServer: kingpin.Flag(
-		"kubeconfig.server",
-		"kubeconfig server",
-	).Default("https://kubernetes-api-endpoint:6443").String(),
-	gitlabURL: kingpin.Flag(
-		"gitlab.url",
-		"url to api",
-	).Default("https://gitlab-server/api/v4").String(),
-	gitlabToken: kingpin.Flag(
-		"gitlab.token",
-		"token to api",
-	).Default("gitlab-token").String(),
-	makeAPICallServer: kingpin.Flag(
-		"makeAPICall.server",
-		"server for api call",
-	).Default("127.0.0.1").String(),
-	namespacesNotDelete: kingpin.Flag(
-		"namespaces.not-deleted",
-		"namespaces that not be deleted, comma separeted",
-	).Default("master").String(),
-}
-
 func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -1388,85 +1302,6 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/* TODO: not deleted tags */
-func cleanOldTags(rootSpan opentracing.Span) {
-	var tracer = opentracing.GlobalTracer()
-	span := tracer.StartSpan("cleanOldTagsBy", opentracing.ChildOf(rootSpan.Context()))
-	defer span.Finish()
-
-	projectIDs := []string{}
-
-	opt := metav1.ListOptions{
-		LabelSelector: *appConfig.ingressFilter,
-	}
-
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
-	for _, ingress := range ingresss.Items {
-		projectID := ingress.Annotations["kubernetes-manager/git-project-id"]
-
-		if !stringInSlice(projectID, projectIDs) {
-			projectIDs = append(projectIDs, ingress.Annotations["kubernetes-manager/git-project-id"])
-		}
-	}
-
-	for _, projectID := range projectIDs {
-		cleanOldTagsByProject(rootSpan, projectID)
-	}
-}
-func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) {
-	var tracer = opentracing.GlobalTracer()
-	span := tracer.StartSpan("cleanOldTagsByProject", opentracing.ChildOf(rootSpan.Context()))
-	defer span.Finish()
-
-	/* ADD TAGS NOT DELETE */
-	nonDelete := []string{}
-	opt := metav1.ListOptions{
-		LabelSelector: *appConfig.ingressFilter,
-	}
-
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
-	for _, ingress := range ingresss.Items {
-		if ingress.Annotations["kubernetes-manager/git-project-id"] == projectID {
-			nonDelete = append(nonDelete, ingress.Annotations["kubernetes-manager/registry-tag"])
-		}
-	}
-
-	log.Infof("tags to delete=%s", nonDelete)
-
-	git := gitlab.NewClient(nil, *appConfig.gitlabToken)
-	err := git.SetBaseURL(*appConfig.gitlabURL)
-	if err != nil {
-		log.Panic(err)
-	}
-	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID, nil)
-
-	if err != nil {
-		log.Panic(err)
-	}
-
-	for _, gitRepo := range gitRepos {
-		gitRepoTags, _, err := git.ContainerRegistry.ListRegistryRepositoryTags(projectID, gitRepo.ID, nil)
-
-		if err != nil {
-			log.Panic(err)
-		}
-
-		for _, gitRepoTag := range gitRepoTags {
-			if !stringInSlice(gitRepoTag.Name, nonDelete) {
-
-				log.Infof("Delete project=%s repo=%d tag=%s", projectID, gitRepo.ID, gitRepoTag.Name)
-
-				_, err := git.ContainerRegistry.DeleteRegistryRepositoryTag(projectID, gitRepo.ID, gitRepoTag.Name)
-
-				if err != nil {
-					log.Error(err)
-					span.LogKV("warning", err)
-				}
-			}
-		}
-	}
-}
-
 func addCacheControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "max-age=31557600")
@@ -1481,6 +1316,18 @@ func main() {
 	kingpin.Parse()
 
 	var err error
+
+	if !*appConfig.logPrety {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+	logLevel, err := log.ParseLevel(*appConfig.logLevel)
+	if err != nil {
+		log.Panic(err)
+	}
+	log.SetLevel(logLevel)
+	if logLevel == log.DebugLevel {
+		log.SetReportCaller(true)
+	}
 
 	if len(os.Getenv("SENTRY_DSN")) > 0 {
 		log.Debug("Use Sentry logging...")
@@ -1537,8 +1384,6 @@ func main() {
 	}
 	defer closer.Close()
 
-	opentracing.SetGlobalTracer(tracer)
-
 	if *appConfig.mode == "batch" {
 		span := tracer.StartSpan("main")
 		defer span.Finish()
@@ -1552,6 +1397,14 @@ func main() {
 		defer span.Finish()
 
 		cleanOldTags(span)
+		return
+	}
+
+	if *appConfig.mode == "pauseALL" {
+		span := tracer.StartSpan("main")
+		defer span.Finish()
+
+		pauseALL(span)
 		return
 	}
 
