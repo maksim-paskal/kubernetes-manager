@@ -1,0 +1,3 @@
+#!/bin/sh
+
+php -i | grep xdebug | wc -l

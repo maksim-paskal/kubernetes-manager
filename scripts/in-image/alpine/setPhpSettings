@@ -1,0 +1,5 @@
+#!/bin/sh
+echo $1 | base64 -d > /php-fpm.d/extra-php-fpm.conf
+pkill -USR2 -o php-fpm
+
+echo ok

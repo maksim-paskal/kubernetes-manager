@@ -1,0 +1,4 @@
+#!/bin/sh
+cd /app
+git fetch --all
+git reset --hard origin/$(cat /tmp/gitBranch)

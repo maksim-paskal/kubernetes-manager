@@ -1,0 +1,16 @@
+#!/bin/sh
+apk add openssh git
+
+if [ ! -f ~/.ssh/id_rsa ]; then
+  #ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+  mkdir -p ~/.ssh
+  cp -r /kubernetes-manager/.ssh/* ~/.ssh
+  chmod 400 ~/.ssh/id_rsa
+  ssh-keyscan git.server.com > ~/.ssh/known_hosts
+fi
+
+cd /app
+rm -rf .git
+git init
+git remote add origin $1
+echo $2 > /tmp/gitBranch
