@@ -22,15 +22,20 @@ spec:
         image: {{ .Values.registry.image }}
         imagePullPolicy: {{ .Values.registry.imagePullPolicy }}
         env:
+        {{ if .Values.jaeger.agentOnHost }}
         - name: JAEGER_AGENT_HOST
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
+        {{ end }}
         {{ if .Values.sentry.enabled }}
         - name: "SENTRY_DSN"
           value: {{ .Values.sentry.host }}
         {{ end }}
+{{ if .Values.env}}
+{{ toYaml .Values.env | indent 8 }}
+{{ end }}
         command:
         - /app/kubernetes-manager
         - --front.dist=/app/dist

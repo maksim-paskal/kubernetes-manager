@@ -4,10 +4,19 @@ registry:
 
 resources: {}
 
+jaeger:
+  agentOnHost: false 
 sentry:
-  enabled: true
+  enabled: false
   host: ""
 
+env: {}
+# - name: FRONT_PHPMYADMIN_URL
+#   value: https://phpmyadmin.example.com
+# - name: FRONT_DEBUG_SERVER_NAME
+#   value: dev.example.com
+# - name: FRONT_SENTRY_DSN
+#   value: https://id@sentry/1
 args: []
 # - --log.level=INFO
 # - --kubeconfig.server=https://kubernetes-api
