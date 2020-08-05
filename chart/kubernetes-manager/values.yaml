@@ -1,5 +1,5 @@
 registry:
-  image: paskalmaksim/kubernetes-manager:v0.0.2
+  image: paskalmaksim/kubernetes-manager:v0.0.3
   imagePullPolicy: IfNotPresent
 
 resources: {}

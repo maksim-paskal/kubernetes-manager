@@ -1,7 +1,7 @@
 version: '3'
 services:
   kubernetes-manager:
-    image: paskalmaksim/kubernetes-manager:v0.0.2
+    image: paskalmaksim/kubernetes-manager:v0.0.3
     environment:
     - RCLONE_CONFIG_S3_TYPE=s3
     - RCLONE_CONFIG_S3_PROVIDER=AWS
