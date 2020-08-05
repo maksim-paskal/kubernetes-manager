@@ -3,7 +3,12 @@
     <b-navbar sticky fixed="top" toggleable="lg" type="dark" variant="dark">
       <b-input-group>
         <b-button :disabled="isBusy" variant="outline-secondary" @click="getIngress()">Refresh</b-button>&nbsp;
-        <b-form-input v-model="filter" :disabled="isBusy" placeholder="Type to Search"></b-form-input>
+        <b-form-input
+          v-model="filter"
+          :disabled="isBusy"
+          autocomplete="off"
+          placeholder="Type to Search"
+        ></b-form-input>
       </b-input-group>
     </b-navbar>
 
@@ -74,18 +79,19 @@
             <b-card bg-variant="light" header="Pause branch" class="text-center">
               <div>branch autopause will be at 16:00 UTC</div>
               <br />
-              <b-button @click="makeAPICall('scaleNamespace','none','&replicas=0',false)">Pause</b-button>
+              <b-button @click="makeAPICall('scaleNamespace','none','&replicas=0')">Pause</b-button>
               <b-button
                 variant="success"
-                @click="makeAPICall('scaleNamespace','none','&replicas=1', false)"
+                @click="makeAPICall('scaleNamespace','none','&replicas=1')"
               >Start</b-button>
             </b-card>
             <br />
+            <b-card bg-variant="light" header="Autoscaling" class="text-center">
+              <b-button @click="makeAPICall('disableHPA','none')">Disable autoscaling</b-button>
+            </b-card>
+            <br />
             <b-card bg-variant="light" header="Danger Zone" class="text-center">
-              <b-button
-                variant="danger"
-                @click="makeAPICall('deleteALL','projectID=', '', false)"
-              >Delete All</b-button>
+              <b-button variant="danger" @click="makeAPICall('deleteALL','projectID=')">Delete All</b-button>
             </b-card>
           </b-tab>
           <b-tab key="tab4" title="debug">
@@ -113,24 +119,11 @@
                     />
                   </b-col>
                   <b-col cols="2">
-                    Templates to add:
-                    <b-nav vertical>
-                      <b-nav-item
-                        v-b-tooltip.hover
-                        @click="templateAction"
-                        title="env[XDEBUG_CONFIG]='remote_host=0.tcp.ngrok.io remote_port=17570'"
-                      >config xdebug</b-nav-item>
-                      <b-nav-item
-                        v-b-tooltip.hover
-                        @click="templateAction"
-                        title="php_value[opcache.enable]=0"
-                      >disable&nbsp;opcache</b-nav-item>
-                      <b-nav-item
-                        v-b-tooltip.hover
-                        @click="templateAction"
-                        title="env[APP_ENV]='dev'"
-                      >debug mode</b-nav-item>
-                    </b-nav>
+                    <b-dropdown id="dropdown-1" offset="25" text="Templates" class="m-2">
+                      <b-dropdown-item @click="templateAction(0)">config xdebug</b-dropdown-item>
+                      <b-dropdown-item @click="templateAction(1)">disable opcache</b-dropdown-item>
+                      <b-dropdown-item @click="templateAction(2)">enable debug mode</b-dropdown-item>
+                    </b-dropdown>
                   </b-col>
                 </b-row>
               </b-container>
@@ -142,10 +135,7 @@
               <b-button @click="showTab(4,true,true)">Refresh</b-button>
               <b-button variant="success" @click="makeAPICall('exec','xdebugEnable')">Enable XDEBUG</b-button>
               <b-button @click="setPhpSettings()">Set settings in php-fpm.conf</b-button>
-              <b-button
-                variant="danger"
-                @click="makeAPICall('deletePod','none','&LabelSelector=app=paket')"
-              >Delete Pod</b-button>
+              <b-button variant="danger" @click="makeAPICall('deletePod','none')">Delete Pod</b-button>
             </div>
           </b-tab>
           <b-tab key="tab5" title="git-sync">
@@ -188,10 +178,7 @@
               <b-button @click="showTab(5,true,true)">Refresh</b-button>
               <b-button variant="success" @click="enableGit()">Init</b-button>
               <b-button @click="showPublicKey()">Show public key</b-button>
-              <b-button
-                variant="danger"
-                @click="makeAPICall('deletePod','none','&LabelSelector=app=paket')"
-              >Delete Pod</b-button>
+              <b-button variant="danger" @click="makeAPICall('deletePod','none')">Delete Pod</b-button>
               <b-button @click="makeAPICall('exec','gitFetch')">Fetch</b-button>
               <b-button @click="makeAPICall('exec','clearCache')">Clear Cache</b-button>
             </div>
@@ -298,14 +285,15 @@ export default {
     gitOriginState() {
       if (!this.gitOrigin) return false;
       return this.gitOrigin.match("^[^@]+@[^:]+:[^/]+/[^.]+.git$") != null;
-    }
+    },
   },
   data() {
     return {
       fields: [
         { key: "Actions", sortable: false },
         { key: "Status", sortable: false },
-        { key: "Hosts", sortable: false }
+        { key: "GitBranch", sortable: false },
+        { key: "Hosts", sortable: false },
       ],
       isBusy: true,
       error: null,
@@ -317,7 +305,7 @@ export default {
         content: "",
         loading: false,
         error: null,
-        info: null
+        info: null,
       },
       tabIndex: null,
       tab1Data: null,
@@ -336,7 +324,7 @@ export default {
       podsNamesSelected: null,
 
       isMysqlTab: false,
-      isMongoTab: false
+      isMongoTab: false,
     };
   },
   methods: {
@@ -378,7 +366,7 @@ export default {
         const { result } = await this.$axios.$get("/api/getIngress");
         this.items = result;
 
-        this.items.forEach(async el => {
+        this.items.forEach(async (el) => {
           const result = await this.$axios.$get(
             "/api/getRunningPodsCount?namespace=" + el.Namespace
           );
@@ -390,8 +378,19 @@ export default {
       }
       this.isBusy = false;
     },
-    async templateAction(event) {
-      this.debug_text += event.target.parentElement.dataset.originalTitle;
+    async templateAction(id) {
+      switch (id) {
+        case 0:
+          this.debug_text +=
+            "env[XDEBUG_CONFIG]='remote_host=0.tcp.ngrok.io remote_port=17570'\nenv[PHP_IDE_CONFIG]='serverName=dev'";//TODO: dynamic value
+          break;
+        case 1:
+          this.debug_text += "php_value[opcache.enable]=0";
+          break;
+        case 2:
+          this.debug_text += "env[APP_ENV]='dev'";
+          break;
+      }
       this.debug_text += "\n";
     },
     async showPublicKey() {
@@ -407,15 +406,16 @@ export default {
       }
       return `/api/${api}?cmd=${cmd}&pod=${this.podsNamesSelected}&namespace=${this.infoModal.content.Namespace}${args}`;
     },
-    async makeAPICall(
-      api,
-      cmd = "none",
-      args = "" /* need & */,
-      podsNamesSelectedCheck = true
-    ) {
+    async makeAPICall(api, cmd = "none", args = "" /* need & */) {
       try {
-        if (podsNamesSelectedCheck && !this.podsNamesSelected) {
-          throw "no pod selected";
+        switch (api) {
+          case "scaleNamespace":
+          case "deleteALL":
+            break;
+          default:
+            if (!this.podsNamesSelected) {
+              throw "no pod selected";
+            }
         }
         var realy = await this.$bvModal.msgBoxConfirm("Realy?");
         if (!realy) return;
@@ -495,14 +495,14 @@ export default {
 
           this.podsNames.push({
             value: null,
-            text: "Please select a POD"
+            text: "Please select a POD",
           });
 
           if (result.ExecCode) {
             throw result;
           }
 
-          result.forEach(pod => {
+          result.forEach((pod) => {
             switch (pod.PodLabels["app"]) {
               case "mysql":
                 this.isMysqlTab = true;
@@ -512,7 +512,7 @@ export default {
                 break;
             }
 
-            pod.PodContainers.forEach(container => {
+            pod.PodContainers.forEach((container) => {
               if (defaultPod && !this.podsNamesSelected) {
                 if (
                   pod.PodLabels[defaultPodLabelName] == defaultPodLabelValue
@@ -524,7 +524,7 @@ export default {
               }
               this.podsNames.push({
                 value: `${pod.PodName}:${container.ContainerName}`,
-                text: `${pod.PodName}:${container.ContainerName}`
+                text: `${pod.PodName}:${container.ContainerName}`,
               });
             });
           });
@@ -536,7 +536,9 @@ export default {
               this.tab1Data = {
                 result: "found",
                 server: `mysql.${this.infoModal.content.Namespace}.svc.cluster.local`,
-                phpmyadminURL: "https://phpmyadmin/db_structure.php?server=1"
+                phpmyadminURL:
+                  /* TODO: Dynamic value */
+                  '{{ env "FRONT_PHPMYADMIN_URL" }}',
               };
             }
             break;
@@ -560,7 +562,7 @@ export default {
 
               const [obj1, obj2] = await Promise.all([
                 this.$axios.$get(this.makeAPICallUrl("exec", "xdebugInfo")),
-                this.$axios.$get(this.makeAPICallUrl("exec", "getPhpSettings"))
+                this.$axios.$get(this.makeAPICallUrl("exec", "getPhpSettings")),
               ]);
 
               if (obj1.result.ExecCode) {
@@ -604,7 +606,7 @@ export default {
 
               const [obj1, obj2] = await Promise.all([
                 this.$axios.$get(this.makeAPICallUrl("exec", "getGitPubKey")),
-                this.$axios.$get(this.makeAPICallUrl("exec", "getGitBranch"))
+                this.$axios.$get(this.makeAPICallUrl("exec", "getGitBranch")),
               ]);
 
               if (obj1.result.ExecCode) {
@@ -661,7 +663,7 @@ export default {
       } else {
         this.error = e;
       }
-    }
-  }
+    },
+  },
 };
 </script>

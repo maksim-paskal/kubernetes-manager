@@ -1,26 +1,32 @@
-module main
+module github.com/maksim-paskal/kubernetes-manager
 
-go 1.12
+go 1.14
 
 require (
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/getsentry/sentry-go v0.3.1
+	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
+	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/labstack/gommon v0.3.0
+	github.com/maksim-paskal/utils-go v0.0.3
 	github.com/mitchellh/gox v1.0.1 // indirect
-	github.com/opentracing/opentracing-go v1.1.0
-	github.com/sirupsen/logrus v1.4.2
-	github.com/uber-go/atomic v1.4.0 // indirect
-	github.com/uber/jaeger-client-go v2.16.0+incompatible
-	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
-	github.com/xanzy/go-gitlab v0.20.1
-	go.uber.org/atomic v1.4.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	github.com/opentracing/opentracing-go v1.2.0
+	github.com/prometheus/common v0.10.0
+	github.com/sirupsen/logrus v1.6.0
+	github.com/uber/jaeger-client-go v2.25.0+incompatible
+	github.com/uber/jaeger-lib v2.2.0+incompatible
+	github.com/xanzy/go-gitlab v0.33.0
+	go.uber.org/atomic v1.6.0 // indirect
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
+	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642 // indirect
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
+	google.golang.org/appengine v1.6.6 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
-	k8s.io/api v0.0.0-20190814101207-0772a1bdf941
-	k8s.io/apimachinery v0.0.0-20190814100815-533d101be9a6
-	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
-	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a // indirect
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v0.17.0
 )

@@ -17,10 +17,15 @@ module.exports = {
     '~plugins/app.js'
   ],
   modules: [
-    '@nuxtjs/axios'
+    '@nuxtjs/axios',
+    '@nuxtjs/sentry'
   ],
   axios: {
     proxy: true
+  },
+  sentry: {
+    dsn: 'https://id@sentry/1', // TODO: dynamic value
+    config: {}, // Additional config
   },
   proxy: {
     '/api/': `${process.env.BACKEND_URL}`

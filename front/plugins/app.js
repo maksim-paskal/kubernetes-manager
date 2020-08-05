@@ -48,14 +48,14 @@ Vue.component('b-col', BCol)
 import { BInputGroup } from 'bootstrap-vue'
 Vue.component('b-input-group', BInputGroup)
 
-import { BNav } from 'bootstrap-vue'
-Vue.component('b-nav', BNav)
-
-import { BNavItem } from 'bootstrap-vue'
-Vue.component('b-nav-item', BNavItem)
-
 import { TooltipPlugin } from 'bootstrap-vue'
 Vue.use(TooltipPlugin)
 
 import { BFormSelect } from 'bootstrap-vue'
 Vue.component('b-form-select', BFormSelect)
+
+import { BDropdown } from 'bootstrap-vue'
+Vue.component('b-dropdown', BDropdown)
+
+import { BDropdownItem } from 'bootstrap-vue'
+Vue.component('b-dropdown-item', BDropdownItem)

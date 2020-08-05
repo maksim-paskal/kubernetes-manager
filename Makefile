@@ -1,5 +1,5 @@
 build:
-	docker build . -t paskalmaksim/telegram-gateway:dev
+	docker build --pull . -t paskalmaksim/kubernetes-manager:dev
 test:
 	go test *.go
 	golangci-lint run

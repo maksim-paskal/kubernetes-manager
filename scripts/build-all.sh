@@ -26,7 +26,7 @@ export GOX="go run github.com/mitchellh/gox"
 
 rm -rf _dist
 
-$GOX -parallel=3 -output="_dist/$BINNAME-{{.OS}}-{{.Arch}}/$BINNAME" -osarch="$TARGETS" $GOFLAGS -tags "$TAGS" -ldflags "$LDFLAGS"
+$GOX -parallel=3 -output="_dist/$BINNAME-{{.OS}}-{{.Arch}}/$BINNAME" -osarch="$TARGETS" $GOFLAGS -tags "$TAGS" -ldflags "$LDFLAGS" ./cmd/main
 
 cd _dist
 for dir in *
