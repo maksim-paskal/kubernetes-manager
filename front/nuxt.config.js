@@ -24,7 +24,7 @@ module.exports = {
     proxy: true
   },
   sentry: {
-    dsn: 'https://id@sentry/1', // TODO: dynamic value
+    dsn: 'https://__setry_id__@__setry_server__/1',
     config: {}, // Additional config
   },
   proxy: {

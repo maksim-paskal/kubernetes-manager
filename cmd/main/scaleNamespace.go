@@ -171,7 +171,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, _ := json.Marshal(payload)
 	_, err = clientset.CoreV1().Namespaces().Patch(namespace[0], types.StrategicMergePatchType, payloadBytes)
 	if err != nil {
-		/* TODO */
+		/* TODO: sometimes scale to 0 fails from first time */
 		log.Warn(err)
 		//http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelWarning, r, err, "")

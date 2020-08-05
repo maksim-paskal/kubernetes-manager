@@ -13,7 +13,7 @@ limitations under the License.
 package main
 
 import (
-	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -44,9 +44,13 @@ func diffToNow(t time.Time) int {
 	return int(t1.Sub(t).Hours() / 24)
 }
 
-func addCacheControl(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Cache-Control", "max-age=31557600")
-		h.ServeHTTP(w, r)
-	})
+func getEnvDefault(name string, defaultValue string) string {
+	r := os.Getenv(name)
+	if len(defaultValue) == 0 {
+		return r
+	}
+	if len(r) == 0 {
+		return defaultValue
+	}
+	return r
 }

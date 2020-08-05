@@ -1201,7 +1201,7 @@ func main() {
 	fs := http.FileServer(http.Dir(*appConfig.frontDist))
 
 	http.Handle("/", fs)
-	http.Handle("/_nuxt/", addCacheControl(fs))
+	http.HandleFunc("/_nuxt/", serveFiles)
 	http.HandleFunc("/api/getIngress", getIngress)
 	http.HandleFunc("/api/getNamespace", getNamespace)
 	http.HandleFunc("/api/deleteNamespace", deleteNamespace)

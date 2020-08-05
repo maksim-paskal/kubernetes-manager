@@ -382,7 +382,7 @@ export default {
       switch (id) {
         case 0:
           this.debug_text +=
-            "env[XDEBUG_CONFIG]='remote_host=0.tcp.ngrok.io remote_port=17570'\nenv[PHP_IDE_CONFIG]='serverName=dev'";//TODO: dynamic value
+            "env[XDEBUG_CONFIG]='remote_host=0.tcp.ngrok.io remote_port=17570'\nenv[PHP_IDE_CONFIG]='serverName=__FRONT_DEBUG_SERVER_NAME__'";
           break;
         case 1:
           this.debug_text += "php_value[opcache.enable]=0";
@@ -536,9 +536,7 @@ export default {
               this.tab1Data = {
                 result: "found",
                 server: `mysql.${this.infoModal.content.Namespace}.svc.cluster.local`,
-                phpmyadminURL:
-                  /* TODO: Dynamic value */
-                  '{{ env "FRONT_PHPMYADMIN_URL" }}',
+                phpmyadminURL: "__FRONT_PHPMYADMIN_URL__",
               };
             }
             break;
