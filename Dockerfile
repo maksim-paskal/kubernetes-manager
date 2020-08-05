@@ -32,6 +32,7 @@ ENV SYSTEM_GIT_TAGS=master,release-.*
 ENV SYSTEM_NAMESPACES=kube-system
 ENV FRONT_PHPMYADMIN_URL=https://aaa
 ENV FRONT_DEBUG_SERVER_NAME=bbb
+ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
 # rclone params for cleanOldTags
 ENV RCLONE_CONFIG_S3_TYPE=s3
