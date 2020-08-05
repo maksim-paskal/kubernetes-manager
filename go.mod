@@ -11,7 +11,6 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/labstack/gommon v0.3.0
 	github.com/maksim-paskal/utils-go v0.0.3
-	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/common v0.10.0
 	github.com/sirupsen/logrus v1.6.0
