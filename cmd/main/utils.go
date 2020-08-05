@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -41,4 +42,11 @@ func isSystemNamespace(namespace string) bool {
 func diffToNow(t time.Time) int {
 	t1 := time.Now()
 	return int(t1.Sub(t).Hours() / 24)
+}
+
+func addCacheControl(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "max-age=31557600")
+		h.ServeHTTP(w, r)
+	})
 }

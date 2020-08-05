@@ -1001,19 +1001,6 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAPIversion(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
-	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getAPIversion", ext.RPCServerOption(spanCtx))
-	defer span.Finish()
-
-	w.Header().Set("Content-Type", "application/json")
-	_, err := w.Write([]byte(fmt.Sprintf("{\"version\":\"%s-%s\"}", appConfig.Version, buildTime)))
-	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
-	}
-}
-
 func getPods(w http.ResponseWriter, r *http.Request) {
 	var tracer = opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -1097,13 +1084,6 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 
 var clientset *kubernetes.Clientset
 var restconfig *rest.Config
-
-func addCacheControl(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Cache-Control", "max-age=31557600")
-		h.ServeHTTP(w, r)
-	})
-}
 
 type LogrusAdapter struct{}
 
