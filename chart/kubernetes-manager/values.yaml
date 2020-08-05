@@ -1,0 +1,21 @@
+registry:
+  image: paskalmaksim/kubernetes-manager:v0.0.2
+  imagePullPolicy: IfNotPresent
+
+resources: {}
+
+sentry:
+  enabled: true
+  host: ""
+
+args: []
+# - --log.level=INFO
+# - --kubeconfig.server=https://kubernetes-api
+# - --gitlab.url=https://git/api/v4
+# - --gitlab.token=git-token
+# - --system.gitTags=master,release-.*
+# - --system.namespaces=kube-system
+
+ingress:
+  host: "test.com"
+  annotations: {}

@@ -1,0 +1,4 @@
+apiVersion: v1
+icon: https://helm.sh/img/helm.svg
+name: kubernetes-manager
+version: 0.0.1

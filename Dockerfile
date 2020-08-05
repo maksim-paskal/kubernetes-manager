@@ -17,7 +17,7 @@ ENV GOFLAGS="-trimpath"
 RUN cd /usr/src/kubernetes-manager \
   && go mod download \
   && go mod verify \
-  && go build -v -o kubernetes-manager -ldflags "-X main.buildTime=$(date +"%Y%m%d%H%M%S")" ./cmd/main
+  && go build -v -o kubernetes-manager -ldflags "-X main.buildTime=$(date +"%Y%m%d%H%M%S") -X main.gitVersion=docker" ./cmd/main
 
 FROM alpine:latest
 
@@ -31,7 +31,7 @@ ENV GITLAB_TOKEN=some-token
 ENV SYSTEM_GIT_TAGS=master,release-.*
 ENV SYSTEM_NAMESPACES=kube-system
 
-# rclone and registry needs to cleanOldTags
+# rclone params for cleanOldTags
 ENV RCLONE_CONFIG_S3_TYPE=s3
 ENV RCLONE_CONFIG_S3_PROVIDER=AWS
 ENV RCLONE_CONFIG_S3_ACCESS_KEY_ID=change-it
