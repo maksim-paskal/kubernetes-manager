@@ -3,12 +3,29 @@
     <b-navbar sticky fixed="top" toggleable="lg" type="dark" variant="dark">
       <b-input-group>
         <b-button :disabled="isBusy" variant="outline-secondary" @click="getIngress()">Refresh</b-button>&nbsp;
+        <b-dropdown variant="outline-secondary" text="Menu">
+          <b-dropdown-item target="_blank" href="__FRONT_SENTRY_URL__">
+            <img height="24" src="~assets/sentry.png" />&nbsp;Open Sentry
+          </b-dropdown-item>
+          <b-dropdown-item target="_blank" href="__FRONT_METRICS_URL__">
+            <img height="24" src="~assets/grafana.png" />&nbsp;Open Metrics
+          </b-dropdown-item>
+          <b-dropdown-item target="_blank" href="__FRONT_LOGS_URL__">
+            <img height="24" src="~assets/elasticsearch.png" />&nbsp;Open Logs
+          </b-dropdown-item>
+          <b-dropdown-item target="_blank" href="__FRONT_TRACING_URL__">
+            <img height="24" src="~assets/jaeger.png" />&nbsp;Open Tracing
+          </b-dropdown-item>
+          <b-dropdown-item target="_blank" href="__FRONT_SLACK_URL__">
+            <img height="24" src="~assets/slack.png" />&nbsp;Report Issue
+          </b-dropdown-item>
+        </b-dropdown>&nbsp;
         <b-form-input
           v-model="filter"
           :disabled="isBusy"
           autocomplete="off"
           placeholder="Type to Search"
-        ></b-form-input>
+        />&nbsp;
       </b-input-group>
     </b-navbar>
 
@@ -40,9 +57,28 @@
       <b-card no-body v-if="!infoModal.loading">
         <b-tabs card @input="showTab" v-model="tabIndex">
           <b-tab key="tab0" title="info">
+            <b-button
+              :href="getNamespacedString('__FRONT_METRICS_URL__/__FRONT_METRICS_PATH__')"
+              target="_blank"
+            >
+              <img height="16" src="~assets/grafana.png" />&nbsp;Metrics
+            </b-button>
+            <b-button
+              :href="getNamespacedString('__FRONT_LOGS_URL__/__FRONT_LOGS_PATH__')"
+              target="_blank"
+            >
+              <img height="16" src="~assets/elasticsearch.png" />&nbsp;Logs
+            </b-button>
+
+            <b-card class="mt-3" header="Namespace information">
+              <pre class="m-0">{{ infoModal.content }}</pre>
+            </b-card>
+
+            <!--
             <b-card-text>
               <pre>{{ infoModal.content }}</pre>
             </b-card-text>
+            -->
           </b-tab>
           <b-tab key="tab1" title="mysql" :disabled="!isMysqlTab">
             <pre>{{ tab1Data }}</pre>
@@ -330,6 +366,9 @@ export default {
   methods: {
     async podsNamesChange() {
       this.showTab(this.tabIndex, true);
+    },
+    getNamespacedString(data) {
+      return data.replace(/__Namespace__/g, this.infoModal.content.Namespace);
     },
     getNamespaceStatus(data) {
       const total = data.RunningPodsCount;

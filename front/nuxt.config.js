@@ -32,7 +32,8 @@ module.exports = {
   },
   mode: 'spa',
   css: [
-    'bootstrap/dist/css/bootstrap.min.css'
+    'bootstrap/dist/css/bootstrap.min.css',
+    '~/css/main.css'
   ],
   /*
   ** Customize the progress bar color

@@ -22,6 +22,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var replacer *strings.Replacer = strings.NewReplacer(
+	"__FRONT_PHPMYADMIN_URL__", getEnvDefault("FRONT_PHPMYADMIN_URL", ""),
+	"__FRONT_DEBUG_SERVER_NAME__", getEnvDefault("FRONT_DEBUG_SERVER_NAME", ""),
+	"__FRONT_SENTRY_URL__", getEnvDefault("FRONT_SENTRY_URL", ""),
+	"__FRONT_METRICS_URL__", getEnvDefault("FRONT_METRICS_URL", ""),
+	"__FRONT_LOGS_URL__", getEnvDefault("FRONT_LOGS_URL", ""),
+	"__FRONT_TRACING_URL__", getEnvDefault("FRONT_TRACING_URL", ""),
+	"__FRONT_SLACK_URL__", getEnvDefault("FRONT_SLACK_URL", ""),
+	"__FRONT_METRICS_PATH__", getEnvDefault("FRONT_METRICS_PATH", ""),
+	"__FRONT_LOGS_PATH__", getEnvDefault("FRONT_LOGS_PATH", ""),
+	"https://__setry_id__@__setry_server__/1", getEnvDefault("FRONT_SENTRY_DSN", "https://id@sentry/1"),
+)
+
 func serveFiles(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(*appConfig.frontDist, filepath.Clean(r.URL.Path))
 
@@ -44,10 +57,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newContents := string(read)
-	newContents = strings.Replace(newContents, "__FRONT_PHPMYADMIN_URL__", getEnvDefault("FRONT_PHPMYADMIN_URL", ""), -1)
-	newContents = strings.Replace(newContents, "__FRONT_DEBUG_SERVER_NAME__", getEnvDefault("FRONT_DEBUG_SERVER_NAME", ""), -1)
-	newContents = strings.Replace(newContents, "https://__setry_id__@__setry_server__/1", getEnvDefault("FRONT_SENTRY_DSN", "https://id@sentry/1"), -1)
+	newContents := replacer.Replace(string(read))
 
 	_, err = w.Write([]byte(newContents))
 
