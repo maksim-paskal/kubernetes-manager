@@ -26,7 +26,7 @@ import (
 )
 
 func getIngress(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getIngress", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -66,6 +66,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -78,13 +79,14 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 
-		item.GitBranch = ingress.Annotations[label_gitBranch]
+		item.GitBranch = ingress.Annotations[labelGitBranch]
 
-		if len(namespace.GetAnnotations()[label_lastScaleDate]) > 0 {
-			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[label_lastScaleDate])
+		if len(namespace.GetAnnotations()[labelLastScaleDate]) > 0 {
+			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[labelLastScaleDate])
 			if err != nil {
 				log.Warn(err)
 				logError(span, sentry.LevelWarning, r, err, "")
@@ -121,6 +123,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

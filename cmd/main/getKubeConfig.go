@@ -25,7 +25,7 @@ import (
 )
 
 func getKubeConfig(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getKubeConfig", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -34,6 +34,7 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -41,10 +42,11 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
-	var kubeConfig = `apiVersion: v1
+	kubeConfig := `apiVersion: v1
 clusters:
 - cluster:
     insecure-skip-tls-verify: true
@@ -78,6 +80,7 @@ users:
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	err = tmpl.Execute(&out, params)

@@ -22,7 +22,7 @@ import (
 )
 
 func getAPIversion(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getAPIversion", ext.RPCServerOption(spanCtx))
 	defer span.Finish()

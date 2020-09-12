@@ -14,8 +14,8 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -78,23 +78,30 @@ func logError(span opentracing.Span, level sentry.Level, request *http.Request, 
 		span.LogKV("error", message)
 	}
 }
+
 func initPodCommands() map[string]getInfoDBCommandsType {
 	m := make(map[string]getInfoDBCommandsType)
+
+	var command strings.Builder
+	command.WriteString("mongo admin -u $MONGO_INITDB_ROOT_USERNAME")
+	command.WriteString(" -p $MONGO_INITDB_ROOT_PASSWORD")
+	command.WriteString(" --quiet --eval  \"printjson(db.adminCommand('listDatabases'))\"")
 
 	m["mongoInfo"] = getInfoDBCommandsType{
 		param: execContainerParams{
 			namespace:     "",
 			labelSelector: "app=mongo",
 			container:     "mongo",
-			command:       "mongo admin -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --quiet --eval  \"printjson(db.adminCommand('listDatabases'))\"",
+			command:       command.String(),
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
+
 			return nil
 		},
 	}
@@ -109,24 +116,25 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
@@ -141,20 +149,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -174,20 +182,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -207,13 +215,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			text := r.URL.Query()["text"]
 
 			if len(text) != 1 {
-				return errors.New("no text")
+				return ErrNoText
 			}
 			param.namespace = namespace[0]
 			param.command = fmt.Sprintf("%s %s", param.command, text)
@@ -221,13 +229,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -247,7 +255,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			param.namespace = namespace[0]
@@ -255,13 +263,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -281,19 +289,19 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			origin := r.URL.Query()["origin"]
 
 			if len(origin) != 1 {
-				return errors.New("no origin")
+				return ErrNoOrigin
 			}
 
 			branch := r.URL.Query()["branch"]
 
 			if len(origin) != 1 {
-				return errors.New("no branch")
+				return ErrNoBranch
 			}
 
 			param.namespace = namespace[0]
@@ -302,13 +310,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -328,7 +336,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			param.namespace = namespace[0]
@@ -336,17 +344,18 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
@@ -361,24 +370,25 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
@@ -393,23 +403,24 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
@@ -424,24 +435,25 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
@@ -456,26 +468,28 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return errors.New("no namespace")
+				return ErrNoNamespace
 			}
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return errors.New("no pod")
+				return ErrNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != 2 {
-				return errors.New("no pod selected")
+			if len(podinfo) != KeyValueLength {
+				return ErrNoPodSelected
 			}
 
 			param.podname = podinfo[0]
 			param.container = podinfo[1]
+
 			return nil
 		},
 	}
+
 	return m
 }
 
@@ -487,22 +501,30 @@ type httpResponse struct {
 func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- httpResponse) {
 	url := fmt.Sprintf("http://%s:%d%s", *appConfig.makeAPICallServer, *appConfig.port, api)
 
-	req, _ := http.NewRequest("GET", url, nil)
+	ctx := context.Background()
+
+	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 	req.URL.RawQuery = q.Encode()
 
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	if err != nil {
 		logError(span, sentry.LevelError, nil, err, "")
 	}
 
-	resp, _ := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logError(span, sentry.LevelError, nil, err, "")
+	} else if resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	httpBody, _ := ioutil.ReadAll(resp.Body)
 
 	ch <- httpResponse{resp.Status, string(httpBody)}
 }
+
 func deleteALL(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteALL", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -512,6 +534,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) != 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
@@ -521,6 +544,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logError(span, sentry.LevelError, r, err, "")
 		}
+
 		return
 	}
 
@@ -568,6 +592,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -578,7 +603,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 }
 
 func execCommands(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("execCommands", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -588,6 +613,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	if len(cmd) != 1 {
 		http.Error(w, "no command", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "no command")
+
 		return
 	}
 
@@ -595,6 +621,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(w, "no command found", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "no command found")
+
 		return
 	}
 
@@ -602,19 +629,19 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 
 	if podExecute.beforeExecute != nil {
 		err := podExecute.beforeExecute(&podExecute.param, r)
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 	}
 
 	execResults, err := execContainer(span, podExecute.param)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -635,6 +662,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -659,7 +687,7 @@ type execContainerResults struct {
 }
 
 func execContainer(rootSpan opentracing.Span, params execContainerParams) (execContainerResults, error) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("execContainer", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
@@ -680,8 +708,9 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 		}
 
 		if len(pods.Items) == 0 {
-			logError(span, sentry.LevelInfo, nil, nil, "pod in status Running not found, retry")
-			return execContainerResults{}, errors.New("pod in status Running not found, retry")
+			logError(span, sentry.LevelInfo, nil, nil, ErrNoPodInStatusRunning.Error())
+
+			return execContainerResults{}, ErrNoPodInStatusRunning
 		}
 
 		params.podname = pods.Items[0].Name
@@ -732,8 +761,9 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 
 	return results, nil
 }
+
 func getNamespace(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getNamespace", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -743,14 +773,15 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
 	_, err := clientset.CoreV1().Namespaces().Get(namespace[0], metav1.GetOptions{})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -760,8 +791,9 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 		logError(span, sentry.LevelError, r, err, "")
 	}
 }
+
 func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteRegistryTag", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -771,6 +803,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	if len(tag) < 1 {
 		http.Error(w, "tag not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "tag not set")
+
 		return
 	}
 
@@ -780,6 +813,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logError(span, sentry.LevelError, r, err, "")
 		}
+
 		return
 	}
 
@@ -788,6 +822,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	if len(projectID) < 1 {
 		http.Error(w, "projectID not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "projectID not set")
+
 		return
 	}
 
@@ -800,10 +835,10 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	span.LogKV("event", "ListRegistryRepositories")
 	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID[0], nil)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -811,7 +846,6 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		span.LogKV("DeleteRegistryRepositoryTag", fmt.Sprintf("gitRepo.ID=%d", gitRepo.ID))
 
 		_, err := git.ContainerRegistry.DeleteRegistryRepositoryTag(projectID[0], gitRepo.ID, tag[0])
-
 		if err != nil {
 			span.LogKV("warning", err)
 		}
@@ -823,8 +857,9 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		logError(span, sentry.LevelError, r, err, "")
 	}
 }
+
 func executeBatch(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("executeBatch", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -837,8 +872,9 @@ func executeBatch(w http.ResponseWriter, r *http.Request) {
 		logError(span, sentry.LevelError, r, err, "")
 	}
 }
+
 func deleteNamespace(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteNamespace", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -848,6 +884,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
@@ -857,14 +894,15 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logError(span, sentry.LevelError, r, err, "")
 		}
+
 		return
 	}
 
 	err := clientset.CoreV1().Namespaces().Delete(namespace[0], nil)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -874,8 +912,9 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		logError(span, sentry.LevelError, r, err, "")
 	}
 }
+
 func deletePod(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deletePod", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -885,6 +924,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
@@ -901,9 +941,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	if len(pod) > 0 {
 		podinfo := strings.Split(pod[0], ":")
 
-		if len(podinfo) != 2 {
+		if len(podinfo) != KeyValueLength {
 			http.Error(w, "no pod selected", http.StatusInternalServerError)
 			logError(span, sentry.LevelInfo, r, nil, "no pod selected")
+
 			return
 		}
 
@@ -912,6 +953,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		if len(LabelSelector) < 1 {
 			http.Error(w, "LabelSelector not set", http.StatusInternalServerError)
 			logError(span, sentry.LevelInfo, r, nil, "LabelSelector not set")
+
 			return
 		}
 
@@ -923,12 +965,14 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		if err1 != nil {
 			http.Error(w, err1.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err1, "")
+
 			return
 		}
 
 		if len(pods.Items) == 0 {
-			http.Error(w, "pod in status Running not found, retry", http.StatusInternalServerError)
-			logError(span, sentry.LevelInfo, r, nil, "pod in status Running not found, retry")
+			http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
+			logError(span, sentry.LevelInfo, r, nil, ErrNoPodInStatusRunning.Error())
+
 			return
 		}
 
@@ -939,6 +983,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err2, "")
+
 		return
 	}
 
@@ -959,6 +1004,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -969,7 +1015,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getRunningPodsCount", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -979,16 +1025,17 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
 	pods, err := clientset.CoreV1().Pods(namespace[0]).List(metav1.ListOptions{
 		FieldSelector: "status.phase=Running",
 	})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -1002,7 +1049,7 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPods(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -1012,22 +1059,24 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
 	pods, err := clientset.CoreV1().Pods(namespace[0]).List(metav1.ListOptions{
 		FieldSelector: "status.phase=Running",
 	})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
 	if len(pods.Items) == 0 {
-		http.Error(w, "pod in status Running not found, retry", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "pod in status Running not found, retry")
+		http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, nil, ErrNoPodInStatusRunning.Error())
+
 		return
 	}
 
@@ -1045,7 +1094,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 		Result []PodData `json:"result"`
 	}
 
-	var podsData []PodData
+	podsData := make([]PodData, 0)
 
 	for _, pod := range pods.Items {
 		var podContainersData []PodContainerData
@@ -1073,6 +1122,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -1082,8 +1132,10 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var clientset *kubernetes.Clientset
-var restconfig *rest.Config
+var (
+	clientset  *kubernetes.Clientset
+	restconfig *rest.Config
+)
 
 type LogrusAdapter struct{}
 
@@ -1106,7 +1158,6 @@ func main() {
 	var err error
 
 	logLevel, err := log.ParseLevel(*appConfig.logLevel)
-
 	if err != nil {
 		panic(err)
 	}
@@ -1184,6 +1235,7 @@ func main() {
 		defer span.Finish()
 
 		batch(span)
+
 		return
 	}
 
@@ -1192,6 +1244,7 @@ func main() {
 		defer span.Finish()
 
 		cleanOldTags(span)
+
 		return
 	}
 
@@ -1220,7 +1273,6 @@ func main() {
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", *appConfig.port), nil)
 	if err != nil {
-
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second)
 

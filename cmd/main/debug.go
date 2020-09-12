@@ -23,13 +23,12 @@ import (
 )
 
 func getDebug(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getDebug", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
 
 	_, err := w.Write(formatRequest(span, r))
-
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}

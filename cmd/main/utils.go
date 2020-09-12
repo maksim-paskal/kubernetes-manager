@@ -26,6 +26,7 @@ func isSystemBranch(gitBranch string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -36,12 +37,14 @@ func isSystemNamespace(namespace string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 func diffToNow(t time.Time) int {
 	t1 := time.Now()
-	return int(t1.Sub(t).Hours() / 24)
+
+	return int(t1.Sub(t).Hours() / HoursInDay)
 }
 
 func getEnvDefault(name string, defaultValue string) string {
@@ -52,5 +55,6 @@ func getEnvDefault(name string, defaultValue string) string {
 	if len(r) == 0 {
 		return defaultValue
 	}
+
 	return r
 }

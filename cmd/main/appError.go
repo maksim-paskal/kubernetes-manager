@@ -12,14 +12,14 @@ limitations under the License.
 */
 package main
 
-const (
-	HoursInDay             = 24
-	KeyValueLength         = 2
-	MessageNamespaceNotSet = "namespace not set"
+import "errors"
 
-	labelLastScaleDate    = "kubernetes-manager/lastScaleDate"
-	labelGitBranch        = "kubernetes-manager/git-branch"
-	labelGitProjectID     = "kubernetes-manager/git-project-id"
-	labelGitProjectOrigin = "kubernetes-manager/git-project-origin"
-	labelRegistryTag      = "kubernetes-manager/registry-tag"
+var (
+	ErrNoNamespace          = errors.New("no namespace")
+	ErrNoPod                = errors.New("no pod")
+	ErrNoPodSelected        = errors.New("no pod selected")
+	ErrNoText               = errors.New("no text")
+	ErrNoOrigin             = errors.New("no origin")
+	ErrNoBranch             = errors.New("no branch")
+	ErrNoPodInStatusRunning = errors.New("pod in status Running not found, retry")
 )

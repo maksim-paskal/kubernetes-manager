@@ -33,7 +33,7 @@ func scheduleBatch() {
 		log.Panic(err)
 	}
 
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 
 	for {
 		<-time.After(duration)
@@ -44,7 +44,7 @@ func scheduleBatch() {
 }
 
 func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProjectID string, gitBranch string) bool {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("getLastCommitBranch", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 	lastCommitDateForRemove := time.Now().AddDate(0, 0, -*appConfig.removeBranchDaysInactive)
@@ -55,25 +55,25 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 	}
 
 	gitCommits, _, err := git.Commits.ListCommits(gitProjectID, &gitCommitOptions)
-
 	if err != nil {
 		log.Error(err)
 		logError(span, sentry.LevelInfo, nil, nil, err.Error())
 	}
 	if len(gitCommits) == 0 {
 		log.Debugf("deleteOnLastCommit=gitBranch=%s,gitProjectID=%s", gitBranch, gitProjectID)
+
 		return true
 	}
+
 	return false
 }
 
 func batch(rootSpan opentracing.Span) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))
-
 	if err != nil {
 		log.Error(err)
 		logError(span, sentry.LevelInfo, nil, nil, err.Error())
@@ -86,13 +86,14 @@ func batch(rootSpan opentracing.Span) {
 	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
 
 	for _, ingress := range ingresss.Items {
-		gitBranch := ingress.Annotations[label_gitBranch]
-		gitProjectID := ingress.Annotations[label_gitProjectId]
+		gitBranch := ingress.Annotations[labelGitBranch]
+		gitProjectID := ingress.Annotations[labelGitProjectID]
 
 		namespace, err := clientset.CoreV1().Namespaces().Get(ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
 			log.Error(err)
 			logError(span, sentry.LevelError, nil, err, "")
+
 			return
 		}
 
@@ -106,8 +107,8 @@ func batch(rootSpan opentracing.Span) {
 			if strings.Contains(err.Error(), "404 Branch Not Found") {
 				isDeleteBranch = true
 			}
-		} else if len(namespace.GetAnnotations()[label_lastScaleDate]) > 0 {
-			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[label_lastScaleDate])
+		} else if len(namespace.GetAnnotations()[labelLastScaleDate]) > 0 {
+			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[labelLastScaleDate])
 			if err != nil {
 				log.Warn(err)
 				logError(span, sentry.LevelWarning, nil, err, "")

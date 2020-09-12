@@ -43,17 +43,16 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 	if len(mimeType) > 0 {
 		w.Header().Add("Content-Type", mimeType)
 
-		switch mimeType {
-		case "application/javascript":
+		if mimeType == "application/javascript" {
 			w.Header().Add("Cache-Control", "max-age=31557600")
 		}
 	}
 
 	read, err := ioutil.ReadFile(path)
-
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -64,6 +63,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 }

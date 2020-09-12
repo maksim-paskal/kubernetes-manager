@@ -39,7 +39,7 @@ type RegistryData struct {
 var exceptions []string
 
 func cleanOldTags(rootSpan opentracing.Span) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsBy", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
@@ -54,11 +54,11 @@ func cleanOldTags(rootSpan opentracing.Span) {
 
 	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
 	for _, ingress := range ingresss.Items {
-		projectID := ingress.Annotations[label_gitProjectId]
+		projectID := ingress.Annotations[labelGitProjectID]
 
 		if !utils.StringInSlice(projectID, projectIDs) {
-			projectIDs = append(projectIDs, ingress.Annotations[label_gitProjectId])
-			projectOrigins = append(projectOrigins, ingress.Annotations[label_gitProjectOrigin])
+			projectIDs = append(projectIDs, ingress.Annotations[labelGitProjectID])
+			projectOrigins = append(projectOrigins, ingress.Annotations[labelGitProjectOrigin])
 		}
 	}
 
@@ -102,7 +102,7 @@ func cleanOldTags(rootSpan opentracing.Span) {
 }
 
 func getExceptions(rootSpan opentracing.Span) []string {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("getExceptions", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
@@ -113,7 +113,6 @@ func getExceptions(rootSpan opentracing.Span) []string {
 	}
 
 	cms, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(opt)
-
 	if err != nil {
 		log.Panic(err)
 	}
@@ -121,7 +120,6 @@ func getExceptions(rootSpan opentracing.Span) []string {
 	log.Infof("found exception configmaps=%d", len(cms.Items))
 	for _, cm := range cms.Items {
 		cleanoldtags, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(cm.Name, metav1.GetOptions{})
-
 		if err != nil {
 			log.Panic(err)
 		}
@@ -129,7 +127,7 @@ func getExceptions(rootSpan opentracing.Span) []string {
 		data := cleanoldtags.Data["exceptions"]
 		for _, row := range strings.Split(data, "\n") {
 			data := strings.Split(row, ":")
-			if len(data) == 2 {
+			if len(data) == KeyValueLength {
 				if !utils.StringInSlice(row, allExceptions) {
 					allExceptions = append(allExceptions, row)
 				}
@@ -139,8 +137,9 @@ func getExceptions(rootSpan opentracing.Span) []string {
 
 	return allExceptions
 }
+
 func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsByProject", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
@@ -159,8 +158,8 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string
 
 	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
 	for _, ingress := range ingresss.Items {
-		if ingress.Annotations[label_gitProjectId] == projectID {
-			tag := ingress.Annotations[label_registryTag]
+		if ingress.Annotations[labelGitProjectID] == projectID {
+			tag := ingress.Annotations[labelRegistryTag]
 			if !utils.StringInSlice(tag, nonDelete) {
 				nonDelete = append(nonDelete, tag)
 			}
@@ -168,11 +167,17 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string
 	}
 
 	log.Infof("projectID=%s, tags to not delete=%s", projectID, nonDelete)
+
 	return nonDelete
 }
 
-func exec(rootSpan opentracing.Span, hub *registry.Registry, checkRepository string, tagsToLeaveArray []string) []string {
-	var tracer = opentracing.GlobalTracer()
+func exec(
+	rootSpan opentracing.Span,
+	hub *registry.Registry,
+	checkRepository string,
+	tagsToLeaveArray []string,
+) []string {
+	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("exec", opentracing.ChildOf(rootSpan.Context()))
 	defer span.Finish()
 
@@ -180,7 +185,6 @@ func exec(rootSpan opentracing.Span, hub *registry.Registry, checkRepository str
 	var errorTags []string
 	var err error
 	repositories, err := hub.Repositories()
-
 	if err != nil {
 		panic(err)
 	}
@@ -197,7 +201,6 @@ func exec(rootSpan opentracing.Span, hub *registry.Registry, checkRepository str
 		log.Debugf("repository=%s", repository)
 		if strings.HasPrefix(repository, checkRepository) {
 			tags, err := hub.Tags(repository)
-
 			if err != nil {
 				log.Error(err)
 				logError(span, sentry.LevelInfo, nil, nil, err.Error())
@@ -250,7 +253,7 @@ func exec(rootSpan opentracing.Span, hub *registry.Registry, checkRepository str
 					log.Error(err)
 					logError(span, sentry.LevelInfo, nil, nil, err.Error())
 				} else {
-					releaseDateDiffDays := releaseMaxDate.Sub(releaseDate).Hours() / 24
+					releaseDateDiffDays := releaseMaxDate.Sub(releaseDate).Hours() / HoursInDay
 
 					if releaseDateDiffDays < float64(*appConfig.releaseNotDeleteDays) {
 						log.Debugf("image %s date in notDeleteDays", tagToDelete)
@@ -261,9 +264,15 @@ func exec(rootSpan opentracing.Span, hub *registry.Registry, checkRepository str
 		}
 	}
 
-	log.Infof("checkRepository=%s,errorTags=%d,deleteTags=%d,releaseNotDelete=%d", checkRepository, len(errorTags), len(deleteTags), len(releaseNotDelete))
+	log.Infof(
+		"checkRepository=%s,errorTags=%d,deleteTags=%d,releaseNotDelete=%d",
+		checkRepository,
+		len(errorTags),
+		len(deleteTags),
+		len(releaseNotDelete),
+	)
 
-	var deleteCommand []string
+	deleteCommand := make([]string, 0)
 
 	for _, errorTag := range errorTags {
 		image := strings.Split(errorTag, ":")

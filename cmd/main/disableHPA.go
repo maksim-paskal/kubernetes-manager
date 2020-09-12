@@ -24,7 +24,7 @@ import (
 )
 
 func disableHPA(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("disableHPA", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -32,8 +32,9 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, MSG_NAMESPACE_NOT_SET, http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, MSG_NAMESPACE_NOT_SET)
+		http.Error(w, MessageNamespaceNotSet, http.StatusInternalServerError)
+		logError(span, sentry.LevelInfo, r, nil, MessageNamespaceNotSet)
+
 		return
 	}
 
@@ -44,14 +45,15 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
 		}
+
 		return
 	}
 
 	hpas, err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).List(metav1.ListOptions{})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 
@@ -63,10 +65,10 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 
 	for _, hpa := range hpas.Items {
 		err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).Delete(hpa.Name, opt)
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 	}
@@ -98,6 +100,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -106,6 +109,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 }

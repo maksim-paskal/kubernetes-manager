@@ -28,7 +28,7 @@ import (
 )
 
 func scaleNamespace(w http.ResponseWriter, r *http.Request) {
-	var tracer = opentracing.GlobalTracer()
+	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("scaleNamespace", ext.RPCServerOption(spanCtx))
 	defer span.Finish()
@@ -39,6 +39,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	if len(namespace) < 1 {
 		http.Error(w, "namespace not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+
 		return
 	}
 
@@ -56,30 +57,31 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	if len(replicas) < 1 {
 		http.Error(w, "replicas not set", http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, nil, "replicas not set")
+
 		return
 	}
 
 	ds, err := clientset.AppsV1().Deployments(namespace[0]).List(metav1.ListOptions{})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	for _, d := range ds.Items {
 		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(d.Name, metav1.GetOptions{})
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 
 		i, err := strconv.ParseInt(replicas[0], 10, 32)
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 
@@ -90,6 +92,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		if errUpdate != nil {
 			http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, errUpdate, "")
+
 			return
 		}
 	}
@@ -97,27 +100,27 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	// scale statefullsets
 	if version > 0 {
 		sf, err := clientset.AppsV1().StatefulSets(namespace[0]).List(metav1.ListOptions{})
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
+
 			return
 		}
 
 		for _, s := range sf.Items {
 			ss, err := clientset.AppsV1().StatefulSets(namespace[0]).Get(s.Name, metav1.GetOptions{})
-
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				logError(span, sentry.LevelError, r, err, "")
+
 				return
 			}
 
 			i, err := strconv.ParseInt(replicas[0], 10, 32)
-
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				logError(span, sentry.LevelError, r, err, "")
+
 				return
 			}
 
@@ -128,6 +131,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			if errUpdate != nil {
 				http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
 				logError(span, sentry.LevelError, r, errUpdate, "")
+
 				return
 			}
 		}
@@ -148,6 +152,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
+
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -165,7 +170,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 	payload := patchStringValue{
 		Metadata: metadataStringValue{
-			Annotations: map[string]string{label_lastScaleDate: time.Now().Format(time.RFC3339)},
+			Annotations: map[string]string{labelLastScaleDate: time.Now().Format(time.RFC3339)},
 		},
 	}
 	payloadBytes, _ := json.Marshal(payload)
@@ -173,8 +178,8 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		/* TODO: sometimes scale to 0 fails from first time */
 		log.Warn(err)
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelWarning, r, err, "")
-		//return
+		// return
 	}
 }

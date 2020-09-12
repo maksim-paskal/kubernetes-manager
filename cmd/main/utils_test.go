@@ -17,7 +17,6 @@ import (
 )
 
 func TestIsSystemBranch(t *testing.T) {
-
 	systemGitTags := "master,release-.*"
 	appConfig.systemGitTags = &systemGitTags
 
@@ -44,7 +43,6 @@ func TestIsSystemBranch(t *testing.T) {
 }
 
 func TestIsSystemNamespace(t *testing.T) {
-
 	systemNamespaces := "kube-system,app"
 	appConfig.systemNamespaces = &systemNamespaces
 
