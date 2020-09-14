@@ -14,16 +14,16 @@
     "update-latest": "yarn upgrade --latest"
   },
   "dependencies": {
-    "@nuxtjs/axios": "^5.12.1",
+    "@nuxtjs/axios": "^5.12.2",
     "@nuxtjs/sentry": "^4.3.4",
     "bootstrap": "^4.5.2",
-    "bootstrap-vue": "^2.16.0",
-    "nuxt": "^2.14.3",
-    "vue": "^2.6.11"
+    "bootstrap-vue": "^2.17.0",
+    "nuxt": "^2.14.5",
+    "vue": "^2.6.12"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.7.0",
+    "eslint": "^7.9.0",
     "eslint-friendly-formatter": "^4.0.1",
     "eslint-loader": "^4.0.2",
     "eslint-plugin-vue": "^6.2.2"
