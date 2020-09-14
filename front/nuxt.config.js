@@ -30,7 +30,7 @@ module.exports = {
   proxy: {
     '/api/': `${process.env.BACKEND_URL}`
   },
-  mode: 'spa',
+  ssr: false,
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
     '~/css/main.css'
