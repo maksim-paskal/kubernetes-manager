@@ -68,6 +68,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	//nolint:dupl
 	for _, d := range ds.Items {
 		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(d.Name, metav1.GetOptions{})
 		if err != nil {
@@ -107,6 +108,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		//nolint:dupl
 		for _, s := range sf.Items {
 			ss, err := clientset.AppsV1().StatefulSets(namespace[0]).Get(s.Name, metav1.GetOptions{})
 			if err != nil {
@@ -176,10 +178,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, _ := json.Marshal(payload)
 	_, err = clientset.CoreV1().Namespaces().Patch(namespace[0], types.StrategicMergePatchType, payloadBytes)
 	if err != nil {
-		/* TODO: sometimes scale to 0 fails from first time */
 		log.Warn(err)
-		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelWarning, r, err, "")
-		// return
 	}
 }

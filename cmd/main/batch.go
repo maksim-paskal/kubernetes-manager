@@ -101,6 +101,7 @@ func batch(rootSpan opentracing.Span) {
 
 		_, _, err = git.Branches.GetBranch(gitProjectID, gitBranch)
 
+		//nolint:gocritic
 		if isSystemBranch(gitBranch) {
 			isDeleteBranch = false
 		} else if err != nil {

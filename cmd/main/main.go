@@ -79,6 +79,7 @@ func logError(span opentracing.Span, level sentry.Level, request *http.Request, 
 	}
 }
 
+//nolint:gocyclo
 func initPodCommands() map[string]getInfoDBCommandsType {
 	m := make(map[string]getInfoDBCommandsType)
 
