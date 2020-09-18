@@ -41,6 +41,7 @@ var exceptions []string
 func cleanOldTags(rootSpan opentracing.Span) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsBy", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
 	projectIDs := []string{}
@@ -85,6 +86,7 @@ func cleanOldTags(rootSpan opentracing.Span) {
 	hub.Logf = registry.Quiet
 
 	var deleteCommand strings.Builder
+
 	deleteCommand.WriteString("set -ex\n")
 
 	for _, item := range items {
@@ -92,6 +94,7 @@ func cleanOldTags(rootSpan opentracing.Span) {
 			deleteCommand.WriteString(command)
 		}
 	}
+
 	const resultFile = "cleanOldTags.sh"
 	//nolint:gosec
 	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), 0744)
@@ -105,6 +108,7 @@ func cleanOldTags(rootSpan opentracing.Span) {
 func getExceptions(rootSpan opentracing.Span) []string {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("getExceptions", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
 	allExceptions := []string{}
@@ -119,6 +123,7 @@ func getExceptions(rootSpan opentracing.Span) []string {
 	}
 
 	log.Infof("found exception configmaps=%d", len(cms.Items))
+
 	for _, cm := range cms.Items {
 		cleanoldtags, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(cm.Name, metav1.GetOptions{})
 		if err != nil {
@@ -142,6 +147,7 @@ func getExceptions(rootSpan opentracing.Span) []string {
 func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsByProject", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
 	nonDelete := []string{}
@@ -180,26 +186,33 @@ func exec(
 ) []string {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("exec", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
-	var deleteTags []string
-	var errorTags []string
-	var err error
+	var (
+		deleteTags []string
+		errorTags  []string
+		err        error
+	)
+
 	repositories, err := hub.Repositories()
 	if err != nil {
 		panic(err)
 	}
 
 	releasePattern, err := regexp.Compile(*appConfig.releasePatern)
-	var releaseMaxDate time.Time
+
+	releaseMaxDate := time.Now()
 
 	if err != nil {
 		panic(err)
 	}
 
 	log.Debug("start list")
+
 	for _, repository := range repositories {
 		log.Debugf("repository=%s", repository)
+
 		if strings.HasPrefix(repository, checkRepository) {
 			tags, err := hub.Tags(repository)
 			if err != nil {
@@ -238,6 +251,7 @@ func exec(
 			}
 		}
 	}
+
 	log.Debugf("finished")
 
 	var releaseNotDelete []string

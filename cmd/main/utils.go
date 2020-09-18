@@ -49,10 +49,14 @@ func diffToNow(t time.Time) int {
 
 func getEnvDefault(name string, defaultValue string) string {
 	r := os.Getenv(name)
-	if len(defaultValue) == 0 {
+	defaultValueLen := len(defaultValue)
+
+	if defaultValueLen == 0 {
 		return r
 	}
-	if len(r) == 0 {
+
+	rLen := len(r)
+	if rLen == 0 {
 		return defaultValue
 	}
 

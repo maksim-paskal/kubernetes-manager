@@ -25,10 +25,12 @@ func getAPIversion(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getAPIversion", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err := w.Write([]byte(fmt.Sprintf("{\"version\":\"%s-%s\"}", appConfig.Version, buildTime)))
+	//
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}

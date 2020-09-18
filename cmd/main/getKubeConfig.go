@@ -28,6 +28,7 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getKubeConfig", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	caCRT, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/ca.crt")
@@ -70,12 +71,15 @@ users:
 		ClusterServer string
 		UserToken     string
 	}
+
 	params := Inventory{
 		ClusterCAD:    base64.StdEncoding.EncodeToString(caCRT),
 		ClusterServer: *appConfig.kubeconfigServer,
 		UserToken:     string(token),
 	}
+
 	var out bytes.Buffer
+
 	tmpl, err := template.New("kubeconfig").Parse(kubeConfig)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,6 +87,7 @@ users:
 
 		return
 	}
+
 	err = tmpl.Execute(&out, params)
 
 	if err != nil {

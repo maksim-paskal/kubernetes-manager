@@ -29,6 +29,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getIngress", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	type IngressList struct {
@@ -60,7 +61,9 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	span.LogKV("event", "start ingress list")
+
 	ingresss, err := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
+
 	span.LogKV("event", "end ingress list")
 
 	if err != nil {
@@ -71,12 +74,13 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	span.LogKV("event", "start range")
+
 	for _, ingress := range ingresss.Items {
 		var item IngressList
 
 		span.LogKV("event", "search namespace="+ingress.Namespace)
 		namespace, err := clientset.CoreV1().Namespaces().Get(ingress.Namespace, metav1.GetOptions{})
-		if err != nil {
+		if err != nil { //nolint:wsl
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
 
@@ -117,15 +121,17 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 			result.Result = append(result.Result, item)
 		}
 	}
+
 	span.LogKV("event", "end range")
 	span.LogKV("event", "result", result)
 	js, err := json.Marshal(result)
-	if err != nil {
+	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "max-age=10")
 	_, err = w.Write(js)

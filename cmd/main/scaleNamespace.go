@@ -31,6 +31,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("scaleNamespace", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -138,6 +139,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
 	type ResultData struct {
 		Stdout string
 	}
@@ -145,20 +147,23 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	type ResultType struct {
 		Result ResultData `json:"result"`
 	}
+
 	result := ResultType{
 		Result: ResultData{
 			Stdout: fmt.Sprintf("all Deployments/StatefulSets in namespace scaled to %s", replicas[0]),
 		},
 	}
 	js, err := json.Marshal(result)
-	if err != nil {
+	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -167,9 +172,11 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	type metadataStringValue struct {
 		Annotations map[string]string `json:"annotations"`
 	}
+
 	type patchStringValue struct {
 		Metadata metadataStringValue `json:"metadata"`
 	}
+
 	payload := patchStringValue{
 		Metadata: metadataStringValue{
 			Annotations: map[string]string{labelLastScaleDate: time.Now().Format(time.RFC3339)},
@@ -177,6 +184,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 	payloadBytes, _ := json.Marshal(payload)
 	_, err = clientset.CoreV1().Namespaces().Patch(namespace[0], types.StrategicMergePatchType, payloadBytes)
+
 	if err != nil {
 		log.Warn(err)
 		logError(span, sentry.LevelWarning, r, err, "")

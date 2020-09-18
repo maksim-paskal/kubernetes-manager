@@ -70,6 +70,7 @@ func logError(span opentracing.Span, level sentry.Level, request *http.Request, 
 			scope.SetExtra("Request.PostForm", request.PostForm)
 		}
 	})
+
 	if err != nil {
 		localHub.CaptureException(err)
 		span.LogKV("error", err)
@@ -84,6 +85,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 	m := make(map[string]getInfoDBCommandsType)
 
 	var command strings.Builder
+
 	command.WriteString("mongo admin -u $MONGO_INITDB_ROOT_USERNAME")
 	command.WriteString(" -p $MONGO_INITDB_ROOT_PASSWORD")
 	command.WriteString(" --quiet --eval  \"printjson(db.adminCommand('listDatabases'))\"")
@@ -509,7 +511,7 @@ func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- http
 
 	tracer := opentracing.GlobalTracer()
 	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-	if err != nil {
+	if err != nil { //nolint:wsl
 		logError(span, sentry.LevelError, nil, err, "")
 	}
 
@@ -519,6 +521,7 @@ func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- http
 	} else if resp.Body != nil {
 		defer resp.Body.Close()
 	}
+
 	httpBody, _ := ioutil.ReadAll(resp.Body)
 
 	ch <- httpResponse{resp.Status, string(httpBody)}
@@ -528,6 +531,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteALL", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -542,7 +546,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	if isSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
-		if err != nil {
+		if err != nil { //nolint:wsl
 			logError(span, sentry.LevelError, r, err, "")
 		}
 
@@ -555,9 +559,11 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		DeleteNamespaceResultBody   httpResponse
 		DeleteRegistryTagResultBody httpResponse
 	}
+
 	type ResultType struct {
 		Result ResultData `json:"result"`
 	}
+
 	result := ResultType{
 		Result: ResultData{},
 	}
@@ -566,6 +572,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	q := make(url.Values)
 
 	q.Add("namespace", namespace[0])
+
 	go makeAPICall(span, "/api/deleteNamespace", q, ch3)
 
 	result.Result.DeleteNamespaceResultBody = (<-ch3)
@@ -578,6 +585,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		q = make(url.Values)
 		q.Add("projectID", r.URL.Query()["git-project-id"][0])
 		q.Add("tag", r.URL.Query()["registry-tag"][0])
+
 		go makeAPICall(span, "/api/deleteRegistryTag", q, ch4)
 
 		result.Result.DeleteRegistryTagResultBody = (<-ch4)
@@ -590,14 +598,16 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 
 	span.LogKV("result", result)
 	js, err := json.Marshal(result)
-	if err != nil {
+	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelInfo, r, err, "")
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -607,6 +617,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("execCommands", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	cmd := r.URL.Query()["cmd"]
@@ -660,14 +671,16 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 
 	span.LogKV("result", result)
 	js, err := json.Marshal(result)
-	if err != nil {
+	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -690,16 +703,19 @@ type execContainerResults struct {
 func execContainer(rootSpan opentracing.Span, params execContainerParams) (execContainerResults, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("execContainer", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
 	span.SetTag("params", params)
 
 	if len(params.podname) == 0 {
 		span.LogKV("event", "pod list start")
+
 		pods, err := clientset.CoreV1().Pods(params.namespace).List(metav1.ListOptions{
 			LabelSelector: params.labelSelector,
 			FieldSelector: "status.phase=Running",
 		})
+
 		span.LogKV("event", "pod list end")
 
 		if err != nil {
@@ -733,23 +749,27 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 		}, scheme.ParameterCodec)
 
 	span.LogKV("event", "remotecommand start")
+
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
 		logError(span, sentry.LevelError, nil, err, "")
 
 		return execContainerResults{}, err
 	}
+
 	span.LogKV("event", "remotecommand end")
 
 	var stdout, stderr bytes.Buffer
 
 	span.LogKV("event", "stream start")
+
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    false,
 	})
+
 	span.LogKV("event", "stream end")
 
 	results := execContainerResults{
@@ -767,6 +787,7 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getNamespace", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -788,6 +809,7 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write([]byte("{status:'ok'}"))
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -797,6 +819,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteRegistryTag", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	tag := r.URL.Query()["tag"]
@@ -811,7 +834,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	if isSystemBranch(tag[0]) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'registry tag can not be deleted'}"))
-		if err != nil {
+		if err != nil { //nolint:wsl
 			logError(span, sentry.LevelError, r, err, "")
 		}
 
@@ -835,6 +858,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	span.LogKV("event", "ListRegistryRepositories")
+
 	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID[0], nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -854,6 +878,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write([]byte("{status:'ok'}"))
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -863,13 +888,14 @@ func executeBatch(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("executeBatch", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	batch(span)
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err := w.Write([]byte("{status:'ok'}"))
-	if err != nil {
+	if err != nil { //nolint:wsl
 		logError(span, sentry.LevelError, r, err, "")
 	}
 }
@@ -878,6 +904,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deleteNamespace", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -892,7 +919,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	if isSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
-		if err != nil {
+		if err != nil { //nolint:wsl
 			logError(span, sentry.LevelError, r, err, "")
 		}
 
@@ -909,6 +936,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write([]byte("{status:'ok'}"))
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -918,6 +946,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("deletePod", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -979,6 +1008,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 		podName = pods.Items[0].Name
 	}
+
 	err2 := clientset.CoreV1().Pods(namespace[0]).Delete(podName, opt)
 
 	if err2 != nil {
@@ -995,6 +1025,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	type ResultType struct {
 		Result ResultData `json:"result"`
 	}
+
 	result := ResultType{
 		Result: ResultData{
 			Stdout: fmt.Sprintf("deleted %s pod", podName),
@@ -1008,8 +1039,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -1019,6 +1052,7 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getRunningPodsCount", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -1053,6 +1087,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -1107,6 +1142,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 
 			podContainersData = append(podContainersData, podContainerData)
 		}
+
 		podData := PodData{
 			PodName:       pod.Name,
 			PodLabels:     pod.Labels,
@@ -1126,8 +1162,10 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
+
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
 	}
@@ -1167,6 +1205,7 @@ func main() {
 
 	if len(os.Getenv("SENTRY_DSN")) > 0 {
 		log.Debug("Use Sentry logging...")
+
 		err = sentry.Init(sentry.ClientOptions{
 			Release: fmt.Sprintf("%s-%s", appConfig.Version, buildTime),
 		})
@@ -1233,6 +1272,7 @@ func main() {
 
 	if *appConfig.mode == "batch" {
 		span := tracer.StartSpan("main")
+
 		defer span.Finish()
 
 		batch(span)
@@ -1242,6 +1282,7 @@ func main() {
 
 	if *appConfig.mode == "cleanOldTags" {
 		span := tracer.StartSpan("main")
+
 		defer span.Finish()
 
 		cleanOldTags(span)

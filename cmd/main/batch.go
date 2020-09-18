@@ -37,7 +37,7 @@ func scheduleBatch() {
 
 	for {
 		<-time.After(duration)
-		span := tracer.StartSpan("scheduleBatch")
+		span := tracer.StartSpan("scheduleBatch") //nolint:wsl
 		batch(span)
 		span.Finish()
 	}
@@ -46,7 +46,9 @@ func scheduleBatch() {
 func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProjectID string, gitBranch string) bool {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("getLastCommitBranch", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
+
 	lastCommitDateForRemove := time.Now().AddDate(0, 0, -*appConfig.removeBranchDaysInactive)
 
 	gitCommitOptions := gitlab.ListCommitsOptions{
@@ -59,7 +61,10 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 		log.Error(err)
 		logError(span, sentry.LevelInfo, nil, nil, err.Error())
 	}
-	if len(gitCommits) == 0 {
+
+	gitCommitsLen := len(gitCommits)
+
+	if gitCommitsLen == 0 {
 		log.Debugf("deleteOnLastCommit=gitBranch=%s,gitProjectID=%s", gitBranch, gitProjectID)
 
 		return true
@@ -71,6 +76,7 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 func batch(rootSpan opentracing.Span) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
+
 	defer span.Finish()
 
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))

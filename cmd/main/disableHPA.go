@@ -27,6 +27,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("disableHPA", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	namespace := r.URL.Query()["namespace"]
@@ -41,7 +42,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	if isSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not disable autoscale'}"))
-		if err != nil {
+		if err != nil { //nolint:wsl
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
 		}
@@ -79,6 +80,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	q.Add("namespace", namespace[0])
 	q.Add("version", "1")
 	q.Add("replicas", "1")
+
 	go makeAPICall(span, "/api/scaleNamespace", q, ch1)
 
 	type ResultData struct {
@@ -89,6 +91,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	type ResultType struct {
 		ScaleNamespaceResult ResultData `json:"result"`
 	}
+
 	result := ResultType{
 		ScaleNamespaceResult: ResultData{
 			Result: (<-ch1),
@@ -103,6 +106,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
 

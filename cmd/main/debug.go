@@ -26,6 +26,7 @@ func getDebug(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getDebug", ext.RPCServerOption(spanCtx))
+
 	defer span.Finish()
 
 	_, err := w.Write(formatRequest(span, r))
@@ -36,7 +37,7 @@ func getDebug(w http.ResponseWriter, r *http.Request) {
 
 func formatRequest(span opentracing.Span, r *http.Request) []byte {
 	// Create return string
-	var request []string
+	request := []string{}
 	// Add the request string
 	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
 	request = append(request, url)
@@ -45,6 +46,7 @@ func formatRequest(span opentracing.Span, r *http.Request) []byte {
 	// Loop through headers
 	for name, headers := range r.Header {
 		name = strings.ToLower(name)
+
 		for _, h := range headers {
 			request = append(request, fmt.Sprintf("%v: %v", name, h))
 		}
@@ -56,6 +58,7 @@ func formatRequest(span opentracing.Span, r *http.Request) []byte {
 		if err != nil {
 			logError(span, sentry.LevelError, r, err, "")
 		}
+
 		request = append(request, "\n")
 		request = append(request, r.Form.Encode())
 	}
