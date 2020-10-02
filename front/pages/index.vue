@@ -33,7 +33,7 @@
       <b-spinner style="width: 10rem; height: 10rem;" variant="primary"></b-spinner>
     </div>
 
-    <b-modal :id="infoModal.id" :title="infoModal.title" size="xl" ok-only>
+    <b-modal ref="info-modal" :id="infoModal.id" :title="infoModal.title" size="xl" ok-only>
       <div style="padding:50px" class="text-center" v-if="infoModal.loading">
         <b-spinner style="width: 10rem; height: 10rem;" variant="primary"></b-spinner>
       </div>
@@ -690,8 +690,7 @@ export default {
 
       this.infoModal.title = item.Namespace;
       this.infoModal.content = item; //JSON.stringify(item, null, 2);
-      this.$root.$emit("bv::show::modal", this.infoModal.id, button);
-
+      this.$refs['info-modal'].show()
       this.showTab(this.tabIndex);
     },
     showAxiosError(e) {

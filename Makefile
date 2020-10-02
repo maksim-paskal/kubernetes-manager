@@ -6,6 +6,7 @@ test:
 	go mod tidy
 	go test ./cmd/main
 	golangci-lint run --allow-parallel-runners -v --enable-all --disable testpackage,nestif,gochecknoglobals,funlen,gocognit --fix
+	cd front && yarn lint
 testChart:
 	helm lint --strict ./chart/kubernetes-manager
 	helm template ./chart/kubernetes-manager | kubectl apply --dry-run --validate=true -f -
