@@ -12,3 +12,5 @@ testChart:
 	helm template ./chart/kubernetes-manager | kubectl apply --dry-run --validate=true -f -
 build-all:
 	scripts/build-all.sh
+upgrade:
+	cd front && yarn update-latest
