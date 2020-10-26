@@ -711,7 +711,7 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 	if len(params.podname) == 0 {
 		span.LogKV("event", "pod list start")
 
-		pods, err := clientset.CoreV1().Pods(params.namespace).List(metav1.ListOptions{
+		pods, err := clientset.CoreV1().Pods(params.namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: params.labelSelector,
 			FieldSelector: "status.phase=Running",
 		})
@@ -799,7 +799,7 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := clientset.CoreV1().Namespaces().Get(namespace[0], metav1.GetOptions{})
+	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace[0], metav1.GetOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
@@ -926,7 +926,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := clientset.CoreV1().Namespaces().Delete(namespace[0], nil)
+	err := clientset.CoreV1().Namespaces().Delete(context.TODO(), namespace[0], metav1.DeleteOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
@@ -987,7 +987,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		pods, err1 := clientset.CoreV1().Pods(namespace[0]).List(metav1.ListOptions{
+		pods, err1 := clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: LabelSelector[0],
 			FieldSelector: "status.phase=Running",
 		})
@@ -1009,7 +1009,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		podName = pods.Items[0].Name
 	}
 
-	err2 := clientset.CoreV1().Pods(namespace[0]).Delete(podName, opt)
+	err2 := clientset.CoreV1().Pods(namespace[0]).Delete(context.TODO(), podName, *opt)
 
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
@@ -1064,7 +1064,7 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pods, err := clientset.CoreV1().Pods(namespace[0]).List(metav1.ListOptions{
+	pods, err := clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: "status.phase=Running",
 	})
 	if err != nil {
@@ -1099,7 +1099,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pods, err := clientset.CoreV1().Pods(namespace[0]).List(metav1.ListOptions{
+	pods, err := clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: "status.phase=Running",
 	})
 	if err != nil {

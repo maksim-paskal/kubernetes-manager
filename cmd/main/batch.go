@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"net/url"
 	"strings"
 	"time"
@@ -89,13 +90,13 @@ func batch(rootSpan opentracing.Span) {
 		LabelSelector: *appConfig.ingressFilter,
 	}
 
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
+	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
 
 	for _, ingress := range ingresss.Items {
 		gitBranch := ingress.Annotations[labelGitBranch]
 		gitProjectID := ingress.Annotations[labelGitProjectID]
 
-		namespace, err := clientset.CoreV1().Namespaces().Get(ingress.Namespace, metav1.GetOptions{})
+		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
 			log.Error(err)
 			logError(span, sentry.LevelError, nil, err, "")

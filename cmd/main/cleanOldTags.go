@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -53,7 +54,7 @@ func cleanOldTags(rootSpan opentracing.Span) {
 		LabelSelector: *appConfig.ingressFilter,
 	}
 
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
+	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
 	for _, ingress := range ingresss.Items {
 		projectID := ingress.Annotations[labelGitProjectID]
 
@@ -117,7 +118,7 @@ func getExceptions(rootSpan opentracing.Span) []string {
 		LabelSelector: "app=cleanoldtags",
 	}
 
-	cms, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(opt)
+	cms, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), opt)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -125,7 +126,9 @@ func getExceptions(rootSpan opentracing.Span) []string {
 	log.Infof("found exception configmaps=%d", len(cms.Items))
 
 	for _, cm := range cms.Items {
-		cleanoldtags, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(cm.Name, metav1.GetOptions{})
+		podNamespace := os.Getenv("POD_NAMESPACE")
+
+		cleanoldtags, err := clientset.CoreV1().ConfigMaps(podNamespace).Get(context.TODO(), cm.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Panic(err)
 		}
@@ -163,7 +166,7 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string
 		LabelSelector: *appConfig.ingressFilter,
 	}
 
-	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
+	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
 	for _, ingress := range ingresss.Items {
 		if ingress.Annotations[labelGitProjectID] == projectID {
 			tag := ingress.Annotations[labelRegistryTag]

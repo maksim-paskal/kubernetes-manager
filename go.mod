@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/getsentry/sentry-go v0.7.0
-	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.7 // indirect
@@ -29,7 +28,7 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
-	k8s.io/api v0.17.12
-	k8s.io/apimachinery v0.17.12
-	k8s.io/client-go v0.17.12
+	k8s.io/api v0.18.10
+	k8s.io/apimachinery v0.18.10
+	k8s.io/client-go v0.18.10
 )

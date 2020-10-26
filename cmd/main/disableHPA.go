@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -50,7 +51,9 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hpas, err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).List(metav1.ListOptions{})
+	hpa := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0])
+
+	hpas, err := hpa.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
@@ -65,7 +68,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, hpa := range hpas.Items {
-		err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).Delete(hpa.Name, opt)
+		err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).Delete(context.TODO(), hpa.Name, *opt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")

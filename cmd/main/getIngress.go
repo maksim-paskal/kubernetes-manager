@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -62,7 +63,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 
 	span.LogKV("event", "start ingress list")
 
-	ingresss, err := clientset.ExtensionsV1beta1().Ingresses("").List(opt)
+	ingresss, err := clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
 
 	span.LogKV("event", "end ingress list")
 
@@ -79,7 +80,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		var item IngressList
 
 		span.LogKV("event", "search namespace="+ingress.Namespace)
-		namespace, err := clientset.CoreV1().Namespaces().Get(ingress.Namespace, metav1.GetOptions{})
+		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil { //nolint:wsl
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")

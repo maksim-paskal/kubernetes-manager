@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -62,7 +63,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ds, err := clientset.AppsV1().Deployments(namespace[0]).List(metav1.ListOptions{})
+	ds, err := clientset.AppsV1().Deployments(namespace[0]).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logError(span, sentry.LevelError, r, err, "")
@@ -71,7 +72,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 	//nolint:dupl
 	for _, d := range ds.Items {
-		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(d.Name, metav1.GetOptions{})
+		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(context.TODO(), d.Name, metav1.GetOptions{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
@@ -89,7 +90,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		i32 := int32(i)
 		dps.Spec.Replicas = &i32
-		_, errUpdate := clientset.AppsV1().Deployments(namespace[0]).Update(dps)
+		_, errUpdate := clientset.AppsV1().Deployments(namespace[0]).Update(context.TODO(), dps, metav1.UpdateOptions{})
 
 		if errUpdate != nil {
 			http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
@@ -101,7 +102,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 	// scale statefullsets
 	if version > 0 {
-		sf, err := clientset.AppsV1().StatefulSets(namespace[0]).List(metav1.ListOptions{})
+		sf, err := clientset.AppsV1().StatefulSets(namespace[0]).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logError(span, sentry.LevelError, r, err, "")
@@ -111,7 +112,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		//nolint:dupl
 		for _, s := range sf.Items {
-			ss, err := clientset.AppsV1().StatefulSets(namespace[0]).Get(s.Name, metav1.GetOptions{})
+			ss, err := clientset.AppsV1().StatefulSets(namespace[0]).Get(context.TODO(), s.Name, metav1.GetOptions{})
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				logError(span, sentry.LevelError, r, err, "")
@@ -129,7 +130,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 			i32 := int32(i)
 			ss.Spec.Replicas = &i32
-			_, errUpdate := clientset.AppsV1().StatefulSets(namespace[0]).Update(ss)
+			_, errUpdate := clientset.AppsV1().StatefulSets(namespace[0]).Update(context.TODO(), ss, metav1.UpdateOptions{})
 
 			if errUpdate != nil {
 				http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
@@ -183,7 +184,8 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	payloadBytes, _ := json.Marshal(payload)
-	_, err = clientset.CoreV1().Namespaces().Patch(namespace[0], types.StrategicMergePatchType, payloadBytes)
+	ns := clientset.CoreV1().Namespaces()
+	_, err = ns.Patch(context.TODO(), namespace[0], types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
 
 	if err != nil {
 		log.Warn(err)
