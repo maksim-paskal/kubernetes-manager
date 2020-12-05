@@ -5,7 +5,7 @@ test:
 	go fmt ./cmd/main
 	go mod tidy
 	go test ./cmd/main
-	golangci-lint run --allow-parallel-runners -v --enable-all --disable testpackage,nestif,gochecknoglobals,funlen,gocognit --fix
+	golangci-lint run --allow-parallel-runners -v --enable-all --disable testpackage,nestif,gochecknoglobals,funlen,gocognit,exhaustivestruct --fix
 	cd front && yarn lint
 testChart:
 	helm lint --strict ./chart/kubernetes-manager

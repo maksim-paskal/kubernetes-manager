@@ -27,6 +27,7 @@ import (
 	sentry "github.com/getsentry/sentry-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -721,7 +722,7 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 		if err != nil {
 			logError(span, sentry.LevelError, nil, err, "")
 
-			return execContainerResults{}, err
+			return execContainerResults{}, errors.Wrap(err, "error in clientset.CoreV1().Pods")
 		}
 
 		if len(pods.Items) == 0 {
@@ -754,7 +755,7 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 	if err != nil {
 		logError(span, sentry.LevelError, nil, err, "")
 
-		return execContainerResults{}, err
+		return execContainerResults{}, errors.Wrap(err, "error in remotecommand.NewSPDYExecutor")
 	}
 
 	span.LogKV("event", "remotecommand end")
@@ -1312,12 +1313,15 @@ func main() {
 	http.HandleFunc("/api/getPods", getPods)
 	http.HandleFunc("/api/debug", getDebug)
 	http.HandleFunc("/api/disableHPA", disableHPA)
+	http.HandleFunc("/api/getEnvStatus", getEnvStatus)
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", *appConfig.port), nil)
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second)
 
-		log.Fatal("ListenAndServe: ", err)
+		log.Error("ListenAndServe: ", err)
+
+		return
 	}
 }

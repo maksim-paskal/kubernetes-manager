@@ -40,6 +40,7 @@ type appConfigType struct {
 	removeBranchLastScaleDate *int
 	systemGitTags             *string
 	systemNamespaces          *string
+	envStatusRegexp           *string
 }
 
 var appConfig = appConfigType{
@@ -132,4 +133,8 @@ var appConfig = appConfigType{
 		"system.namespaces",
 		"Kubernetes namespaces that can not delete",
 	).Default("kube-system").Envar("SYSTEM_NAMESPACES").String(),
+	envStatusRegexp: kingpin.Flag(
+		"envStatus.regexp",
+		"Kubernetes namespaces pattern",
+	).Default(`(?P<ns>.+)\.dev\.example\.com`).Envar("ENV_STATUS_REGEXP").String(),
 }
