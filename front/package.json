@@ -18,7 +18,7 @@
     "@nuxtjs/sentry": "^4.5.0",
     "bootstrap": "^4.5.3",
     "bootstrap-vue": "^2.20.1",
-    "nuxt": "^2.14.9",
+    "nuxt": "^2.14.11",
     "vue": "^2.6.12"
   },
   "devDependencies": {
