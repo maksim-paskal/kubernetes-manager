@@ -1192,7 +1192,7 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	log.Infof("Starting kubernetes-manager %s-%s", appConfig.Version, buildTime)
+	log.Infof("Starting kubernetes-manager %s", appConfig.Version)
 
 	var err error
 

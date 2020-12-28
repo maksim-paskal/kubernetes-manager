@@ -13,13 +13,24 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
+	"os"
+	"runtime"
 
 	sentry "github.com/getsentry/sentry-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
+
+type APIVersion struct {
+	Version    string
+	GoVersion  string
+	Goroutines int
+	GOMAXPROCS int
+	GOGC       string
+	GODEBUG    string
+}
 
 func getAPIversion(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
@@ -29,7 +40,21 @@ func getAPIversion(w http.ResponseWriter, r *http.Request) {
 	defer span.Finish()
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err := w.Write([]byte(fmt.Sprintf("{\"version\":\"%s-%s\"}", appConfig.Version, buildTime)))
+
+	result := APIVersion{
+		Version:    appConfig.Version,
+		GoVersion:  runtime.Version(),
+		Goroutines: runtime.NumGoroutine(),
+		GOMAXPROCS: runtime.GOMAXPROCS(-1),
+		GOGC:       os.Getenv("GOGC"),
+		GODEBUG:    os.Getenv("GODEBUG"),
+	}
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		logError(span, sentry.LevelError, r, err, "")
+	}
+
+	_, err = w.Write(resultJSON)
 	//
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")
