@@ -13,4 +13,6 @@ testChart:
 build-all:
 	scripts/build-all.sh
 upgrade:
+	go get -u all
+	go mod tidy
 	cd front && yarn update-latest
