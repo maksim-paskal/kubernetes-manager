@@ -200,7 +200,7 @@ func exec(
 
 	repositories, err := hub.Repositories()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	releasePattern, err := regexp.Compile(*appConfig.releasePatern)
@@ -208,7 +208,7 @@ func exec(
 	releaseMaxDate := time.Now()
 
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	log.Debug("start list")

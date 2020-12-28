@@ -21,9 +21,9 @@ import (
 	"time"
 
 	sentry "github.com/getsentry/sentry-go"
-	"github.com/labstack/gommon/log"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )

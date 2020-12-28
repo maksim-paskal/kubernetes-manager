@@ -17,6 +17,8 @@ import (
 )
 
 func TestIsSystemBranch(t *testing.T) {
+	t.Parallel()
+
 	systemGitTags := "master,release-.*"
 	appConfig.systemGitTags = &systemGitTags
 
@@ -43,6 +45,8 @@ func TestIsSystemBranch(t *testing.T) {
 }
 
 func TestIsSystemNamespace(t *testing.T) {
+	t.Parallel()
+
 	systemNamespaces := "kube-system,app"
 	appConfig.systemNamespaces = &systemNamespaces
 

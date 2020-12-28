@@ -13,6 +13,8 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
+
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -43,7 +45,7 @@ type appConfigType struct {
 }
 
 var appConfig = appConfigType{
-	Version: gitVersion,
+	Version: fmt.Sprintf("%s-%s", gitVersion, buildTime),
 	mode: kingpin.Flag(
 		"mode",
 		"web or batch or cleanOldTags",

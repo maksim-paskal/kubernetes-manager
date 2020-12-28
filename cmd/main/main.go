@@ -27,6 +27,7 @@ import (
 	sentry "github.com/getsentry/sentry-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -721,7 +722,7 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 		if err != nil {
 			logError(span, sentry.LevelError, nil, err, "")
 
-			return execContainerResults{}, err
+			return execContainerResults{}, errors.Wrap(err, "error list pods")
 		}
 
 		if len(pods.Items) == 0 {
@@ -754,7 +755,7 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 	if err != nil {
 		logError(span, sentry.LevelError, nil, err, "")
 
-		return execContainerResults{}, err
+		return execContainerResults{}, errors.Wrap(err, "error in NewSPDYExecutor")
 	}
 
 	span.LogKV("event", "remotecommand end")
@@ -1187,21 +1188,24 @@ func (l LogrusAdapter) Infof(msg string, args ...interface{}) {
 }
 
 func main() {
-	log.Infof("Starting kubernetes-manager %s-%s", appConfig.Version, buildTime)
 	kingpin.Version(appConfig.Version)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
-	isSystemBranch("test")
+	log.Infof("Starting kubernetes-manager %s-%s", appConfig.Version, buildTime)
 
 	var err error
 
 	logLevel, err := log.ParseLevel(*appConfig.logLevel)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	log.SetLevel(logLevel)
+
+	if logLevel >= log.DebugLevel {
+		log.SetReportCaller(true)
+	}
 
 	if len(os.Getenv("SENTRY_DSN")) > 0 {
 		log.Debug("Use Sentry logging...")
@@ -1227,7 +1231,7 @@ func main() {
 		log.Info("No kubeconfig file use incluster")
 		restconfig, err = rest.InClusterConfig()
 		if err != nil {
-			panic(err.Error())
+			log.Panic(err.Error())
 		}
 	}
 
@@ -1318,6 +1322,6 @@ func main() {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second)
 
-		log.Fatal("ListenAndServe: ", err)
+		log.Fatal("ListenAndServe: ", err) //nolint:gocritic
 	}
 }

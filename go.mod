@@ -4,9 +4,9 @@ go 1.15
 
 replace (
 	github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v0.0.0-20200919145931-8dac23c8dac1
-	k8s.io/api => k8s.io/api v0.18.10
-	k8s.io/apimachinery => k8s.io/apimachinery v0.18.10
-	k8s.io/client-go => k8s.io/client-go v0.18.10
+	k8s.io/api => k8s.io/api v0.18.14
+	k8s.io/apimachinery => k8s.io/apimachinery v0.18.14
+	k8s.io/client-go => k8s.io/client-go v0.18.14
 )
 
 require (
@@ -19,27 +19,26 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/getsentry/sentry-go v0.9.0
 	github.com/go-errors/errors v1.1.1 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
-	github.com/googleapis/gnostic v0.5.3 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-hclog v0.15.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.11 // indirect
-	github.com/labstack/gommon v0.3.0
 	github.com/maksim-paskal/utils-go v0.0.5
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.15.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible
-	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/xanzy/go-gitlab v0.40.2
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
@@ -53,8 +52,9 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.20.1
-	k8s.io/apimachinery v0.20.1
-	k8s.io/client-go v1.5.1
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	k8s.io/api v0.18.14
+	k8s.io/apimachinery v0.18.14
+	k8s.io/client-go v0.18.14
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920 // indirect
 )
