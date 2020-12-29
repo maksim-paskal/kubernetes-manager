@@ -49,6 +49,7 @@ func getAPIversion(w http.ResponseWriter, r *http.Request) {
 		GOGC:       os.Getenv("GOGC"),
 		GODEBUG:    os.Getenv("GODEBUG"),
 	}
+
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		logError(span, sentry.LevelError, r, err, "")

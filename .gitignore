@@ -2,3 +2,4 @@ test.sh
 _dist
 /kubernetes-manager
 kubeconfig
+__debug_bin

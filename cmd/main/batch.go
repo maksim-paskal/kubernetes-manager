@@ -20,6 +20,7 @@ import (
 
 	sentry "github.com/getsentry/sentry-go"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,6 +60,7 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 
 	gitCommits, _, err := git.Commits.ListCommits(gitProjectID, &gitCommitOptions)
 	if err != nil {
+		err = errors.Wrap(err, "git.Commits.ListCommits")
 		log.Error(err)
 		logError(span, sentry.LevelInfo, nil, nil, err.Error())
 	}
@@ -82,6 +84,7 @@ func batch(rootSpan opentracing.Span) {
 
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))
 	if err != nil {
+		err = errors.Wrap(err, "gitlab.NewClient")
 		log.Error(err)
 		logError(span, sentry.LevelInfo, nil, nil, err.Error())
 	}
@@ -98,6 +101,7 @@ func batch(rootSpan opentracing.Span) {
 
 		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
+			err = errors.Wrap(err, "clientset.CoreV1().Namespaces().Get")
 			log.Error(err)
 			logError(span, sentry.LevelError, nil, err, "")
 

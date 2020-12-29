@@ -25,6 +25,7 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	utils "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -219,6 +220,7 @@ func exec(
 		if strings.HasPrefix(repository, checkRepository) {
 			tags, err := hub.Tags(repository)
 			if err != nil {
+				err = errors.Wrap(err, "hub.Tags")
 				log.Error(err)
 				logError(span, sentry.LevelInfo, nil, nil, err.Error())
 			}
@@ -232,6 +234,7 @@ func exec(
 					releaseDate, err := time.Parse("20060102", releasePattern.FindStringSubmatch(tag)[1])
 
 					if err != nil {
+						err = errors.Wrap(err, "time.Parse")
 						log.Error(err)
 						logError(span, sentry.LevelInfo, nil, nil, err.Error())
 					} else if releaseDate.After(releaseMaxDate) {
@@ -240,6 +243,7 @@ func exec(
 				}
 
 				if err != nil {
+					err = errors.Wrap(err, "hub.ManifestDigest")
 					log.Error(err)
 					logError(span, sentry.LevelInfo, nil, nil, err.Error())
 
@@ -268,6 +272,7 @@ func exec(
 				releaseDate, err := time.Parse("20060102", releasePattern.FindStringSubmatch(tag[1])[1])
 
 				if err != nil {
+					err = errors.Wrap(err, "time.Parse")
 					log.Error(err)
 					logError(span, sentry.LevelInfo, nil, nil, err.Error())
 				} else {

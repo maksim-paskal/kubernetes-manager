@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -50,6 +51,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 
 	read, err := ioutil.ReadFile(path)
 	if err != nil {
+		err = errors.Wrap(err, "ioutil.ReadFile")
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -61,6 +63,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write([]byte(newContents))
 
 	if err != nil {
+		err = errors.Wrap(err, "w.Write")
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 

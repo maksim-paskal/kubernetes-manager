@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	//nolint:gosec
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"strings"
@@ -1322,6 +1325,6 @@ func main() {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second)
 
-		log.Fatal("ListenAndServe: ", err) //nolint:gocritic
+		log.Fatal(errors.Wrap(err, "http.ListenAndServe")) //nolint:gocritic
 	}
 }
