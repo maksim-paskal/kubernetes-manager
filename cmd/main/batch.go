@@ -20,7 +20,6 @@ import (
 
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +28,7 @@ import (
 func scheduleBatch() {
 	duration, err := time.ParseDuration("30m")
 	if err != nil {
-		log.Panic(err)
+		log.WithError(err).Fatal()
 	}
 
 	tracer := opentracing.GlobalTracer()
@@ -57,7 +56,6 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 
 	gitCommits, _, err := git.Commits.ListCommits(gitProjectID, &gitCommitOptions)
 	if err != nil {
-		err = errors.Wrap(err, "git.Commits.ListCommits")
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
@@ -83,7 +81,6 @@ func batch(rootSpan opentracing.Span) {
 
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))
 	if err != nil {
-		err = errors.Wrap(err, "gitlab.NewClient")
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
@@ -102,7 +99,6 @@ func batch(rootSpan opentracing.Span) {
 
 		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
-			err = errors.Wrap(err, "clientset.CoreV1().Namespaces().Get")
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).

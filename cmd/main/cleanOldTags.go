@@ -25,7 +25,6 @@ import (
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	utils "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -82,7 +81,10 @@ func cleanOldTags(rootSpan opentracing.Span) {
 
 	hub, err := registry.New(*appConfig.registryURL, *appConfig.registryUser, *appConfig.registryPassword)
 	if err != nil {
-		log.Panic(err)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Fatal()
 	}
 
 	hub.Logf = registry.Quiet
@@ -101,7 +103,10 @@ func cleanOldTags(rootSpan opentracing.Span) {
 	//nolint:gosec
 	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), 0744)
 	if err != nil {
-		log.Panic(err)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Fatal()
 	}
 
 	log.Infof("%s created", resultFile)
@@ -121,7 +126,10 @@ func getExceptions(rootSpan opentracing.Span) []string {
 
 	cms, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), opt)
 	if err != nil {
-		log.Panic(err)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Fatal()
 	}
 
 	log.Infof("found exception configmaps=%d", len(cms.Items))
@@ -131,7 +139,10 @@ func getExceptions(rootSpan opentracing.Span) []string {
 
 		cleanoldtags, err := clientset.CoreV1().ConfigMaps(podNamespace).Get(context.TODO(), cm.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Panic(err)
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Fatal()
 		}
 
 		data := cleanoldtags.Data["exceptions"]
@@ -201,7 +212,10 @@ func exec(
 
 	repositories, err := hub.Repositories()
 	if err != nil {
-		log.Panic(err)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Fatal()
 	}
 
 	releasePattern, err := regexp.Compile(*appConfig.releasePatern)
@@ -209,7 +223,10 @@ func exec(
 	releaseMaxDate := time.Now()
 
 	if err != nil {
-		log.Panic(err)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Fatal()
 	}
 
 	log.Debug("start list")
@@ -220,7 +237,6 @@ func exec(
 		if strings.HasPrefix(repository, checkRepository) {
 			tags, err := hub.Tags(repository)
 			if err != nil {
-				err = errors.Wrap(err, "hub.Tags")
 				log.
 					WithError(err).
 					WithField(logrushookopentracing.SpanKey, span).
@@ -236,7 +252,6 @@ func exec(
 					releaseDate, err := time.Parse("20060102", releasePattern.FindStringSubmatch(tag)[1])
 
 					if err != nil {
-						err = errors.Wrap(err, "time.Parse")
 						log.
 							WithError(err).
 							WithField(logrushookopentracing.SpanKey, span).
@@ -247,7 +262,6 @@ func exec(
 				}
 
 				if err != nil {
-					err = errors.Wrap(err, "hub.ManifestDigest")
 					log.
 						WithError(err).
 						WithField(logrushookopentracing.SpanKey, span).
@@ -278,7 +292,6 @@ func exec(
 				releaseDate, err := time.Parse("20060102", releasePattern.FindStringSubmatch(tag[1])[1])
 
 				if err != nil {
-					err = errors.Wrap(err, "time.Parse")
 					log.
 						WithError(err).
 						WithField(logrushookopentracing.SpanKey, span).

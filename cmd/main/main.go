@@ -22,7 +22,6 @@ import (
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -48,7 +47,7 @@ func main() {
 
 	logLevel, err := log.ParseLevel(*appConfig.logLevel)
 	if err != nil {
-		log.Panic(err)
+		log.WithError(err).Fatal()
 	}
 
 	log.SetLevel(logLevel)
@@ -79,24 +78,24 @@ func main() {
 	if len(*appConfig.kubeconfigPath) > 0 {
 		restconfig, err = clientcmd.BuildConfigFromFlags("", *appConfig.kubeconfigPath)
 		if err != nil {
-			log.Panic(err.Error())
+			log.WithError(err).Fatal()
 		}
 	} else {
 		log.Info("No kubeconfig file use incluster")
 		restconfig, err = rest.InClusterConfig()
 		if err != nil {
-			log.Panic(err.Error())
+			log.WithError(err).Fatal()
 		}
 	}
 
 	clientset, err = kubernetes.NewForConfig(restconfig)
 	if err != nil {
-		log.Panic(err.Error())
+		log.WithError(err).Fatal()
 	}
 
 	cfg, err := jaegercfg.FromEnv()
 	if err != nil {
-		log.Panicf("Could not parse Jaeger env vars: %s", err.Error())
+		log.WithError(err).Fatal("Could not parse Jaeger env vars")
 	}
 
 	cfg.ServiceName = "kubernetes-manager"
@@ -115,7 +114,7 @@ func main() {
 	opentracing.SetGlobalTracer(tracer)
 
 	if err != nil {
-		log.Panicf("Could not initialize jaeger tracer: %s", err.Error())
+		log.WithError(err).Fatal("Could not initialize jaeger tracer")
 	}
 	defer closer.Close()
 
@@ -164,6 +163,6 @@ func main() {
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", *appConfig.port), nil)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "http.ListenAndServe")) //nolint:gocritic
+		log.WithError(err).Fatal()
 	}
 }
