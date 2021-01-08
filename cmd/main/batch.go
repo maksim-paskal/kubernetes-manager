@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	sentry "github.com/getsentry/sentry-go"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -30,9 +29,6 @@ import (
 func scheduleBatch() {
 	duration, err := time.ParseDuration("30m")
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
 		log.Panic(err)
 	}
 

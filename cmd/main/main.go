@@ -18,9 +18,7 @@ import (
 
 	//nolint:gosec
 	_ "net/http/pprof"
-	"time"
 
-	sentry "github.com/getsentry/sentry-go"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -166,9 +164,6 @@ func main() {
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", *appConfig.port), nil)
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
 		log.Fatal(errors.Wrap(err, "http.ListenAndServe")) //nolint:gocritic
 	}
 }
