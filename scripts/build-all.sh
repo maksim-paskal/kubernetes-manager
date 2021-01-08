@@ -19,7 +19,7 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 export TAGS=""
 export GOFLAGS=""
-export LDFLAGS="-X main.buildTime=$(date +\"%Y%m%d%H%M%S\")"
+export LDFLAGS=""
 export TARGETS="darwin/amd64 linux/amd64"
 export BINNAME="kubernetes-manager"
 export GOX="go run github.com/mitchellh/gox"

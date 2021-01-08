@@ -36,7 +36,6 @@ import (
 
 var (
 	gitVersion string = "dev"
-	buildTime  string
 	clientset  *kubernetes.Clientset
 	restconfig *rest.Config
 )
@@ -59,17 +58,17 @@ func main() {
 		log.SetReportCaller(true)
 	}
 
-	log.Infof("Starting kubernetes-manager %s", appConfig.Version)
+	log.Infof("Starting kubernetes-manager %s...", appConfig.Version)
 
 	if len(os.Getenv("SENTRY_DSN")) > 0 {
 		log.Debug("Use Sentry logging...")
 
 		err = sentry.Init(sentry.ClientOptions{
-			Release: fmt.Sprintf("%s-%s", appConfig.Version, buildTime),
+			Release: appConfig.Version,
 		})
 
 		if err != nil {
-			fmt.Printf("Sentry initialization failed: %v\n", err)
+			log.WithError(err).Fatal("Sentry initialization failed")
 		}
 	}
 
