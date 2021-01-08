@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
@@ -38,6 +39,7 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -49,6 +51,7 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -93,6 +96,7 @@ users:
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -104,6 +108,7 @@ users:
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 	}
 
@@ -115,6 +120,7 @@ users:
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 	}
 }

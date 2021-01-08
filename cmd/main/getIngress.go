@@ -19,6 +19,7 @@ import (
 	"time"
 
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	utils "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -72,6 +73,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -89,6 +91,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
+				WithField(logrushooksentry.RequestKey, r).
 				Error()
 
 			return
@@ -102,6 +105,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 				log.
 					WithError(err).
 					WithField(logrushookopentracing.SpanKey, span).
+					WithField(logrushooksentry.RequestKey, r).
 					Warn()
 			} else {
 				item.NamespaceLastScaled = lastScaleDate.String()
@@ -139,6 +143,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -152,6 +157,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 	}
 }

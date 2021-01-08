@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
@@ -36,6 +37,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoCommand).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -47,6 +49,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoComandFound).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -61,6 +64,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
+				WithField(logrushooksentry.RequestKey, r).
 				Error()
 
 			return
@@ -73,6 +77,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -97,6 +102,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -109,6 +115,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 	}
 }

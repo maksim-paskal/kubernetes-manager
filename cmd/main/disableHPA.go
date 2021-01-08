@@ -19,6 +19,7 @@ import (
 	"net/url"
 
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
@@ -39,6 +40,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -52,6 +54,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
+				WithField(logrushooksentry.RequestKey, r).
 				Error()
 		}
 
@@ -66,6 +69,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -84,6 +88,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
+				WithField(logrushooksentry.RequestKey, r).
 				Error()
 
 			return
@@ -121,6 +126,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
@@ -134,6 +140,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
+			WithField(logrushooksentry.RequestKey, r).
 			Error()
 
 		return
