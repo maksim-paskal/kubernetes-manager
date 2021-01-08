@@ -16,9 +16,10 @@ import (
 	"bytes"
 	"context"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/deprecated/scheme"
@@ -58,13 +59,19 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 		span.LogKV("event", "pod list end")
 
 		if err != nil {
-			logError(span, sentry.LevelError, nil, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return execContainerResults{}, errors.Wrap(err, "error list pods")
 		}
 
 		if len(pods.Items) == 0 {
-			logError(span, sentry.LevelInfo, nil, nil, ErrNoPodInStatusRunning.Error())
+			log.
+				WithError(ErrNoPodInStatusRunning).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return execContainerResults{}, ErrNoPodInStatusRunning
 		}
@@ -91,7 +98,10 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
-		logError(span, sentry.LevelError, nil, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return execContainerResults{}, errors.Wrap(err, "error in NewSPDYExecutor")
 	}

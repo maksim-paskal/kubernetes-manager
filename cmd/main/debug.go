@@ -17,9 +17,10 @@ import (
 	"net/http"
 	"strings"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 )
 
 func getDebug(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,10 @@ func getDebug(w http.ResponseWriter, r *http.Request) {
 
 	_, err := w.Write(formatRequest(span, r))
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }
 
@@ -56,7 +60,10 @@ func formatRequest(span opentracing.Span, r *http.Request) []byte {
 	if r.Method == "POST" {
 		err := r.ParseForm()
 		if err != nil {
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 		}
 
 		request = append(request, "\n")

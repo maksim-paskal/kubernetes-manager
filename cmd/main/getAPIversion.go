@@ -18,9 +18,10 @@ import (
 	"os"
 	"runtime"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 )
 
 type APIVersion struct {
@@ -52,12 +53,18 @@ func getAPIversion(w http.ResponseWriter, r *http.Request) {
 
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	_, err = w.Write(resultJSON)
 	//
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

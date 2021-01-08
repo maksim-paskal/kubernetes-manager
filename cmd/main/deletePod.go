@@ -19,9 +19,10 @@ import (
 	"net/http"
 	"strings"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,8 +36,11 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, "namespace not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoNamespace).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -55,8 +59,11 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		podinfo := strings.Split(pod[0], ":")
 
 		if len(podinfo) != KeyValueLength {
-			http.Error(w, "no pod selected", http.StatusInternalServerError)
-			logError(span, sentry.LevelInfo, r, nil, "no pod selected")
+			http.Error(w, ErrNoPodSelected.Error(), http.StatusInternalServerError)
+			log.
+				WithError(ErrNoPodSelected).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -64,8 +71,11 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		podName = podinfo[0]
 	} else {
 		if len(LabelSelector) < 1 {
-			http.Error(w, "LabelSelector not set", http.StatusInternalServerError)
-			logError(span, sentry.LevelInfo, r, nil, "LabelSelector not set")
+			http.Error(w, ErrNoLabelSelector.Error(), http.StatusInternalServerError)
+			log.
+				WithError(ErrNoLabelSelector).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -77,14 +87,20 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 		if err1 != nil {
 			http.Error(w, err1.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err1, "")
+			log.
+				WithError(err1).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
 
 		if len(pods.Items) == 0 {
 			http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelInfo, r, nil, ErrNoPodInStatusRunning.Error())
+			log.
+				WithError(ErrNoPodInStatusRunning).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -96,7 +112,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err2, "")
+		log.
+			WithError(err2).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -118,7 +137,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -127,6 +149,9 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

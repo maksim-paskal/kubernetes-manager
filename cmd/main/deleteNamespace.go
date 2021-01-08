@@ -16,9 +16,10 @@ import (
 	"context"
 	"net/http"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,8 +33,11 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, "namespace not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoNamespace).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -42,7 +46,10 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
 		if err != nil { //nolint:wsl
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 		}
 
 		return
@@ -51,7 +58,10 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	err := clientset.CoreV1().Namespaces().Delete(context.TODO(), namespace[0], metav1.DeleteOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -60,6 +70,9 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write([]byte("{status:'ok'}"))
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

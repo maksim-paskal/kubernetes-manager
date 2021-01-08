@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
@@ -39,8 +39,11 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	version := 0
 
 	if len(namespace) < 1 {
-		http.Error(w, "namespace not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "namespace not set")
+		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoNamespace).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -50,15 +53,21 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		version, err = strconv.Atoi(r.URL.Query()["version"][0])
 		if err != nil {
-			logError(span, sentry.LevelWarning, r, nil, fmt.Sprintf("can not parse version %s", r.URL.Query()["version"][0]))
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Warn("can not parse version ", version)
 		}
 	}
 
 	replicas := r.URL.Query()["replicas"]
 
 	if len(replicas) < 1 {
-		http.Error(w, "replicas not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "replicas not set")
+		http.Error(w, ErrNoReplicas.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoReplicas).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -66,7 +75,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	ds, err := clientset.AppsV1().Deployments(namespace[0]).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -75,7 +87,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(context.TODO(), d.Name, metav1.GetOptions{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -83,7 +98,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		i, err := strconv.ParseInt(replicas[0], 10, 32)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -94,7 +112,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		if errUpdate != nil {
 			http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, errUpdate, "")
+			log.
+				WithError(errUpdate).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -105,7 +126,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		sf, err := clientset.AppsV1().StatefulSets(namespace[0]).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -115,7 +139,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			ss, err := clientset.AppsV1().StatefulSets(namespace[0]).Get(context.TODO(), s.Name, metav1.GetOptions{})
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				logError(span, sentry.LevelError, r, err, "")
+				log.
+					WithError(err).
+					WithField(logrushookopentracing.SpanKey, span).
+					Error()
 
 				return
 			}
@@ -123,7 +150,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			i, err := strconv.ParseInt(replicas[0], 10, 32)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				logError(span, sentry.LevelError, r, err, "")
+				log.
+					WithError(err).
+					WithField(logrushookopentracing.SpanKey, span).
+					Error()
 
 				return
 			}
@@ -134,7 +164,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 			if errUpdate != nil {
 				http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
-				logError(span, sentry.LevelError, r, errUpdate, "")
+				log.
+					WithError(errUpdate).
+					WithField(logrushookopentracing.SpanKey, span).
+					Error()
 
 				return
 			}
@@ -157,7 +190,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(result)
 	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -166,7 +202,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	/*patch*/
@@ -188,7 +227,9 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	_, err = ns.Patch(context.TODO(), namespace[0], types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
 
 	if err != nil {
-		log.Warn(err)
-		logError(span, sentry.LevelWarning, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Warn()
 	}
 }

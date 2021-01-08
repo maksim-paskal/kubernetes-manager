@@ -19,8 +19,9 @@ import (
 	"net/http"
 	"net/url"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type httpResponse struct {
@@ -39,12 +40,18 @@ func makeAPICall(span opentracing.Span, api string, q url.Values, ch chan<- http
 	tracer := opentracing.GlobalTracer()
 	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	if err != nil { //nolint:wsl
-		logError(span, sentry.LevelError, nil, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logError(span, sentry.LevelError, nil, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	} else if resp.Body != nil {
 		defer resp.Body.Close()
 	}

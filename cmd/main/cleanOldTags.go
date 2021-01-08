@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	sentry "github.com/getsentry/sentry-go"
 	"github.com/heroku/docker-registry-client/registry"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	utils "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -221,8 +221,10 @@ func exec(
 			tags, err := hub.Tags(repository)
 			if err != nil {
 				err = errors.Wrap(err, "hub.Tags")
-				log.Error(err)
-				logError(span, sentry.LevelInfo, nil, nil, err.Error())
+				log.
+					WithError(err).
+					WithField(logrushookopentracing.SpanKey, span).
+					Error()
 			}
 
 			for _, tag := range tags {
@@ -235,8 +237,10 @@ func exec(
 
 					if err != nil {
 						err = errors.Wrap(err, "time.Parse")
-						log.Error(err)
-						logError(span, sentry.LevelInfo, nil, nil, err.Error())
+						log.
+							WithError(err).
+							WithField(logrushookopentracing.SpanKey, span).
+							Error()
 					} else if releaseDate.After(releaseMaxDate) {
 						releaseMaxDate = releaseDate
 					}
@@ -244,8 +248,10 @@ func exec(
 
 				if err != nil {
 					err = errors.Wrap(err, "hub.ManifestDigest")
-					log.Error(err)
-					logError(span, sentry.LevelInfo, nil, nil, err.Error())
+					log.
+						WithError(err).
+						WithField(logrushookopentracing.SpanKey, span).
+						Error()
 
 					errorTags = append(errorTags, fmt.Sprintf("%s:%s", repository, tag))
 				} else {
@@ -273,8 +279,10 @@ func exec(
 
 				if err != nil {
 					err = errors.Wrap(err, "time.Parse")
-					log.Error(err)
-					logError(span, sentry.LevelInfo, nil, nil, err.Error())
+					log.
+						WithError(err).
+						WithField(logrushookopentracing.SpanKey, span).
+						Error()
 				} else {
 					releaseDateDiffDays := releaseMaxDate.Sub(releaseDate).Hours() / HoursInDay
 

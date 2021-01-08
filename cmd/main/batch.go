@@ -19,6 +19,7 @@ import (
 	"time"
 
 	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -61,8 +62,10 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 	gitCommits, _, err := git.Commits.ListCommits(gitProjectID, &gitCommitOptions)
 	if err != nil {
 		err = errors.Wrap(err, "git.Commits.ListCommits")
-		log.Error(err)
-		logError(span, sentry.LevelInfo, nil, nil, err.Error())
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	gitCommitsLen := len(gitCommits)
@@ -85,8 +88,10 @@ func batch(rootSpan opentracing.Span) {
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))
 	if err != nil {
 		err = errors.Wrap(err, "gitlab.NewClient")
-		log.Error(err)
-		logError(span, sentry.LevelInfo, nil, nil, err.Error())
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	opt := metav1.ListOptions{
@@ -102,8 +107,10 @@ func batch(rootSpan opentracing.Span) {
 		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
 			err = errors.Wrap(err, "clientset.CoreV1().Namespaces().Get")
-			log.Error(err)
-			logError(span, sentry.LevelError, nil, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -122,8 +129,10 @@ func batch(rootSpan opentracing.Span) {
 		} else if len(namespace.GetAnnotations()[labelLastScaleDate]) > 0 {
 			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[labelLastScaleDate])
 			if err != nil {
-				log.Warn(err)
-				logError(span, sentry.LevelWarning, nil, err, "")
+				log.
+					WithError(err).
+					WithField(logrushookopentracing.SpanKey, span).
+					Warn()
 			}
 			if diffToNow(lastScaleDate) > *appConfig.removeBranchLastScaleDate {
 				isDeleteBranch = true

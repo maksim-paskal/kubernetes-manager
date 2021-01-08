@@ -16,9 +16,10 @@ import (
 	"fmt"
 	"net/http"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -32,8 +33,11 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	tag := r.URL.Query()["tag"]
 
 	if len(tag) < 1 {
-		http.Error(w, "tag not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "tag not set")
+		http.Error(w, ErrNoTag.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoTag).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -42,7 +46,10 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte("{status:'ok',warning:'registry tag can not be deleted'}"))
 		if err != nil { //nolint:wsl
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 		}
 
 		return
@@ -51,8 +58,11 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	projectID := r.URL.Query()["projectID"]
 
 	if len(projectID) < 1 {
-		http.Error(w, "projectID not set", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "projectID not set")
+		http.Error(w, ErrNoProjectID.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoProjectID).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -61,7 +71,10 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	git, err := gitlab.NewClient(*appConfig.gitlabToken, gitlab.WithBaseURL(*appConfig.gitlabURL))
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	span.LogKV("event", "ListRegistryRepositories")
@@ -69,7 +82,10 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID[0], nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -87,6 +103,9 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write([]byte("{status:'ok'}"))
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

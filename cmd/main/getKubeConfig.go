@@ -19,9 +19,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 )
 
 func getKubeConfig(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,10 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	caCRT, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -42,7 +46,10 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	token, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -83,7 +90,10 @@ users:
 	tmpl, err := template.New("kubeconfig").Parse(kubeConfig)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -91,7 +101,10 @@ users:
 	err = tmpl.Execute(&out, params)
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -99,6 +112,9 @@ users:
 	_, err = w.Write(out.Bytes())
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

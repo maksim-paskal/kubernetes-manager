@@ -18,11 +18,11 @@ import (
 	"net/http"
 	"time"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	utils "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/common/log"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -69,7 +69,10 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -83,7 +86,10 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil { //nolint:wsl
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -93,8 +99,10 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		if len(namespace.GetAnnotations()[labelLastScaleDate]) > 0 {
 			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[labelLastScaleDate])
 			if err != nil {
-				log.Warn(err)
-				logError(span, sentry.LevelWarning, r, err, "")
+				log.
+					WithError(err).
+					WithField(logrushookopentracing.SpanKey, span).
+					Warn()
 			} else {
 				item.NamespaceLastScaled = lastScaleDate.String()
 				item.NamespaceLastScaledDays = diffToNow(lastScaleDate)
@@ -128,7 +136,10 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(result)
 	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -138,6 +149,9 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

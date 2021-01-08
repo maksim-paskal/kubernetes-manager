@@ -18,10 +18,11 @@ import (
 
 	//nolint:gosec
 	_ "net/http/pprof"
-	"os"
 	"time"
 
 	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -58,26 +59,28 @@ func main() {
 		log.SetReportCaller(true)
 	}
 
-	log.Infof("Starting kubernetes-manager %s...", appConfig.Version)
-
-	if len(os.Getenv("SENTRY_DSN")) > 0 {
-		log.Debug("Use Sentry logging...")
-
-		err = sentry.Init(sentry.ClientOptions{
-			Release: appConfig.Version,
-		})
-
-		if err != nil {
-			log.WithError(err).Fatal("Sentry initialization failed")
-		}
+	hookSentry, err := logrushooksentry.NewHook(logrushooksentry.Options{
+		Release: appConfig.Version,
+	})
+	if err != nil {
+		log.WithError(err).Fatal()
 	}
+
+	log.AddHook(hookSentry)
+	defer hookSentry.Stop()
+
+	hookTracing, err := logrushookopentracing.NewHook(logrushookopentracing.Options{})
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+
+	log.AddHook(hookTracing)
+
+	log.Infof("Starting kubernetes-manager %s...", appConfig.Version)
 
 	if len(*appConfig.kubeconfigPath) > 0 {
 		restconfig, err = clientcmd.BuildConfigFromFlags("", *appConfig.kubeconfigPath)
 		if err != nil {
-			sentry.CaptureException(err)
-			sentry.Flush(time.Second)
-
 			log.Panic(err.Error())
 		}
 	} else {
@@ -90,17 +93,11 @@ func main() {
 
 	clientset, err = kubernetes.NewForConfig(restconfig)
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
 		log.Panic(err.Error())
 	}
 
 	cfg, err := jaegercfg.FromEnv()
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
 		log.Panicf("Could not parse Jaeger env vars: %s", err.Error())
 	}
 
@@ -120,9 +117,6 @@ func main() {
 	opentracing.SetGlobalTracer(tracer)
 
 	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second)
-
 		log.Panicf("Could not initialize jaeger tracer: %s", err.Error())
 	}
 	defer closer.Close()

@@ -16,9 +16,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	sentry "github.com/getsentry/sentry-go"
+	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log "github.com/sirupsen/logrus"
 )
 
 func execCommands(w http.ResponseWriter, r *http.Request) {
@@ -31,16 +32,22 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	cmd := r.URL.Query()["cmd"]
 
 	if len(cmd) != 1 {
-		http.Error(w, "no command", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "no command")
+		http.Error(w, ErrNoCommand.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoCommand).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
 
 	_, ok := getInfoDBCommands[cmd[0]]
 	if !ok {
-		http.Error(w, "no command found", http.StatusInternalServerError)
-		logError(span, sentry.LevelInfo, r, nil, "no command found")
+		http.Error(w, ErrNoComandFound.Error(), http.StatusInternalServerError)
+		log.
+			WithError(ErrNoComandFound).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -51,7 +58,10 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		err := podExecute.beforeExecute(&podExecute.param, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logError(span, sentry.LevelError, r, err, "")
+			log.
+				WithError(err).
+				WithField(logrushookopentracing.SpanKey, span).
+				Error()
 
 			return
 		}
@@ -60,7 +70,10 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	execResults, err := execContainer(span, podExecute.param)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -81,7 +94,10 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(result)
 	if err != nil { //nolint:wsl
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 
 		return
 	}
@@ -90,6 +106,9 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 
 	if err != nil {
-		logError(span, sentry.LevelError, r, err, "")
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			Error()
 	}
 }

@@ -13,10 +13,8 @@ limitations under the License.
 package main
 
 const (
-	HoursInDay             = 24
-	KeyValueLength         = 2
-	MessageNamespaceNotSet = "namespace not set"
-
+	HoursInDay            = 24
+	KeyValueLength        = 2
 	labelLastScaleDate    = "kubernetes-manager/lastScaleDate"
 	labelGitBranch        = "kubernetes-manager/git-branch"
 	labelGitProjectID     = "kubernetes-manager/git-project-id"
