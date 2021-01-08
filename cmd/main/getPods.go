@@ -62,7 +62,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	if len(pods.Items) == 0 {
 		http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
 		log.
-			WithError(err).
+			WithError(ErrNoPodInStatusRunning).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithField(logrushooksentry.RequestKey, r).
 			Error()
