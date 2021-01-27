@@ -15,6 +15,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -124,7 +125,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		item.IngressLabels = ingress.Labels
 
 		for _, rule := range ingress.Spec.Rules {
-			host := "http://" + rule.Host
+			host := fmt.Sprintf("%s://%s", *appConfig.ingressHostDefaultProtocol, rule.Host)
 			if !utils.StringInSlice(host, item.Hosts) {
 				item.Hosts = append(item.Hosts, host)
 			}
