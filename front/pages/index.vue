@@ -242,16 +242,13 @@
                   <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods</b-card-text>
                 </b-tab>
                 <b-tab title="4. Shell">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} exec -it `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=paket -o jsonpath='{.items[0].metadata.name}'` -c backend sh</b-card-text>
+                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} exec -it `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[1] }} sh</b-card-text>
                 </b-tab>
                 <b-tab title="5. Logs">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} logs `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=paket -o jsonpath='{.items[0].metadata.name}'` -c backend</b-card-text>
+                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} logs `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[1] }}</b-card-text>
                 </b-tab>
                 <b-tab title="6. Clear memcahed">
                   <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} delete `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=memcached -o name`</b-card-text>
-                </b-tab>
-                <b-tab title="7. Restart react">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} delete `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=paket-site -o name`</b-card-text>
                 </b-tab>
               </b-tabs>
             </b-card>
