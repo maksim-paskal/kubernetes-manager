@@ -242,10 +242,10 @@
                   <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods</b-card-text>
                 </b-tab>
                 <b-tab title="4. Shell">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} exec -it `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[1] }} sh</b-card-text>
+                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} exec -it `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ this.defaultPodInfo[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ this.defaultPodInfo[1] }} sh</b-card-text>
                 </b-tab>
                 <b-tab title="5. Logs">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} logs `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ infoModal.content.IngressAnotations["kubernetes-manager/default-pod"].split(':')[1] }}</b-card-text>
+                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} logs `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ this.defaultPodInfo[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ this.defaultPodInfo[1] }}</b-card-text>
                 </b-tab>
                 <b-tab title="6. Clear memcahed">
                   <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} delete `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=memcached -o name`</b-card-text>
@@ -352,6 +352,7 @@ export default {
       gitSyncEnabled: "",
       gitSyncShowPublicKey: false,
       gitSyncPublicKey: "",
+      defaultPodInfo: "",
 
       podsNames: [],
       podsNamesSelected: null,
@@ -508,16 +509,16 @@ export default {
           "kubernetes-manager/default-pod"
         ];
 
-        var defaultPodInfo = null;
+        this.defaultPodInfo = ["app=default","app"];
         var defaultPodLabelName = null;
         var defaultPodLabelValue = null;
         var defaultPodContainer = null;
 
-        if (defaultPod) {
-          defaultPodInfo = defaultPod.split(":");
-          defaultPodLabelName = defaultPodInfo[0].split("=")[0];
-          defaultPodLabelValue = defaultPodInfo[0].split("=")[1];
-          defaultPodContainer = defaultPodInfo[1];
+        if (defaultPod && defaultPod.split(":").length == 2) {
+          this.defaultPodInfo = defaultPod.split(":");
+          defaultPodLabelName = this.defaultPodInfo[0].split("=")[0];
+          defaultPodLabelValue = this.defaultPodInfo[0].split("=")[1];
+          defaultPodContainer = this.defaultPodInfo[1];
         }
 
         if (this.podsNames.length == 0 || podsForce) {

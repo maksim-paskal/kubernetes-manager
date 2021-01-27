@@ -27,6 +27,6 @@ var (
 	ErrNoCommand            = errors.New("no comand")
 	ErrNoReplicas           = errors.New("no replicas")
 	ErrNoComandFound        = errors.New("no command found")
-	ErrNoPodInStatusRunning = errors.New("pod in status Running not found, retry")
+	ErrNoPodInStatusRunning = errors.New("pod in status Running not found")
 	ErrUserDeleteALL        = errors.New("user requested deleteALL")
 )

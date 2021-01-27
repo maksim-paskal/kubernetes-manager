@@ -1,4 +1,4 @@
-FROM node:lts as front
+FROM node:14 as front
 
 WORKDIR /app
 COPY front /app
@@ -22,7 +22,7 @@ RUN go mod download \
   && go build -v -o kubernetes-manager -ldflags "-X main.gitVersion=$(git describe --tags `git rev-list --tags --max-count=1`)-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')" ./cmd/main \
   && ./kubernetes-manager --version
 
-FROM alpine:latest
+FROM alpine:3.13
 
 COPY --from=front /app/dist /app/dist
 COPY --from=build /usr/src/kubernetes-manager/kubernetes-manager /app/kubernetes-manager
