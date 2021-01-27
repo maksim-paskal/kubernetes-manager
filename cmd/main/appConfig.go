@@ -17,29 +17,30 @@ import (
 )
 
 type appConfigType struct {
-	Version                   string
-	mode                      *string
-	port                      *int
-	logLevel                  *string
-	kubeconfigPath            *string
-	frontDist                 *string
-	ingressNoFiltration       *bool
-	ingressAnotationKey       *string
-	ingressFilter             *string
-	kubeconfigServer          *string
-	gitlabURL                 *string
-	gitlabToken               *string
-	makeAPICallServer         *string
-	registryURL               *string
-	registryUser              *string
-	registryPassword          *string
-	registryDirectory         *string
-	releasePatern             *string
-	releaseNotDeleteDays      *int
-	removeBranchDaysInactive  *int
-	removeBranchLastScaleDate *int
-	systemGitTags             *string
-	systemNamespaces          *string
+	Version                    string
+	mode                       *string
+	port                       *int
+	logLevel                   *string
+	kubeconfigPath             *string
+	frontDist                  *string
+	ingressNoFiltration        *bool
+	ingressAnotationKey        *string
+	ingressFilter              *string
+	kubeconfigServer           *string
+	gitlabURL                  *string
+	gitlabToken                *string
+	makeAPICallServer          *string
+	registryURL                *string
+	registryUser               *string
+	registryPassword           *string
+	registryDirectory          *string
+	releasePatern              *string
+	releaseNotDeleteDays       *int
+	removeBranchDaysInactive   *int
+	removeBranchLastScaleDate  *int
+	systemGitTags              *string
+	systemNamespaces           *string
+	ingressHostDefaultProtocol *string
 }
 
 var appConfig = appConfigType{
@@ -132,4 +133,8 @@ var appConfig = appConfigType{
 		"system.namespaces",
 		"Kubernetes namespaces that can not delete",
 	).Default("kube-system").Envar("SYSTEM_NAMESPACES").String(),
+	ingressHostDefaultProtocol: kingpin.Flag(
+		"ingressHostDefaultProtocol",
+		"default host protocol",
+	).Default("https").String(),
 }
