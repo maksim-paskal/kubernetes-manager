@@ -55,8 +55,7 @@ func getEnvDefault(name string, defaultValue string) string {
 		return r
 	}
 
-	rLen := len(r)
-	if rLen == 0 {
+	if len(r) == 0 {
 		return defaultValue
 	}
 
