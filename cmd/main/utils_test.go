@@ -19,7 +19,7 @@ import (
 func TestIsSystemBranch(t *testing.T) {
 	t.Parallel()
 
-	systemGitTags := "master,release-.*"
+	systemGitTags := "^master$,^release-.*"
 	appConfig.systemGitTags = &systemGitTags
 
 	got := isSystemBranch("master")
@@ -30,6 +30,13 @@ func TestIsSystemBranch(t *testing.T) {
 	}
 
 	got = isSystemBranch("test")
+	want = false
+
+	if got != want {
+		t.Errorf("TestIsSystemBranch, got=%t want=%t", got, want)
+	}
+
+	got = isSystemBranch("test-master1")
 	want = false
 
 	if got != want {

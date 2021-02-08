@@ -128,7 +128,7 @@ var appConfig = appConfigType{
 	systemGitTags: kingpin.Flag(
 		"system.gitTags",
 		"Docker registry git tags/branch that can not delete (regexp)",
-	).Default("master,release-.*").Envar("SYSTEM_GIT_TAGS").String(),
+	).Default("^master$,^release-.*").Envar("SYSTEM_GIT_TAGS").String(),
 	systemNamespaces: kingpin.Flag(
 		"system.namespaces",
 		"Kubernetes namespaces that can not delete",
