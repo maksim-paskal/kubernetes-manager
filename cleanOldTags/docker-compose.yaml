@@ -9,10 +9,10 @@ services:
     - RCLONE_CONFIG_S3_SECRET_ACCESS_KEY=AWS_SECRET
     - RCLONE_CONFIG_S3_REGION=eu-central-1
     - POD_NAMESPACE=kubernetes-manager
-    - GITLAB_URL=https://git/api/v4
-    - GITLAB_TOKEN=some-token
-    - SYSTEM_GIT_TAGS=master,release-.*
+    - SYSTEM_GIT_TAGS=^master$,^release-.*
     - SYSTEM_NAMESPACES=kube-system
+    - SENTRY_ENVIRONMENT=cleanOldTags
+    - SENTRY_DSN=https://id@sentry/1
     command:
     - /bin/sh
     - -c
