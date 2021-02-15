@@ -220,7 +220,7 @@ func exec(
 
 	releasePattern, err := regexp.Compile(*appConfig.releasePatern)
 
-	releaseMaxDate := time.Now()
+	releaseMaxDate := time.Time{}
 
 	if err != nil {
 		log.
