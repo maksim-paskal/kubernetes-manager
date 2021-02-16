@@ -74,7 +74,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -92,7 +92,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -106,7 +106,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 				log.
 					WithError(err).
 					WithField(logrushookopentracing.SpanKey, span).
-					WithField(logrushooksentry.RequestKey, r).
+					WithFields(logrushooksentry.AddRequest(r)).
 					Warn()
 			} else {
 				item.NamespaceLastScaled = lastScaleDate.String()
@@ -144,7 +144,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -158,7 +158,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 }

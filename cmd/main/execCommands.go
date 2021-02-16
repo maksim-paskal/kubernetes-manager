@@ -37,7 +37,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoCommand).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -49,7 +49,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoComandFound).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -64,7 +64,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -77,7 +77,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -102,7 +102,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -115,7 +115,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 }

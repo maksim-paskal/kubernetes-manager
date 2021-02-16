@@ -44,7 +44,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -58,7 +58,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Warn("can not parse version ", version)
 		}
 	}
@@ -70,7 +70,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoReplicas).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -82,7 +82,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -95,7 +95,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -107,7 +107,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -122,7 +122,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(errUpdate).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -137,7 +137,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -151,7 +151,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 				log.
 					WithError(err).
 					WithField(logrushookopentracing.SpanKey, span).
-					WithField(logrushooksentry.RequestKey, r).
+					WithFields(logrushooksentry.AddRequest(r)).
 					Error()
 
 				return
@@ -163,7 +163,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 				log.
 					WithError(err).
 					WithField(logrushookopentracing.SpanKey, span).
-					WithField(logrushooksentry.RequestKey, r).
+					WithFields(logrushooksentry.AddRequest(r)).
 					Error()
 
 				return
@@ -178,7 +178,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 				log.
 					WithError(errUpdate).
 					WithField(logrushookopentracing.SpanKey, span).
-					WithField(logrushooksentry.RequestKey, r).
+					WithFields(logrushooksentry.AddRequest(r)).
 					Error()
 
 				return
@@ -205,7 +205,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -218,7 +218,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 
@@ -244,7 +244,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Warn()
 	}
 }
