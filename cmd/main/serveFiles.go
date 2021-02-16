@@ -54,7 +54,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -68,7 +68,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return

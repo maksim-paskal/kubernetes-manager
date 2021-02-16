@@ -28,7 +28,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
-	github.com/maksim-paskal/logrus-hook-sentry v0.0.7
+	github.com/maksim-paskal/logrus-hook-sentry v0.0.8
 	github.com/maksim-paskal/utils-go v0.0.5
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect

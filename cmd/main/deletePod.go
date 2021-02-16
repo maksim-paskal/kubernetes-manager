@@ -41,7 +41,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -65,7 +65,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(ErrNoPodSelected).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -78,7 +78,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(ErrNoLabelSelector).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -94,7 +94,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err1).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -105,7 +105,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(ErrNoPodInStatusRunning).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 
 			return
@@ -121,7 +121,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err2).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -147,7 +147,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -160,7 +160,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 }

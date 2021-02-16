@@ -38,7 +38,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(ErrNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -51,7 +51,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 		}
 
@@ -61,7 +61,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	log.
 		WithError(ErrUserDeleteALL).
 		WithField(logrushookopentracing.SpanKey, span).
-		WithField(logrushooksentry.RequestKey, r).
+		WithFields(logrushooksentry.AddRequest(r)).
 		Warn()
 
 	type ResultData struct {
@@ -112,7 +112,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
@@ -125,7 +125,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 }

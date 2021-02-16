@@ -36,7 +36,7 @@ func getDebug(w http.ResponseWriter, r *http.Request) {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
-			WithField(logrushooksentry.RequestKey, r).
+			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	}
 }
@@ -65,7 +65,7 @@ func formatRequest(span opentracing.Span, r *http.Request) []byte {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
-				WithField(logrushooksentry.RequestKey, r).
+				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
 		}
 
