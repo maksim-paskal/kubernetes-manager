@@ -23,7 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var replacer *strings.Replacer = strings.NewReplacer(
+var replacer = strings.NewReplacer(
 	"__FRONT_PHPMYADMIN_URL__", getEnvDefault("FRONT_PHPMYADMIN_URL", ""),
 	"__FRONT_DEBUG_SERVER_NAME__", getEnvDefault("FRONT_DEBUG_SERVER_NAME", ""),
 	"__FRONT_SENTRY_URL__", getEnvDefault("FRONT_SENTRY_URL", ""),

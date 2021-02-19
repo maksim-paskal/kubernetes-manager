@@ -1,6 +1,6 @@
 module github.com/maksim-paskal/kubernetes-manager
 
-go 1.15
+go 1.16
 
 replace (
 	github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v0.0.0-20200919145931-8dac23c8dac1

@@ -4,7 +4,7 @@ WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate
 
-FROM golang:1.15 as build
+FROM golang:1.16 as build
 
 WORKDIR /usr/src/kubernetes-manager
 
