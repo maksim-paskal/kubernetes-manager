@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	gitVersion string = "dev"
+	gitVersion = "dev"
 	clientset  *kubernetes.Clientset
 	restconfig *rest.Config
 )
