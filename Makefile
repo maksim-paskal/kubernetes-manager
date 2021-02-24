@@ -13,12 +13,8 @@ testChart:
 build-all:
 	scripts/build-all.sh
 upgrade:
-	go get -v -u all
-	# downgrade to v0.18.14
-	go get -v -u k8s.io/api@v0.18.14 || true
-	go get -v -u k8s.io/apimachinery@v0.18.14
-	go get -v -u k8s.io/client-go@v0.18.14
-	# downgrade for k8s.io/client-go@v0.18.14
-	go get -v -u github.com/googleapis/gnostic@v0.1.0
+	go get -v -u k8s.io/api@v0.19.8 || true
+	go get -v -u k8s.io/apimachinery@v0.19.8
+	go get -v -u k8s.io/client-go@v0.19.8
 	go mod tidy
 	cd front && yarn update-latest
