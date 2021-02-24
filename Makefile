@@ -9,7 +9,7 @@ test:
 	cd front && yarn lint
 testChart:
 	helm lint --strict ./chart/kubernetes-manager
-	helm template ./chart/kubernetes-manager | kubectl apply --dry-run --validate=true -f -
+	helm template ./chart/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
 build-all:
 	scripts/build-all.sh
 upgrade:
