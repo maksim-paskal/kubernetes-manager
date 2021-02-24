@@ -2,13 +2,6 @@ module github.com/maksim-paskal/kubernetes-manager
 
 go 1.16
 
-replace (
-	github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v0.0.0-20200919145931-8dac23c8dac1
-	k8s.io/api => k8s.io/api v0.18.14
-	k8s.io/apimachinery => k8s.io/apimachinery v0.18.14
-	k8s.io/client-go => k8s.io/client-go v0.18.14
-)
-
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
@@ -25,7 +18,6 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.11 // indirect
-	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
 	github.com/maksim-paskal/logrus-hook-sentry v0.0.8
 	github.com/maksim-paskal/utils-go v0.0.5
@@ -50,8 +42,8 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.18.14
-	k8s.io/apimachinery v0.18.14
-	k8s.io/client-go v0.18.14
+	k8s.io/api v0.19.8
+	k8s.io/apimachinery v0.19.8
+	k8s.io/client-go v0.19.8
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 )
