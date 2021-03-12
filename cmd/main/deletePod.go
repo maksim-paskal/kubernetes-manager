@@ -53,7 +53,8 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		GracePeriodSeconds: &GracePeriodSeconds,
 	}
 
-	podName := ""
+	var podName string
+
 	LabelSelector := r.URL.Query()["LabelSelector"]
 	pod := r.URL.Query()["pod"]
 
