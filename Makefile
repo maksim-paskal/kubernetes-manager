@@ -4,7 +4,7 @@ test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/main
 	go mod tidy
-	go test ./cmd/main
+	go test -race ./cmd/main
 	golangci-lint run -v
 	cd front && yarn lint
 testChart:
