@@ -18,14 +18,14 @@
     "@nuxtjs/sentry": "^5.0.2",
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",
-    "nuxt": "^2.15.2",
+    "nuxt": "^2.15.3",
     "vue": "^2.6.12"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.20.0",
+    "eslint": "^7.22.0",
     "eslint-friendly-formatter": "^4.0.1",
     "eslint-loader": "^4.0.2",
-    "eslint-plugin-vue": "^7.6.0"
+    "eslint-plugin-vue": "^7.7.0"
   }
 }
