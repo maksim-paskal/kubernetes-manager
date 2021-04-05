@@ -12,3 +12,4 @@ linters:
   - gocognit
   - exhaustivestruct
   - cyclop
+  - wrapcheck

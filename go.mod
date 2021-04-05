@@ -15,7 +15,6 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-hclog v0.15.0 // indirect
-	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
