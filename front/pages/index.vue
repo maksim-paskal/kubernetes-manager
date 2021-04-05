@@ -2,7 +2,12 @@
   <div>
     <b-navbar sticky fixed="top" toggleable="lg" type="dark" variant="dark">
       <b-input-group>
-        <b-button :disabled="isBusy" variant="outline-secondary" @click="getIngress()">Refresh</b-button>&nbsp;
+        <b-button
+          :disabled="isBusy"
+          variant="outline-secondary"
+          @click="getIngress()"
+          >Refresh</b-button
+        >&nbsp;
         <b-dropdown variant="outline-secondary" text="Menu">
           <b-dropdown-item target="_blank" href="__FRONT_SENTRY_URL__">
             <img height="24" src="~assets/sentry.png" />&nbsp;Open Sentry
@@ -18,8 +23,8 @@
           </b-dropdown-item>
           <b-dropdown-item target="_blank" href="__FRONT_SLACK_URL__">
             <img height="24" src="~assets/slack.png" />&nbsp;Report Issue
-          </b-dropdown-item>
-        </b-dropdown>&nbsp;
+          </b-dropdown-item> </b-dropdown
+        >&nbsp;
         <b-form-input
           v-model="filter"
           :disabled="isBusy"
@@ -29,28 +34,50 @@
       </b-input-group>
     </b-navbar>
 
-    <div style="padding:50px" class="text-center" v-if="isBusy">
-      <b-spinner style="width: 10rem; height: 10rem;" variant="primary"></b-spinner>
+    <div style="padding: 50px" class="text-center" v-if="isBusy">
+      <b-spinner
+        style="width: 10rem; height: 10rem"
+        variant="primary"
+      ></b-spinner>
     </div>
 
-    <b-modal ref="info-modal" :id="infoModal.id" :title="infoModal.title" size="xl" ok-only>
-      <div style="padding:50px" class="text-center" v-if="infoModal.loading">
-        <b-spinner style="width: 10rem; height: 10rem;" variant="primary"></b-spinner>
+    <b-modal
+      ref="info-modal"
+      :id="infoModal.id"
+      :title="infoModal.title"
+      size="xl"
+      ok-only
+    >
+      <div style="padding: 50px" class="text-center" v-if="infoModal.loading">
+        <b-spinner
+          style="width: 10rem; height: 10rem"
+          variant="primary"
+        ></b-spinner>
       </div>
 
       <b-alert
-        v-if="infoModal.info && !infoModal.info.Stdout && !infoModal.info.Stderr"
+        v-if="
+          infoModal.info && !infoModal.info.Stdout && !infoModal.info.Stderr
+        "
         variant="danger"
         show
       >
         <pre>{{ infoModal.info }}</pre>
       </b-alert>
 
-      <b-alert v-if="infoModal.info && infoModal.info.Stderr" variant="danger" show>
+      <b-alert
+        v-if="infoModal.info && infoModal.info.Stderr"
+        variant="danger"
+        show
+      >
         <pre>{{ infoModal.info.Stderr }}</pre>
       </b-alert>
 
-      <b-alert v-if="infoModal.info && infoModal.info.Stdout" variant="info" show>
+      <b-alert
+        v-if="infoModal.info && infoModal.info.Stdout"
+        variant="info"
+        show
+      >
         <pre>{{ infoModal.info.Stdout }}</pre>
       </b-alert>
 
@@ -58,13 +85,19 @@
         <b-tabs card @input="showTab" v-model="tabIndex">
           <b-tab key="tab0" title="info">
             <b-button
-              :href="getNamespacedString('__FRONT_METRICS_URL__/__FRONT_METRICS_PATH__')"
+              :href="
+                getNamespacedString(
+                  '__FRONT_METRICS_URL__/__FRONT_METRICS_PATH__'
+                )
+              "
               target="_blank"
             >
               <img height="16" src="~assets/grafana.png" />&nbsp;Metrics
             </b-button>
             <b-button
-              :href="getNamespacedString('__FRONT_LOGS_URL__/__FRONT_LOGS_PATH__')"
+              :href="
+                getNamespacedString('__FRONT_LOGS_URL__/__FRONT_LOGS_PATH__')
+              "
               target="_blank"
             >
               <img height="16" src="~assets/elasticsearch.png" />&nbsp;Logs
@@ -83,61 +116,87 @@
           <b-tab key="tab1" title="mysql" :disabled="!isMysqlTab">
             <pre>{{ tab1Data }}</pre>
             <div v-if="tab1Data != null">
-              <b-button @click="showTab(1,true,true)">Refresh</b-button>
+              <b-button @click="showTab(1, true, true)">Refresh</b-button>
               <b-button
                 v-if="tab1Data.result == 'found'"
                 target="_blank"
                 v-bind:href="tab1Data.phpmyadminURL"
-              >Open Phpmyadmin</b-button>
+                >Open Phpmyadmin</b-button
+              >
               <b-button
                 v-if="tab1Data.result == 'found'"
                 variant="outline-primary"
-                @click="makeAPICall('exec','mysqlMigrations')"
-              >Migrations</b-button>
+                @click="makeAPICall('exec', 'mysqlMigrations')"
+                >Migrations</b-button
+              >
             </div>
           </b-tab>
           <b-tab key="tab2" title="mongo" :disabled="!isMongoTab">
             <pre>{{ tab2Data }}</pre>
             <div v-if="tab2Data != null">
-              <b-button @click="showTab(2,true,true)">Refresh</b-button>
+              <b-button @click="showTab(2, true, true)">Refresh</b-button>
               <b-button
                 v-if="tab2Data.result == 'found'"
                 variant="danger"
-                @click="makeAPICall('exec','mongoDelete')"
-              >Delete</b-button>
+                @click="makeAPICall('exec', 'mongoDelete')"
+                >Delete</b-button
+              >
               <b-button
                 variant="outline-primary"
-                @click="makeAPICall('exec','mongoMigrations')"
-              >Migrations</b-button>
+                @click="makeAPICall('exec', 'mongoMigrations')"
+                >Migrations</b-button
+              >
             </div>
           </b-tab>
           <b-tab key="tab3" title="settings">
-            <b-card bg-variant="light" header="Pause branch" class="text-center">
+            <b-card
+              bg-variant="light"
+              header="Pause branch"
+              class="text-center"
+            >
               <div>branch autopause will be at 16:00 UTC</div>
               <br />
-              <b-button @click="makeAPICall('scaleNamespace','none','&replicas=0')">Pause</b-button>
+              <b-button
+                @click="makeAPICall('scaleNamespace', 'none', '&replicas=0')"
+                >Pause</b-button
+              >
               <b-button
                 variant="success"
-                @click="makeAPICall('scaleNamespace','none','&replicas=1')"
-              >Start</b-button>
+                @click="makeAPICall('scaleNamespace', 'none', '&replicas=1')"
+                >Start</b-button
+              >
             </b-card>
             <br />
             <b-card bg-variant="light" header="Autoscaling" class="text-center">
-              <b-button @click="makeAPICall('disableHPA','none')">Disable autoscaling</b-button>
+              <b-button @click="makeAPICall('disableHPA', 'none')"
+                >Disable autoscaling</b-button
+              >
             </b-card>
             <br />
             <b-card bg-variant="light" header="Danger Zone" class="text-center">
-              <b-button variant="danger" @click="makeAPICall('deleteALL','projectID=')">Delete All</b-button>
+              <b-button
+                variant="danger"
+                @click="makeAPICall('deleteALL', 'projectID=')"
+                >Delete All</b-button
+              >
             </b-card>
           </b-tab>
           <b-tab key="tab4" title="debug">
+            <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
+              <b-button @click="makeAPICall('disableHPA', 'none')"
+                >Disable autoscaling</b-button
+              >&nbsp;For proper usage you must disable autoscaler</b-alert
+            >
             <b-form-select
               class="mb-3"
               v-model="podsNamesSelected"
               v-on:change="podsNamesChange"
               :options="podsNames"
             />
-            <div v-if="podsNamesSelected">
+            <div v-if="!podsNamesSelected">
+              <b-button @click="showTab(4, true, true)">Refresh</b-button>
+            </div>
+            <div v-else>
               <b-card-text>
                 XDEBUG is
                 <strong>{{ this.debug_enabled }}</strong>
@@ -155,10 +214,21 @@
                     />
                   </b-col>
                   <b-col cols="2">
-                    <b-dropdown id="dropdown-1" offset="25" text="Templates" class="m-2">
-                      <b-dropdown-item @click="templateAction(0)">config xdebug</b-dropdown-item>
-                      <b-dropdown-item @click="templateAction(1)">disable opcache</b-dropdown-item>
-                      <b-dropdown-item @click="templateAction(2)">enable debug mode</b-dropdown-item>
+                    <b-dropdown
+                      id="dropdown-1"
+                      offset="25"
+                      text="Templates"
+                      class="m-2"
+                    >
+                      <b-dropdown-item @click="templateAction(0)"
+                        >config xdebug</b-dropdown-item
+                      >
+                      <b-dropdown-item @click="templateAction(1)"
+                        >disable opcache</b-dropdown-item
+                      >
+                      <b-dropdown-item @click="templateAction(2)"
+                        >enable debug mode</b-dropdown-item
+                      >
                     </b-dropdown>
                   </b-col>
                 </b-row>
@@ -168,20 +238,38 @@
                 Use
                 <strong>ngrok tcp 9000</strong>
               </b-card-text>
-              <b-button @click="showTab(4,true,true)">Refresh</b-button>
-              <b-button variant="success" @click="makeAPICall('exec','xdebugEnable')">Enable XDEBUG</b-button>
-              <b-button @click="setPhpSettings()">Set settings in php-fpm.conf</b-button>
-              <b-button variant="danger" @click="makeAPICall('deletePod','none')">Delete Pod</b-button>
+              <b-button @click="showTab(4, true, true)">Refresh</b-button>
+              <b-button
+                variant="success"
+                @click="makeAPICall('exec', 'xdebugEnable')"
+                >Enable XDEBUG</b-button
+              >
+              <b-button @click="setPhpSettings()"
+                >Set settings in php-fpm.conf</b-button
+              >
+              <b-button
+                variant="danger"
+                @click="makeAPICall('deletePod', 'none')"
+                >Delete Pod</b-button
+              >
             </div>
           </b-tab>
           <b-tab key="tab5" title="git-sync">
+            <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
+              <b-button @click="makeAPICall('disableHPA', 'none')"
+                >Disable autoscaling</b-button
+              >&nbsp;For proper usage you must disable autoscaler</b-alert
+            >
             <b-form-select
               class="mb-3"
               v-model="podsNamesSelected"
               v-on:change="podsNamesChange"
               :options="podsNames"
             />
-            <div v-if="podsNamesSelected">
+            <div v-if="!podsNamesSelected">
+              <b-button @click="showTab(5, true, true)">Refresh</b-button>
+            </div>
+            <div v-else>
               <b-card-text>
                 Sync is
                 <strong>{{ this.gitSyncEnabled }}</strong>
@@ -192,7 +280,11 @@
                     <label for="input-gitOrigin">origin:</label>
                   </b-col>
                   <b-col sm="9">
-                    <b-form-input id="input-gitOrigin" :state="gitOriginState" v-model="gitOrigin"></b-form-input>
+                    <b-form-input
+                      id="input-gitOrigin"
+                      :state="gitOriginState"
+                      v-model="gitOrigin"
+                    ></b-form-input>
                   </b-col>
                 </b-row>
                 <b-row class="my-2">
@@ -200,23 +292,39 @@
                     <label for="input-gitBranch">branch:</label>
                   </b-col>
                   <b-col sm="9">
-                    <b-form-input id="input-gitBranch" :state="gitBranchState" v-model="gitBranch"></b-form-input>
+                    <b-form-input
+                      id="input-gitBranch"
+                      :state="gitBranchState"
+                      v-model="gitBranch"
+                    ></b-form-input>
                   </b-col>
                 </b-row>
                 <b-row v-if="this.gitSyncShowPublicKey">
                   <b-col>
-                    <b-form-textarea rows="5" v-model="gitSyncPublicKey" readonly />
+                    <b-form-textarea
+                      rows="5"
+                      v-model="gitSyncPublicKey"
+                      readonly
+                    />
                   </b-col>
                 </b-row>
               </b-container>
 
               <br />
-              <b-button @click="showTab(5,true,true)">Refresh</b-button>
+              <b-button @click="showTab(5, true, true)">Refresh</b-button>
               <b-button variant="success" @click="enableGit()">Init</b-button>
               <b-button @click="showPublicKey()">Show public key</b-button>
-              <b-button variant="danger" @click="makeAPICall('deletePod','none')">Delete Pod</b-button>
-              <b-button @click="makeAPICall('exec','gitFetch')">Fetch</b-button>
-              <b-button @click="makeAPICall('exec','clearCache')">Clear Cache</b-button>
+              <b-button
+                variant="danger"
+                @click="makeAPICall('deletePod', 'none')"
+                >Delete Pod</b-button
+              >
+              <b-button @click="makeAPICall('exec', 'gitFetch')"
+                >Fetch</b-button
+              >
+              <b-button @click="makeAPICall('exec', 'clearCache')"
+                >Clear Cache</b-button
+              >
             </div>
           </b-tab>
 
@@ -229,26 +337,55 @@
                     <a
                       target="_blank"
                       href="https://kubernetes.io/docs/tasks/tools/install-kubectl/"
-                    >https://kubernetes.io/docs/tasks/tools/install-kubectl/</a>
+                      >https://kubernetes.io/docs/tasks/tools/install-kubectl/</a
+                    >
                   </b-card-text>
                 </b-tab>
                 <b-tab title="2. Configure">
                   <b-card-text>
                     "Save As" this
-                    <a target="_blank" href="/getKubeConfig">file</a> to /tmp/kubeconfig
+                    <a target="_blank" href="/getKubeConfig">file</a> to
+                    /tmp/kubeconfig
                   </b-card-text>
                 </b-tab>
                 <b-tab title="3. Test">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods</b-card-text>
+                  <b-card-text
+                    >kubectl --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} get pods</b-card-text
+                  >
                 </b-tab>
                 <b-tab title="4. Shell">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} exec -it `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ this.defaultPodInfo[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ this.defaultPodInfo[1] }} sh</b-card-text>
+                  <b-card-text
+                    >kubectl --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} exec -it `kubectl
+                    --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} get pods -l{{
+                      this.defaultPodInfo[0]
+                    }}
+                    -o jsonpath='{.items[0].metadata.name}'` -c
+                    {{ this.defaultPodInfo[1] }} sh</b-card-text
+                  >
                 </b-tab>
                 <b-tab title="5. Logs">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} logs `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l{{ this.defaultPodInfo[0] }} -o jsonpath='{.items[0].metadata.name}'` -c {{ this.defaultPodInfo[1] }}</b-card-text>
+                  <b-card-text
+                    >kubectl --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} logs `kubectl
+                    --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} get pods -l{{
+                      this.defaultPodInfo[0]
+                    }}
+                    -o jsonpath='{.items[0].metadata.name}'` -c
+                    {{ this.defaultPodInfo[1] }}</b-card-text
+                  >
                 </b-tab>
                 <b-tab title="6. Clear memcahed">
-                  <b-card-text>kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} delete `kubectl --kubeconfig=/tmp/kubeconfig -n {{ infoModal.content.Namespace }} get pods -l=app=memcached -o name`</b-card-text>
+                  <b-card-text
+                    >kubectl --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} delete `kubectl
+                    --kubeconfig=/tmp/kubeconfig -n
+                    {{ infoModal.content.Namespace }} get pods -l=app=memcached
+                    -o name`</b-card-text
+                  >
                 </b-tab>
               </b-tabs>
             </b-card>
@@ -257,11 +394,11 @@
       </b-card>
     </b-modal>
 
-    <div style="padding:5px" v-if="!isBusy && items == null">
+    <div style="padding: 5px" v-if="!isBusy && items == null">
       <b-alert variant="warning" show>No available namespaces founded</b-alert>
     </div>
 
-    <div style="padding:5px" v-if="error != null">
+    <div style="padding: 5px" v-if="error != null">
       <b-alert variant="danger" show>{{ error }}</b-alert>
     </div>
 
@@ -274,15 +411,24 @@
       :filter="filter"
     >
       <template v-slot:cell(Status)="data">
-        <b-spinner v-if="data.item.RunningPodsCount<0" variant="primary"></b-spinner>
+        <b-spinner
+          v-if="data.item.RunningPodsCount < 0"
+          variant="primary"
+        ></b-spinner>
         <div v-else>
-          <div v-if="data.item.RunningPodsCount==0">
+          <div v-if="data.item.RunningPodsCount == 0">
             Paused
             <br />
             <b-button
               variant="success"
-              @click="unpauseNamespace(data.item.Namespace,data.item.IngressAnotations['kubernetes-manager/version'])"
-            >Start</b-button>
+              @click="
+                unpauseNamespace(
+                  data.item.Namespace,
+                  data.item.IngressAnotations['kubernetes-manager/version']
+                )
+              "
+              >Start</b-button
+            >
           </div>
           <div>{{ getNamespaceStatus(data.item) }}</div>
         </div>
@@ -299,7 +445,8 @@
           size="sm"
           variant="outline-primary"
           @click="info(row.item, row.index, $event.target)"
-        >Details</b-button>
+          >Details</b-button
+        >
       </template>
     </b-table>
   </div>
@@ -355,6 +502,7 @@ export default {
       defaultPodInfo: "",
 
       podsNames: [],
+      podsNamesSelectedTotal: 0,
       podsNamesSelected: null,
 
       isMysqlTab: false,
@@ -468,6 +616,14 @@ export default {
         if (result && result.ExecCode) {
           throw result;
         }
+
+        switch (api) {
+          case "disableHPA":
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+            this.infoModal.loading = false;
+            this.showTab(this.tabIndex, true, true);
+        }
+
         this.infoModal.info = result;
       } catch (e) {
         console.error(e);
@@ -509,7 +665,7 @@ export default {
           "kubernetes-manager/default-pod"
         ];
 
-        this.defaultPodInfo = ["app=default","app"];
+        this.defaultPodInfo = ["app=default", "app"];
         var defaultPodLabelName = null;
         var defaultPodLabelValue = null;
         var defaultPodContainer = null;
@@ -522,6 +678,8 @@ export default {
         }
 
         if (this.podsNames.length == 0 || podsForce) {
+          this.podsNamesSelected = null;
+          this.podsNamesSelectedTotal = 0;
           const { result } = await this.$axios.$get(
             this.makeAPICallUrl("getPods")
           );
@@ -550,12 +708,15 @@ export default {
             }
 
             pod.PodContainers.forEach((container) => {
-              if (defaultPod && !this.podsNamesSelected) {
+              if (defaultPod) {
                 if (
                   pod.PodLabels[defaultPodLabelName] == defaultPodLabelValue
                 ) {
                   if (container.ContainerName == defaultPodContainer) {
-                    this.podsNamesSelected = `${pod.PodName}:${container.ContainerName}`;
+                    this.podsNamesSelectedTotal++;
+                    if (!this.podsNamesSelected) {
+                      this.podsNamesSelected = `${pod.PodName}:${container.ContainerName}`;
+                    }
                   }
                 }
               }
@@ -682,13 +843,14 @@ export default {
         this.tab4Data = null;
         this.tab5Data = null;
 
+        this.podsNamesSelectedTotal = 0;
         this.podsNamesSelected = null;
         this.podsNames = [];
       }
 
       this.infoModal.title = item.Namespace;
       this.infoModal.content = item; //JSON.stringify(item, null, 2);
-      this.$refs['info-modal'].show()
+      this.$refs["info-modal"].show();
       this.showTab(this.tabIndex);
     },
     showAxiosError(e) {
