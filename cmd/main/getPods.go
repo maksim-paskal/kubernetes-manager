@@ -35,9 +35,9 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoNamespace).
+			WithError(errNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -60,9 +60,9 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(pods.Items) == 0 {
-		http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoPodInStatusRunning.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoPodInStatusRunning).
+			WithError(errNoPodInStatusRunning).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()

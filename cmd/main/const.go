@@ -13,8 +13,8 @@ limitations under the License.
 package main
 
 const (
-	HoursInDay            = 24
-	KeyValueLength        = 2
+	hoursInDay            = 24
+	keyValueLength        = 2
 	labelLastScaleDate    = "kubernetes-manager/lastScaleDate"
 	labelGitBranch        = "kubernetes-manager/git-branch"
 	labelGitProjectID     = "kubernetes-manager/git-project-id"

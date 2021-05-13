@@ -44,7 +44,7 @@ func isSystemNamespace(namespace string) bool {
 func diffToNow(t time.Time) int {
 	t1 := time.Now()
 
-	return int(t1.Sub(t).Hours() / HoursInDay)
+	return int(t1.Sub(t).Hours() / hoursInDay)
 }
 
 func getEnvDefault(name string, defaultValue string) string {

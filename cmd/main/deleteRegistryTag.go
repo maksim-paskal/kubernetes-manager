@@ -34,9 +34,9 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	tag := r.URL.Query()["tag"]
 
 	if len(tag) < 1 {
-		http.Error(w, ErrNoTag.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoTag.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoTag).
+			WithError(errNoTag).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -61,9 +61,9 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 	projectID := r.URL.Query()["projectID"]
 
 	if len(projectID) < 1 {
-		http.Error(w, ErrNoProjectID.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoProjectID.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoProjectID).
+			WithError(errNoProjectID).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()

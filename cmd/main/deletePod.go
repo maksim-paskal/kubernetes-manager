@@ -37,9 +37,9 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoNamespace).
+			WithError(errNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -61,10 +61,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 	if len(pod) > 0 {
 		podinfo := strings.Split(pod[0], ":")
 
-		if len(podinfo) != KeyValueLength {
-			http.Error(w, ErrNoPodSelected.Error(), http.StatusInternalServerError)
+		if len(podinfo) != keyValueLength {
+			http.Error(w, errNoPodSelected.Error(), http.StatusInternalServerError)
 			log.
-				WithError(ErrNoPodSelected).
+				WithError(errNoPodSelected).
 				WithField(logrushookopentracing.SpanKey, span).
 				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
@@ -75,9 +75,9 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		podName = podinfo[0]
 	} else {
 		if len(LabelSelector) < 1 {
-			http.Error(w, ErrNoLabelSelector.Error(), http.StatusInternalServerError)
+			http.Error(w, errNoLabelSelector.Error(), http.StatusInternalServerError)
 			log.
-				WithError(ErrNoLabelSelector).
+				WithError(errNoLabelSelector).
 				WithField(logrushookopentracing.SpanKey, span).
 				WithFields(logrushooksentry.AddRequest(r)).
 				Error()
@@ -102,9 +102,9 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(pods.Items) == 0 {
-			http.Error(w, ErrNoPodInStatusRunning.Error(), http.StatusInternalServerError)
+			http.Error(w, errNoPodInStatusRunning.Error(), http.StatusInternalServerError)
 			log.
-				WithError(ErrNoPodInStatusRunning).
+				WithError(errNoPodInStatusRunning).
 				WithField(logrushookopentracing.SpanKey, span).
 				WithFields(logrushooksentry.AddRequest(r)).
 				Error()

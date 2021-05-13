@@ -69,11 +69,11 @@ func execContainer(rootSpan opentracing.Span, params execContainerParams) (execC
 
 		if len(pods.Items) == 0 {
 			log.
-				WithError(ErrNoPodInStatusRunning).
+				WithError(errNoPodInStatusRunning).
 				WithField(logrushookopentracing.SpanKey, span).
 				Error()
 
-			return execContainerResults{}, ErrNoPodInStatusRunning
+			return execContainerResults{}, errNoPodInStatusRunning
 		}
 
 		params.podname = pods.Items[0].Name
