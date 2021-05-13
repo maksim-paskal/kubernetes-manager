@@ -54,27 +54,25 @@ func TestIsSystemBranch(t *testing.T) {
 func TestIsSystemNamespace(t *testing.T) {
 	t.Parallel()
 
-	systemNamespaces := "kube-system,app"
+	systemNamespaces := "^kube-system$,^app$"
 	appConfig.systemNamespaces = &systemNamespaces
 
-	got := isSystemNamespace("master")
-	want := false
+	// namespace, isSystemNamespace
+	testCases := make(map[string]bool)
 
-	if got != want {
-		t.Errorf("TestIsSystemNamespace, got=%t want=%t", got, want)
-	}
+	testCases["master"] = false
+	testCases["app"] = true
+	testCases["release-123456"] = false
+	testCases["kube-system-test"] = false
 
-	got = isSystemNamespace("app")
-	want = true
-
-	if got != want {
-		t.Errorf("TestIsSystemNamespace, got=%t want=%t", got, want)
-	}
-
-	got = isSystemNamespace("release-123456")
-	want = false
-
-	if got != want {
-		t.Errorf("TestIsSystemNamespace, got=%t want=%t", got, want)
+	for namespace, want := range testCases {
+		if got := isSystemNamespace(namespace); got != want {
+			t.Errorf("TestIsSystemNamespace, systemNamespaces=%s, namespace=%s, got=%t want=%t",
+				systemNamespaces,
+				namespace,
+				got,
+				want,
+			)
+		}
 	}
 }
