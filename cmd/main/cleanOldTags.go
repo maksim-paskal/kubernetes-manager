@@ -148,7 +148,7 @@ func getExceptions(rootSpan opentracing.Span) []string {
 		data := cleanoldtags.Data["exceptions"]
 		for _, row := range strings.Split(data, "\n") {
 			data := strings.Split(row, ":")
-			if len(data) == KeyValueLength {
+			if len(data) == keyValueLength {
 				if !utils.StringInSlice(row, allExceptions) {
 					allExceptions = append(allExceptions, row)
 				}
@@ -297,7 +297,7 @@ func exec(
 						WithField(logrushookopentracing.SpanKey, span).
 						Error()
 				} else {
-					releaseDateDiffDays := releaseMaxDate.Sub(releaseDate).Hours() / HoursInDay
+					releaseDateDiffDays := releaseMaxDate.Sub(releaseDate).Hours() / hoursInDay
 
 					if releaseDateDiffDays < float64(*appConfig.releaseNotDeleteDays) {
 						log.Debugf("image %s date in notDeleteDays", tagToDelete)

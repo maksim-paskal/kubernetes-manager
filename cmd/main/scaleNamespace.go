@@ -40,9 +40,9 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	version := 0
 
 	if len(namespace) < 1 {
-		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoNamespace).
+			WithError(errNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -66,9 +66,9 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 	replicas := r.URL.Query()["replicas"]
 
 	if len(replicas) < 1 {
-		http.Error(w, ErrNoReplicas.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoReplicas.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoReplicas).
+			WithError(errNoReplicas).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()

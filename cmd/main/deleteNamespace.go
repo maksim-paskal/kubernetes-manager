@@ -34,9 +34,9 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	if len(namespace) < 1 {
-		http.Error(w, ErrNoNamespace.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoNamespace).
+			WithError(errNoNamespace).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()

@@ -47,7 +47,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 
@@ -65,20 +65,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -98,20 +98,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -131,20 +131,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -164,13 +164,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			text := r.URL.Query()["text"]
 
 			if len(text) != 1 {
-				return ErrNoText
+				return errNoText
 			}
 			param.namespace = namespace[0]
 			param.command = fmt.Sprintf("%s %s", param.command, text)
@@ -178,13 +178,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -204,7 +204,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			param.namespace = namespace[0]
@@ -212,13 +212,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -238,19 +238,19 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			origin := r.URL.Query()["origin"]
 
 			if len(origin) != 1 {
-				return ErrNoOrigin
+				return errNoOrigin
 			}
 
 			branch := r.URL.Query()["branch"]
 
 			if len(origin) != 1 {
-				return ErrNoBranch
+				return errNoBranch
 			}
 
 			param.namespace = namespace[0]
@@ -259,13 +259,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -285,7 +285,7 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			param.namespace = namespace[0]
@@ -293,13 +293,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -319,20 +319,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -352,19 +352,19 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -384,20 +384,20 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]
@@ -417,19 +417,19 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			namespace := r.URL.Query()["namespace"]
 
 			if len(namespace) != 1 {
-				return ErrNoNamespace
+				return errNoNamespace
 			}
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
 
 			if len(pod) != 1 {
-				return ErrNoPod
+				return errNoPod
 			}
 
 			podinfo := strings.Split(pod[0], ":")
 
-			if len(podinfo) != KeyValueLength {
-				return ErrNoPodSelected
+			if len(podinfo) != keyValueLength {
+				return errNoPodSelected
 			}
 
 			param.podname = podinfo[0]

@@ -33,9 +33,9 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	cmd := r.URL.Query()["cmd"]
 
 	if len(cmd) != 1 {
-		http.Error(w, ErrNoCommand.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoCommand.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoCommand).
+			WithError(errNoCommand).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -45,9 +45,9 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 
 	_, ok := getInfoDBCommands[cmd[0]]
 	if !ok {
-		http.Error(w, ErrNoComandFound.Error(), http.StatusInternalServerError)
+		http.Error(w, errNoComandFound.Error(), http.StatusInternalServerError)
 		log.
-			WithError(ErrNoComandFound).
+			WithError(errNoComandFound).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
