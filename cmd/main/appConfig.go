@@ -132,7 +132,7 @@ var appConfig = appConfigType{
 	systemNamespaces: kingpin.Flag(
 		"system.namespaces",
 		"Kubernetes namespaces that can not delete",
-	).Default("kube-system").Envar("SYSTEM_NAMESPACES").String(),
+	).Default("^kube-system$").Envar("SYSTEM_NAMESPACES").String(),
 	ingressHostDefaultProtocol: kingpin.Flag(
 		"ingressHostDefaultProtocol",
 		"default host protocol",
