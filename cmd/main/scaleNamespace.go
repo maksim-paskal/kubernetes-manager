@@ -87,6 +87,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	//nolint:dupl
 	for _, d := range ds.Items {
 		dps, err := clientset.AppsV1().Deployments(namespace[0]).Get(context.TODO(), d.Name, metav1.GetOptions{})
@@ -101,7 +102,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		i, err := strconv.ParseInt(replicas[0], 10, 32)
+		i, err := convertStringToInt64(replicas[0])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.
@@ -157,7 +158,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			i, err := strconv.ParseInt(replicas[0], 10, 32)
+			i, err := convertStringToInt64(replicas[0])
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				log.

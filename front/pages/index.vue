@@ -551,12 +551,14 @@ export default {
         const { result } = await this.$axios.$get("/api/getIngress");
         this.items = result;
 
-        this.items.forEach(async (el) => {
-          const result = await this.$axios.$get(
-            "/api/getRunningPodsCount?namespace=" + el.Namespace
-          );
-          el.RunningPodsCount = result.count;
-        });
+        if (this.items) {
+          this.items.forEach(async (el) => {
+            const result = await this.$axios.$get(
+              "/api/getRunningPodsCount?namespace=" + el.Namespace
+            );
+            el.RunningPodsCount = result.count;
+          });
+        }
       } catch (e) {
         console.error(e);
         this.showAxiosError(e);

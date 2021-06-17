@@ -99,9 +99,12 @@ func cleanOldTags(rootSpan opentracing.Span) {
 		}
 	}
 
-	const resultFile = "cleanOldTags.sh"
-	//nolint:gosec
-	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), 0744)
+	const (
+		resultFile           = "cleanOldTags.sh"
+		resultFilePermission = 0744
+	)
+
+	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), resultFilePermission)
 	if err != nil {
 		log.
 			WithError(err).
