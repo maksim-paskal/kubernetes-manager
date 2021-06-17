@@ -15,6 +15,7 @@ package main
 import (
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -60,4 +61,13 @@ func getEnvDefault(name string, defaultValue string) string {
 	}
 
 	return r
+}
+
+const (
+	convertStringToInt64Base    = 10
+	convertStringToInt64BitSize = 32
+)
+
+func convertStringToInt64(value string) (int64, error) {
+	return strconv.ParseInt(value, convertStringToInt64Base, convertStringToInt64BitSize)
 }
