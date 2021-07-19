@@ -9,8 +9,6 @@ require (
 	github.com/docker/spdystream v0.0.0-20210126114857-18f9c867b9a9 // indirect
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/fatih/color v1.10.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -41,8 +39,8 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.19.8
-	k8s.io/apimachinery v0.19.8
-	k8s.io/client-go v0.19.8
+	k8s.io/api v0.20.9
+	k8s.io/apimachinery v0.20.9
+	k8s.io/client-go v0.20.9
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 )
