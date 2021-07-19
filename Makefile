@@ -13,8 +13,8 @@ testChart:
 build-all:
 	scripts/build-all.sh
 upgrade:
-	go get -v -u k8s.io/api@v0.19.8 || true
-	go get -v -u k8s.io/apimachinery@v0.19.8
-	go get -v -u k8s.io/client-go@v0.19.8
+	go get -v -u k8s.io/api@v0.20.9 || true
+	go get -v -u k8s.io/apimachinery@v0.20.9
+	go get -v -u k8s.io/client-go@v0.20.9
 	go mod tidy
 	cd front && yarn update-latest
