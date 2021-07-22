@@ -29,4 +29,5 @@ var (
 	errNoComandFound        = errors.New("no command found")
 	errNoPodInStatusRunning = errors.New("pod in status Running not found")
 	errUserDeleteALL        = errors.New("user requested deleteALL")
+	errUnSupportedVersion   = errors.New("unsupported version")
 )

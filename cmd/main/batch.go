@@ -97,6 +97,11 @@ func batch(rootSpan opentracing.Span) {
 		gitBranch := ingress.Annotations[labelGitBranch]
 		gitProjectID := ingress.Annotations[labelGitProjectID]
 
+		log := log.WithFields(log.Fields{
+			"gitProjectID": gitProjectID,
+			"gitBranch":    gitBranch,
+		})
+
 		namespace, err := clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
 		if err != nil {
 			log.
@@ -114,9 +119,13 @@ func batch(rootSpan opentracing.Span) {
 		//nolint:gocritic
 		if isSystemBranch(gitBranch) {
 			isDeleteBranch = false
+
+			log.WithField("isDeleteBranch", isDeleteBranch).Debug("is system branch")
 		} else if err != nil {
 			if strings.Contains(err.Error(), "404 Branch Not Found") {
 				isDeleteBranch = true
+
+				log.WithField("isDeleteBranch", isDeleteBranch).Debug("git branch not found")
 			}
 		} else if len(namespace.GetAnnotations()[labelLastScaleDate]) > 0 {
 			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[labelLastScaleDate])
@@ -128,12 +137,16 @@ func batch(rootSpan opentracing.Span) {
 			}
 			if diffToNow(lastScaleDate) > *appConfig.removeBranchLastScaleDate {
 				isDeleteBranch = true
+
+				log.WithField("isDeleteBranch", isDeleteBranch).Debug("lastScaleDate > removeBranchLastScaleDate")
 			}
 		} else if diffToNow(namespace.CreationTimestamp.Time) > 1 {
 			isDeleteBranch = getLastCommitBranch(span, git, gitProjectID, gitBranch)
+
+			log.WithField("isDeleteBranch", isDeleteBranch).Debug("lastScaleDate > removeBranchLastScaleDate")
 		}
 
-		log.Debugf("gitProjectID=%s,gitBranch=%s,isDeleteBranch=%t", gitProjectID, gitBranch, isDeleteBranch)
+		log.Debugf("isDeleteBranch=%t", isDeleteBranch)
 
 		if isDeleteBranch {
 			span.LogKV("delete branch", gitBranch)
