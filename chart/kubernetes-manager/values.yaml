@@ -1,6 +1,6 @@
 registry:
-  image: paskalmaksim/kubernetes-manager:v0.0.3
-  imagePullPolicy: IfNotPresent
+  image: paskalmaksim/kubernetes-manager:latest
+  imagePullPolicy: Always
 
 resources: {}
 
@@ -9,6 +9,9 @@ jaeger:
 sentry:
   enabled: false
   host: ""
+
+service:
+  type: ClusterIP
 
 env: {}
 # - name: FRONT_PHPMYADMIN_URL
@@ -26,5 +29,6 @@ args: []
 # - --system.namespaces=kube-system
 
 ingress:
+  enabled: false
   host: "test.com"
   annotations: {}

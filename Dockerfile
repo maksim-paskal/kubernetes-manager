@@ -9,6 +9,7 @@ FROM golang:1.16 as build
 WORKDIR /usr/src/kubernetes-manager
 
 COPY ./cmd ./cmd
+COPY ./pkg ./pkg
 COPY go.* ./
 COPY ./.git ./
 
@@ -19,7 +20,7 @@ ENV GOFLAGS="-trimpath"
 
 RUN go mod download \
   && go mod verify \
-  && go build -v -o kubernetes-manager -ldflags "-X main.gitVersion=$(git describe --tags `git rev-list --tags --max-count=1`)-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')" ./cmd/main \
+  && go build -v -o kubernetes-manager -ldflags "-X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion=$(git describe --tags `git rev-list --tags --max-count=1`)-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')" ./cmd/main \
   && ./kubernetes-manager --version
 
 FROM alpine:3.13
@@ -46,6 +47,7 @@ ENV RCLONE_CONFIG_S3_REGION=eu-central-1
 
 COPY --from=registry:2.7.1 /bin/registry /usr/local/bin
 COPY --from=registry:2.7.1 /etc/docker/registry/config.yml /etc/docker/registry/config.yml
+COPY config.yaml /app/config.yaml
 
 RUN apk add --no-cache ca-certificates curl \
 && cd /tmp \
@@ -54,4 +56,4 @@ RUN apk add --no-cache ca-certificates curl \
 && mv rclone-v1.51.0-linux-amd64/rclone /usr/local/bin \
 && rm -rf /tmp/*
 
-CMD /app/kubernetes-manager --front.dist=/app/dist
+CMD /app/kubernetes-manager --front.dist=/app/dist --config=/app/config.yaml
