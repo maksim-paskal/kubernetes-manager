@@ -56,12 +56,28 @@ func cleanOldTags(rootSpan opentracing.Span) {
 
 	ingresss, _ := clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
 	for _, ingress := range ingresss.Items {
-		projectID := ingress.Annotations[labelGitProjectID]
+		log := log.WithFields(log.Fields{
+			"name":      ingress.Name,
+			"namespace": ingress.Namespace,
+		})
 
-		if !utils.StringInSlice(projectID, projectIDs) {
-			projectIDs = append(projectIDs, ingress.Annotations[labelGitProjectID])
-			projectOrigins = append(projectOrigins, ingress.Annotations[labelGitProjectOrigin])
+		projectID := ingress.Annotations[labelGitProjectID]
+		projectOrigin := ingress.Annotations[labelGitProjectOrigin]
+
+		if utils.StringInSlice(projectID, projectIDs) {
+			log.Warnf("projectId=%s already in array", projectID)
+
+			continue
 		}
+
+		if len(projectOrigin) == 0 {
+			log.Warnf("%s is empty", labelGitProjectOrigin)
+
+			continue
+		}
+
+		projectIDs = append(projectIDs, ingress.Annotations[labelGitProjectID])
+		projectOrigins = append(projectOrigins, ingress.Annotations[labelGitProjectOrigin])
 	}
 
 	items := []RegistryData{}
