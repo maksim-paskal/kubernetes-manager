@@ -704,7 +704,6 @@ export default {
           this.podsNames = [];
           this.isMysqlTab = false;
           this.isMongoTab = false;
-          this.hasDefaultPod = false;
 
           this.podsNames.push({
             value: null,
@@ -866,6 +865,7 @@ export default {
         this.podsNamesSelectedTotal = 0;
         this.podsNamesSelected = null;
         this.podsNames = [];
+        this.hasDefaultPod = false;
       }
 
       this.infoModal.title = item.Namespace;
