@@ -10,19 +10,30 @@
         >&nbsp;
         <b-dropdown variant="outline-secondary" text="Menu">
           <b-dropdown-item target="_blank" href="__FRONT_SENTRY_URL__">
-            <img height="24" src="~assets/sentry.png" />&nbsp;Open Sentry
+            <img height="24" alt="sentry" src="~assets/sentry.png" />&nbsp;Open
+            Sentry
           </b-dropdown-item>
           <b-dropdown-item target="_blank" href="__FRONT_METRICS_URL__">
-            <img height="24" src="~assets/grafana.png" />&nbsp;Open Metrics
+            <img
+              height="24"
+              alt="grafana"
+              src="~assets/grafana.png"
+            />&nbsp;Open Metrics
           </b-dropdown-item>
           <b-dropdown-item target="_blank" href="__FRONT_LOGS_URL__">
-            <img height="24" src="~assets/elasticsearch.png" />&nbsp;Open Logs
+            <img
+              height="24"
+              alt="elasticsearch"
+              src="~assets/elasticsearch.png"
+            />&nbsp;Open Logs
           </b-dropdown-item>
           <b-dropdown-item target="_blank" href="__FRONT_TRACING_URL__">
-            <img height="24" src="~assets/jaeger.png" />&nbsp;Open Tracing
+            <img height="24" alt="jaeger" src="~assets/jaeger.png" />&nbsp;Open
+            Tracing
           </b-dropdown-item>
           <b-dropdown-item target="_blank" href="__FRONT_SLACK_URL__">
-            <img height="24" src="~assets/slack.png" />&nbsp;Report Issue
+            <img height="24" alt="slack" src="~assets/slack.png" />&nbsp;Report
+            Issue
           </b-dropdown-item> </b-dropdown
         >&nbsp;
         <b-form-input
@@ -92,7 +103,11 @@
               "
               target="_blank"
             >
-              <img height="16" src="~assets/grafana.png" />&nbsp;Metrics
+              <img
+                height="16"
+                alt="grafana"
+                src="~assets/grafana.png"
+              />&nbsp;Metrics
             </b-button>
             <b-button
               :href="
@@ -100,18 +115,17 @@
               "
               target="_blank"
             >
-              <img height="16" src="~assets/elasticsearch.png" />&nbsp;Logs
+              <img
+                height="16"
+                alt="elasticsearch"
+                src="~assets/elasticsearch.png"
+              />&nbsp;Logs
             </b-button>
 
             <b-card class="mt-3" header="Namespace information">
               <pre class="m-0">{{ infoModal.content }}</pre>
             </b-card>
 
-            <!--
-            <b-card-text>
-              <pre>{{ infoModal.content }}</pre>
-            </b-card-text>
-            -->
           </b-tab>
           <b-tab key="tab1" title="mysql" :disabled="!isMysqlTab">
             <pre>{{ tab1Data }}</pre>
@@ -181,7 +195,7 @@
               >
             </b-card>
           </b-tab>
-          <b-tab key="tab4" title="debug">
+          <b-tab key="tab4" title="debug" :disabled="!hasDefaultPod">
             <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
               <b-button @click="makeAPICall('disableHPA', 'none')"
                 >Disable autoscaling</b-button
@@ -254,7 +268,7 @@
               >
             </div>
           </b-tab>
-          <b-tab key="tab5" title="git-sync">
+          <b-tab key="tab5" title="git-sync" :disabled="!hasDefaultPod">
             <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
               <b-button @click="makeAPICall('disableHPA', 'none')"
                 >Disable autoscaling</b-button
@@ -507,6 +521,7 @@ export default {
 
       isMysqlTab: false,
       isMongoTab: false,
+      hasDefaultPod: false,
     };
   },
   methods: {
@@ -607,7 +622,6 @@ export default {
         var realy = await this.$bvModal.msgBoxConfirm("Realy?");
         if (!realy) return;
 
-        //this.infoModal.error = false;
         this.infoModal.loading = true;
         this.infoModal.info = false;
 
@@ -658,14 +672,14 @@ export default {
     async showTab(row, force, podsForce) {
       if (this.infoModal.loading) return true;
       try {
-        //this.infoModal.error = false;
         this.infoModal.loading = true;
         this.infoModal.info = false;
 
         //pods info
-        const defaultPod = this.infoModal.content.IngressAnotations[
-          "kubernetes-manager/default-pod"
-        ];
+        const defaultPod =
+          this.infoModal.content.IngressAnotations[
+            "kubernetes-manager/default-pod"
+          ];
 
         this.defaultPodInfo = ["app=default", "app"];
         var defaultPodLabelName = null;
@@ -673,6 +687,7 @@ export default {
         var defaultPodContainer = null;
 
         if (defaultPod && defaultPod.split(":").length == 2) {
+          this.hasDefaultPod = true
           this.defaultPodInfo = defaultPod.split(":");
           defaultPodLabelName = this.defaultPodInfo[0].split("=")[0];
           defaultPodLabelValue = this.defaultPodInfo[0].split("=")[1];
@@ -689,6 +704,7 @@ export default {
           this.podsNames = [];
           this.isMysqlTab = false;
           this.isMongoTab = false;
+          this.hasDefaultPod = false;
 
           this.podsNames.push({
             value: null,
@@ -788,15 +804,17 @@ export default {
               this.gitBranch = "";
 
               if (!this.gitOrigin) {
-                this.gitOrigin = this.infoModal.content.IngressAnotations[
-                  "kubernetes-manager/git-project-origin"
-                ];
+                this.gitOrigin =
+                  this.infoModal.content.IngressAnotations[
+                    "kubernetes-manager/git-project-origin"
+                  ];
               }
 
               if (this.infoModal.content.IngressAnotations) {
-                const b = this.infoModal.content.IngressAnotations[
-                  "kubernetes-manager/git-branch"
-                ];
+                const b =
+                  this.infoModal.content.IngressAnotations[
+                    "kubernetes-manager/git-branch"
+                  ];
                 if (b) {
                   this.gitBranch = b;
                 }

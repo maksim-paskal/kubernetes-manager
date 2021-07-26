@@ -1,7 +1,9 @@
 version: '3'
 services:
   kubernetes-manager:
-    image: paskalmaksim/kubernetes-manager:v0.0.3
+    #image: paskalmaksim/kubernetes-manager:latest
+    build:
+      context: ../
     environment:
     - RCLONE_CONFIG_S3_TYPE=s3
     - RCLONE_CONFIG_S3_PROVIDER=AWS
@@ -9,7 +11,7 @@ services:
     - RCLONE_CONFIG_S3_SECRET_ACCESS_KEY=AWS_SECRET
     - RCLONE_CONFIG_S3_REGION=eu-central-1
     - POD_NAMESPACE=kubernetes-manager
-    - SYSTEM_GIT_TAGS=^master$,^release-.*
+    - SYSTEM_GIT_TAGS=^master$$,^release-.*
     - SYSTEM_NAMESPACES=kube-system
     - SENTRY_ENVIRONMENT=cleanOldTags
     - SENTRY_DSN=https://id@sentry/1

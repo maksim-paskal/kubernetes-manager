@@ -52,12 +52,13 @@ metadata:
   labels:
     app: kubernetes-manager
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
   ports:
   - port: 9000
     protocol: TCP
   selector:
     app: kubernetes-manager
+{{ if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -78,8 +79,10 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           service:
             name: kubernetes-manager
             port:
               number: 9000
+{{ end }}

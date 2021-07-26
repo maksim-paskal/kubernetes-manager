@@ -13,12 +13,19 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
-	"net/http"
 
 	//nolint:gosec
 	_ "net/http/pprof"
+	"os"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/cleanoldtags"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -26,29 +33,32 @@ import (
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
-var (
-	gitVersion = "dev"
-	clientset  *kubernetes.Clientset
-	restconfig *rest.Config
-)
+var version = flag.Bool("version", false, "version")
 
 func main() {
-	kingpin.Version(appConfig.Version)
-	kingpin.HelpFlag.Short('h')
-	kingpin.Parse()
+	flag.Parse()
+
+	if *version {
+		fmt.Println(config.GetVersion()) //nolint:forbidigo
+		os.Exit(0)
+	}
 
 	var err error
 
-	logLevel, err := log.ParseLevel(*appConfig.logLevel)
+	if err = config.Load(); err != nil {
+		log.Fatal(err)
+	}
+
+	logLevel, err := log.ParseLevel(*config.Get().LogLevel)
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
+
+	log.SetLevel(logLevel)
+
+	log.Debugf("Using config:\n%s", config.String())
 
 	log.SetLevel(logLevel)
 
@@ -57,7 +67,7 @@ func main() {
 	}
 
 	hookSentry, err := logrushooksentry.NewHook(logrushooksentry.Options{
-		Release: appConfig.Version,
+		Release: config.GetVersion(),
 	})
 	if err != nil {
 		log.WithError(err).Fatal()
@@ -73,22 +83,9 @@ func main() {
 
 	log.AddHook(hookTracing)
 
-	log.Infof("Starting kubernetes-manager %s...", appConfig.Version)
+	log.Infof("Starting kubernetes-manager %s...", config.GetVersion())
 
-	if len(*appConfig.kubeconfigPath) > 0 {
-		restconfig, err = clientcmd.BuildConfigFromFlags("", *appConfig.kubeconfigPath)
-		if err != nil {
-			log.WithError(err).Fatal()
-		}
-	} else {
-		log.Info("No kubeconfig file use incluster")
-		restconfig, err = rest.InClusterConfig()
-		if err != nil {
-			log.WithError(err).Fatal()
-		}
-	}
-
-	clientset, err = kubernetes.NewForConfig(restconfig)
+	err = api.MakeAuth()
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
@@ -103,7 +100,7 @@ func main() {
 	cfg.Sampler.Param = 1
 	cfg.Reporter.LogSpans = true
 
-	jLogger := LogrusAdapter{}
+	jLogger := utils.JaegerLogs{}
 	jMetricsFactory := metrics.NullFactory
 
 	tracer, closer, err := cfg.NewTracer(
@@ -118,51 +115,27 @@ func main() {
 	}
 	defer closer.Close()
 
-	if *appConfig.mode == "batch" {
+	if *config.Get().Mode == "batch" {
 		span := tracer.StartSpan("main")
 
 		defer span.Finish()
 
-		batch(span)
+		batch.Execute(span)
 
 		return
 	}
 
-	if *appConfig.mode == "cleanOldTags" {
+	if *config.Get().Mode == "cleanOldTags" {
 		span := tracer.StartSpan("main")
 
 		defer span.Finish()
 
-		cleanOldTags(span)
+		cleanoldtags.Execute(span)
 
 		return
 	}
 
-	go scheduleBatch()
+	go batch.Schedule()
 
-	log.Info(fmt.Sprintf("Starting on port %d...", *appConfig.port))
-	fs := http.FileServer(http.Dir(*appConfig.frontDist))
-
-	http.Handle("/", fs)
-	http.HandleFunc("/_nuxt/", serveFiles)
-	http.HandleFunc("/api/getIngress", getIngress)
-	http.HandleFunc("/api/getNamespace", getNamespace)
-	http.HandleFunc("/api/deleteNamespace", deleteNamespace)
-	http.HandleFunc("/api/deleteRegistryTag", deleteRegistryTag)
-	http.HandleFunc("/api/deletePod", deletePod)
-	http.HandleFunc("/api/exec", execCommands)
-	http.HandleFunc("/api/deleteALL", deleteALL)
-	http.HandleFunc("/api/executeBatch", executeBatch)
-	http.HandleFunc("/getKubeConfig", getKubeConfig)
-	http.HandleFunc("/api/scaleNamespace", scaleNamespace)
-	http.HandleFunc("/api/getRunningPodsCount", getRunningPodsCount)
-	http.HandleFunc("/api/version", getAPIversion)
-	http.HandleFunc("/api/getPods", getPods)
-	http.HandleFunc("/api/debug", getDebug)
-	http.HandleFunc("/api/disableHPA", disableHPA)
-
-	err = http.ListenAndServe(fmt.Sprintf(":%d", *appConfig.port), nil)
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
+	web.StartServer()
 }

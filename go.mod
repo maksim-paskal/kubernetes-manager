@@ -3,8 +3,6 @@ module github.com/maksim-paskal/kubernetes-manager
 go 1.16
 
 require (
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/spdystream v0.0.0-20210126114857-18f9c867b9a9 // indirect
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e // indirect
@@ -36,9 +34,8 @@ require (
 	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.20.9
 	k8s.io/apimachinery v0.20.9
 	k8s.io/client-go v0.20.9
