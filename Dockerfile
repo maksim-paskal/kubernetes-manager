@@ -23,7 +23,7 @@ RUN go mod download \
   && go build -v -o kubernetes-manager -ldflags "-X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion=$(git describe --tags `git rev-list --tags --max-count=1`)-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')" ./cmd/main \
   && ./kubernetes-manager --version
 
-FROM alpine:3.13
+FROM alpine:3.14
 
 COPY --from=front /app/dist /app/dist
 COPY --from=build /usr/src/kubernetes-manager/kubernetes-manager /app/kubernetes-manager
