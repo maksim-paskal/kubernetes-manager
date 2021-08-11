@@ -2,6 +2,11 @@ KUBECONFIG=$(HOME)/.kube/example-kubeconfig
 
 build:
 	docker build --pull . -t paskalmaksim/kubernetes-manager:dev
+security-scan:
+	trivy fs --ignore-unfixed .
+security-check:
+	# https://github.com/aquasecurity/trivy
+	trivy --ignore-unfixed paskalmaksim/kubernetes-manager:dev
 push:
 	docker push paskalmaksim/kubernetes-manager:dev
 test:
