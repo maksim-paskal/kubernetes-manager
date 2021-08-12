@@ -4,29 +4,10 @@ WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate
 
-FROM golang:1.16 as build
-
-WORKDIR /usr/src/kubernetes-manager
-
-COPY ./cmd ./cmd
-COPY ./pkg ./pkg
-COPY go.* ./
-COPY ./.git ./
-
-ENV GOOS=linux
-ENV GOARCH=amd64
-ENV CGO_ENABLED=0
-ENV GOFLAGS="-trimpath"
-
-RUN go mod download \
-  && go mod verify \
-  && go build -v -o kubernetes-manager -ldflags "-X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion=$(git describe --tags `git rev-list --tags --max-count=1`)-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')" ./cmd/main \
-  && ./kubernetes-manager --version
-
 FROM alpine:3.14
 
 COPY --from=front /app/dist /app/dist
-COPY --from=build /usr/src/kubernetes-manager/kubernetes-manager /app/kubernetes-manager
+COPY ./kubernetes-manager /app/kubernetes-manager
 
 # app env
 ENV KUBERNETES_ENDPOINT=https://api:6443

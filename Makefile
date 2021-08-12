@@ -1,6 +1,8 @@
 KUBECONFIG=$(HOME)/.kube/example-kubeconfig
 
 build:
+	goreleaser build --rm-dist --skip-validate
+	mv ./dist/kubernetes-manager_linux_amd64/kubernetes-manager ./kubernetes-manager
 	docker build --pull . -t paskalmaksim/kubernetes-manager:dev
 security-scan:
 	trivy fs --ignore-unfixed .
@@ -28,8 +30,6 @@ clean:
 	helm uninstall kubernetes-manager -n kubernetes-manager-test
 	kubectl delete namespace kubernetes-manager
 	kubectl delete namespace kubernetes-manager-test
-build-all:
-	scripts/build-all.sh
 upgrade:
 	go get -v -u k8s.io/api@v0.20.9 || true
 	go get -v -u k8s.io/apimachinery@v0.20.9
