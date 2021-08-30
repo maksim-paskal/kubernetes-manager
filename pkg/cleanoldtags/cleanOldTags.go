@@ -119,7 +119,7 @@ func Execute(rootSpan opentracing.Span) {
 
 	const (
 		resultFile           = "cleanOldTags.sh"
-		resultFilePermission = 0744
+		resultFilePermission = 0o744
 	)
 
 	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), resultFilePermission)
