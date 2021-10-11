@@ -42,6 +42,8 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/api/getPods", getPods)
 	mux.HandleFunc("/api/debug", getDebug)
 	mux.HandleFunc("/api/disableHPA", disableHPA)
+	mux.HandleFunc("/api/getProjects", getProjects)
+
 	// pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
