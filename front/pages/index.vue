@@ -404,9 +404,26 @@
               </b-tabs>
             </b-card>
           </b-tab>
+
+          <b-tab key="tab7" title="external services">
+            <div>
+              <b-table striped hover :items="tab7Data" :fields="tab7DataFields">
+                <template #cell(WebURL)="data">
+                  <b-button target="_blank" :href="data.item.WebURL+'/-/pipelines/new?var[BUILD]=true&var[NAMESPACE]='+infoModal.content.Namespace" variant="primary">Create Pipeline</b-button>
+                </template>
+                <template #cell(Name)="data">
+                  <b-link target="_blank" :href="data.item.WebURL">{{ data.item.Name }}</b-link>
+                </template>
+              </b-table>
+              <br />
+              <b-button @click="showTab(7, true, true)">Refresh</b-button>
+            </div>
+          </b-tab>
+
         </b-tabs>
       </b-card>
     </b-modal>
+    
 
     <div style="padding: 5px" v-if="!isBusy && items == null">
       <b-alert variant="warning" show>No available namespaces founded</b-alert>
@@ -506,6 +523,7 @@ export default {
       tab2Data: null,
       tab4Data: null,
       tab5Data: null,
+      tab7Data: null,
       debug_enabled: "unknown",
       debug_text: "",
       gitOrigin: "",
@@ -841,6 +859,24 @@ export default {
               }
               this.tab5Data = true;
             }
+            break;
+
+          case 7:
+            if (!force && this.tab7Data!=null) return;
+
+            const { result } = await this.$axios.$get(
+              this.makeAPICallUrl("getProjects")
+            );
+
+            if (result.ExecCode) {
+              throw result;
+            }
+            this.tab7DataFields = [
+              { key: 'Name', label: 'Service'},
+              { key: 'Description', label: 'Description' },
+              { key: 'WebURL', label: 'Options' },
+            ]
+            this.tab7Data = result
             break;
         }
       } catch (e) {

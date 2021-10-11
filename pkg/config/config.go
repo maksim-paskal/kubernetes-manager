@@ -71,6 +71,8 @@ var config = Type{
 
 	SystemNamespaces: flag.String("system.namespaces", getEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
 	SystemGitTags:    flag.String("system.gitTags", getEnvDefault("SYSTEM_GIT_TAGS", "^master$,^release-.*"), ""),
+
+	ExternalServicesTopic: flag.String("externalServicesTopic", getEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 }
 
 type Type struct {
@@ -97,6 +99,7 @@ type Type struct {
 	MakeAPICallServer          *string `yaml:"makeApiCallServer"`
 	SystemNamespaces           *string `yaml:"systemNamespaces"`
 	SystemGitTags              *string `yaml:"systemGitTags"`
+	ExternalServicesTopic      *string `yaml:"externalServicesTopic"`
 }
 
 func Load() error {

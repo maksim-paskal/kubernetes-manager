@@ -59,3 +59,6 @@ Vue.component('b-dropdown', BDropdown)
 
 import { BDropdownItem } from 'bootstrap-vue'
 Vue.component('b-dropdown-item', BDropdownItem)
+
+import { BLink } from 'bootstrap-vue'
+Vue.component('b-link', BLink)
