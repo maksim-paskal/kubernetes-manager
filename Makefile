@@ -32,12 +32,12 @@ coverage:
 	go tool cover -html=coverage.out
 testChart:
 	helm lint --strict ./charts/kubernetes-manager
-	helm lint --strict ./charts/kubernetes-manager-test
+	helm lint --strict ./integration-tests/chart
 	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./charts/kubernetes-manager-test | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
 	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=paskalmaksim/kubernetes-manager:dev --set service.type=LoadBalancer
-	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./charts/kubernetes-manager-test
+	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./integration-tests/chart
 clean:
 	helm uninstall kubernetes-manager -n kubernetes-manager || true
 	helm uninstall kubernetes-manager -n kubernetes-manager-test || true
