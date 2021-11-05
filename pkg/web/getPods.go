@@ -13,7 +13,6 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -23,7 +22,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getPods(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +31,10 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -46,9 +42,13 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pods, err := api.Clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: "status.phase=Running",
-	})
+	namespace := r.URL.Query()["namespace"]
+
+	type ResultType struct {
+		Result []api.GetPodsItem `json:"result"`
+	}
+
+	podsData, err := api.GetPods(namespace[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -60,7 +60,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(pods.Items) == 0 {
+	if len(podsData) == 0 {
 		http.Error(w, errNoPodInStatusRunning.Error(), http.StatusInternalServerError)
 		log.
 			WithError(errNoPodInStatusRunning).
@@ -69,41 +69,6 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 			Error()
 
 		return
-	}
-
-	type PodContainerData struct {
-		ContainerName string
-	}
-
-	type PodData struct {
-		PodName       string
-		PodLabels     map[string]string
-		PodContainers []PodContainerData
-	}
-
-	type ResultType struct {
-		Result []PodData `json:"result"`
-	}
-
-	podsData := make([]PodData, 0)
-
-	for _, pod := range pods.Items {
-		var podContainersData []PodContainerData
-
-		for _, podContainer := range pod.Spec.Containers {
-			podContainerData := PodContainerData{
-				ContainerName: podContainer.Name,
-			}
-
-			podContainersData = append(podContainersData, podContainerData)
-		}
-
-		podData := PodData{
-			PodName:       pod.Name,
-			PodLabels:     pod.Labels,
-			PodContainers: podContainersData,
-		}
-		podsData = append(podsData, podData)
 	}
 
 	result := ResultType{

@@ -14,12 +14,11 @@ package web
 
 import (
 	"bytes"
-	"encoding/base64"
+	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -34,8 +33,7 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	caCRT, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	if err != nil {
+	if err := checkParams(r, []string{"cluster"}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
@@ -46,7 +44,9 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/token")
+	cluster := r.URL.Query()["cluster"]
+
+	clusterKubeconfig, err := api.GetClusterKubeconfig(cluster[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -61,8 +61,8 @@ func getKubeConfig(w http.ResponseWriter, r *http.Request) {
 	kubeConfig := `apiVersion: v1
 clusters:
 - cluster:
-    insecure-skip-tls-verify: true
-    server: {{ .ClusterServer }}
+    certificate-authority-data: "{{ .CACrtBase64 }}"
+    server: "{{ .Endpoint }}"
   name: kubernetes-manager
 contexts:
 - context:
@@ -75,19 +75,7 @@ preferences: {}
 users:
 - name: kubernetes-manager
   user:
-    token: {{ .UserToken }}`
-
-	type Inventory struct {
-		ClusterCAD    string
-		ClusterServer string
-		UserToken     string
-	}
-
-	params := Inventory{
-		ClusterCAD:    base64.StdEncoding.EncodeToString(caCRT),
-		ClusterServer: *config.Get().KubeConfigServer,
-		UserToken:     string(token),
-	}
+    token: "{{ .Token }}"`
 
 	var out bytes.Buffer
 
@@ -103,7 +91,7 @@ users:
 		return
 	}
 
-	err = tmpl.Execute(&out, params)
+	err = tmpl.Execute(&out, clusterKubeconfig)
 
 	if err != nil {
 		log.
@@ -113,8 +101,10 @@ users:
 			Error()
 	}
 
+	contentDisposition := fmt.Sprintf("attachment; filename=\"kubeconfig-%s\"", cluster[0])
+
 	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("Content-Disposition", "attachment; filename=\"kubeconfig\"")
+	w.Header().Set("Content-Disposition", contentDisposition)
 	_, err = w.Write(out.Bytes())
 
 	if err != nil {

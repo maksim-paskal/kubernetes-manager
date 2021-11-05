@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -30,18 +31,18 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	cmd := r.URL.Query()["cmd"]
-
-	if len(cmd) != 1 {
-		http.Error(w, errNoCommand.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"cmd"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoCommand).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
 		return
 	}
+
+	cmd := r.URL.Query()["cmd"]
 
 	_, ok := getInfoDBCommands[cmd[0]]
 	if !ok {
@@ -84,7 +85,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type ResultType struct {
-		Result execContainerResults `json:"result"`
+		Result api.ExecContainerResults `json:"result"`
 	}
 
 	if podExecute.filterStdout != nil {
@@ -96,8 +97,9 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	}
 
 	span.LogKV("result", result)
+
 	js, err := json.Marshal(result)
-	if err != nil { //nolint:wsl
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).

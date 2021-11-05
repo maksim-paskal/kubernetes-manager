@@ -13,10 +13,8 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
@@ -25,7 +23,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func disableHPA(w http.ResponseWriter, r *http.Request) {
@@ -35,12 +32,10 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -48,10 +43,13 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	namespace := r.URL.Query()["namespace"]
+
 	if utils.IsSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
+
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not disable autoscale'}"))
-		if err != nil { //nolint:wsl
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.
 				WithError(err).
@@ -63,9 +61,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hpa := api.Clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0])
-
-	hpas, err := hpa.List(context.TODO(), metav1.ListOptions{})
+	err := api.DisableHPA(namespace[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -77,38 +73,8 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	GracePeriodSeconds := int64(0)
-
-	opt := &metav1.DeleteOptions{
-		GracePeriodSeconds: &GracePeriodSeconds,
-	}
-
-	for _, hpa := range hpas.Items {
-		err := api.Clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace[0]).Delete(context.TODO(), hpa.Name, *opt)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-	}
-
-	ch1 := make(chan api.HTTPResponse)
-	q := make(url.Values)
-
-	q.Add("namespace", namespace[0])
-	q.Add("version", "1")
-	q.Add("replicas", "1")
-
-	go api.MakeAPICall(span, "/api/scaleNamespace", q, ch1)
-
 	type ResultData struct {
 		Stdout string
-		Result api.HTTPResponse
 	}
 
 	type ResultType struct {
@@ -117,7 +83,6 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 
 	result := ResultType{
 		ScaleNamespaceResult: ResultData{
-			Result: (<-ch1),
 			Stdout: "Autoscale disabled",
 		},
 	}

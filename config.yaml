@@ -1,0 +1,7 @@
+kubernetesendpoints:
+- name: default
+  kubeconfigpath: kubeconfig
+  kubeconfigserver: https://some-public-kubernetes-endpoint
+# - name: aws-dev
+#   kubeconfigpath: kubeconfig-aws
+#   kubeconfigserver: https://some-public-kubernetes-endpoint

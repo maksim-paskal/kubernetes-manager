@@ -18,6 +18,9 @@ import (
 	"net/http/pprof"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,7 +31,6 @@ func GetHandler() *http.ServeMux {
 	mux.Handle("/", fs)
 	mux.HandleFunc("/_nuxt/", serveFiles)
 	mux.HandleFunc("/api/getIngress", getIngress)
-	mux.HandleFunc("/api/getNamespace", getNamespace)
 	mux.HandleFunc("/api/deleteNamespace", deleteNamespace)
 	mux.HandleFunc("/api/deleteRegistryTag", deleteRegistryTag)
 	mux.HandleFunc("/api/deletePod", deletePod)
@@ -43,6 +45,9 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/api/debug", getDebug)
 	mux.HandleFunc("/api/disableHPA", disableHPA)
 	mux.HandleFunc("/api/getProjects", getProjects)
+	mux.HandleFunc("/api/getServices", getServices)
+	mux.HandleFunc("/api/ready", handlerReady)
+	mux.HandleFunc("/api/healthz", handlerHealthz)
 
 	// pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -50,6 +55,9 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	// metrics
+	mux.Handle("/metrics", metrics.GetHandler())
 
 	return mux
 }
@@ -60,5 +68,39 @@ func StartServer() {
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *config.Get().Port), GetHandler())
 	if err != nil {
 		log.WithError(err).Fatal()
+	}
+}
+
+func checkParams(r *http.Request, params []string) error {
+	for _, param := range params {
+		if len(r.URL.Query()[param]) != 1 {
+			return errors.Wrap(errNoQueryParam, param)
+		}
+	}
+
+	return nil
+}
+
+func handlerReady(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("ready"))
+	if err != nil {
+		if err != nil {
+			log.
+				WithError(err).
+				WithFields(logrushooksentry.AddRequest(r)).
+				Error()
+		}
+	}
+}
+
+func handlerHealthz(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("live"))
+	if err != nil {
+		if err != nil {
+			log.
+				WithError(err).
+				WithFields(logrushooksentry.AddRequest(r)).
+				Error()
+		}
 	}
 }

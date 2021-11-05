@@ -13,7 +13,6 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -23,7 +22,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func deleteNamespace(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +31,10 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -46,10 +42,13 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	namespace := r.URL.Query()["namespace"]
+
 	if utils.IsSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
+
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
-		if err != nil { //nolint:wsl
+		if err != nil {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
@@ -60,7 +59,7 @@ func deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := api.Clientset.CoreV1().Namespaces().Delete(context.TODO(), namespace[0], metav1.DeleteOptions{})
+	err := api.DeleteNamespace(namespace[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.

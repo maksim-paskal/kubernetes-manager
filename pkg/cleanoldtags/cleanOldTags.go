@@ -13,10 +13,8 @@ limitations under the License.
 package cleanoldtags
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -27,8 +25,8 @@ import (
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	utilsgo "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const deletePrefix = "rm -rf "
@@ -41,30 +39,35 @@ type RegistryData struct {
 
 var exceptions []string
 
-func Execute(rootSpan opentracing.Span) {
+func Execute(rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsBy", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
 
+	var err error
+
 	projectIDs := []string{}
 	projectOrigins := []string{}
 
-	exceptions = getExceptions(span)
-
-	opt := metav1.ListOptions{
-		LabelSelector: *config.Get().IngressFilter,
+	exceptions, err = getExceptions(span)
+	if err != nil {
+		return err
 	}
 
-	ingresss, _ := api.Clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
-	for _, ingress := range ingresss.Items {
+	ingresss, err := api.GetIngress()
+	if err != nil {
+		return err
+	}
+
+	for _, ingress := range ingresss {
 		log := log.WithFields(log.Fields{
-			"name":      ingress.Name,
+			"name":      ingress.IngressName,
 			"namespace": ingress.Namespace,
 		})
 
-		projectID := ingress.Annotations[config.LabelGitProjectID]
-		projectOrigin := ingress.Annotations[config.LabelGitProjectOrigin]
+		projectID := ingress.IngressAnotations[config.LabelGitProjectID]
+		projectOrigin := ingress.IngressAnotations[config.LabelGitProjectOrigin]
 
 		if utilsgo.StringInSlice(projectID, projectIDs) {
 			log.Warnf("projectId=%s already in array", projectID)
@@ -78,8 +81,8 @@ func Execute(rootSpan opentracing.Span) {
 			continue
 		}
 
-		projectIDs = append(projectIDs, ingress.Annotations[config.LabelGitProjectID])
-		projectOrigins = append(projectOrigins, ingress.Annotations[config.LabelGitProjectOrigin])
+		projectIDs = append(projectIDs, ingress.IngressAnotations[config.LabelGitProjectID])
+		projectOrigins = append(projectOrigins, ingress.IngressAnotations[config.LabelGitProjectOrigin])
 	}
 
 	items := []RegistryData{}
@@ -88,10 +91,15 @@ func Execute(rootSpan opentracing.Span) {
 		dockerTag := strings.Split(projectOrigins[i], ":")[1]
 		dockerTag = strings.TrimSuffix(dockerTag, ".git")
 
+		tagsNotDelete, err := cleanOldTagsByProject(rootSpan, projectID)
+		if err != nil {
+			return err
+		}
+
 		item := RegistryData{
 			ProjectID:     projectID,
 			DockerTag:     dockerTag,
-			TagsNotDelete: cleanOldTagsByProject(rootSpan, projectID),
+			TagsNotDelete: tagsNotDelete,
 		}
 
 		items = append(items, item)
@@ -99,10 +107,7 @@ func Execute(rootSpan opentracing.Span) {
 
 	hub, err := registry.New(*config.Get().RegistryURL, *config.Get().RegistryUser, *config.Get().RegistryPassword)
 	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Fatal()
+		return errors.Wrap(err, "can not connect to registry")
 	}
 
 	hub.Logf = registry.Quiet
@@ -112,7 +117,12 @@ func Execute(rootSpan opentracing.Span) {
 	deleteCommand.WriteString("set -ex\n")
 
 	for _, item := range items {
-		for _, command := range exec(span, hub, fmt.Sprintf("%s/", item.DockerTag), item.TagsNotDelete) {
+		commands, err := exec(span, hub, fmt.Sprintf("%s/", item.DockerTag), item.TagsNotDelete)
+		if err != nil {
+			return errors.Wrap(err, "can not get commands")
+		}
+
+		for _, command := range commands {
 			deleteCommand.WriteString(command)
 		}
 	}
@@ -124,16 +134,15 @@ func Execute(rootSpan opentracing.Span) {
 
 	err = ioutil.WriteFile(resultFile, []byte(deleteCommand.String()), resultFilePermission)
 	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Fatal()
+		return errors.Wrap(err, "can not write file")
 	}
 
 	log.Infof("%s created", resultFile)
+
+	return nil
 }
 
-func getExceptions(rootSpan opentracing.Span) []string {
+func getExceptions(rootSpan opentracing.Span) ([]string, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("getExceptions", opentracing.ChildOf(rootSpan.Context()))
 
@@ -141,35 +150,12 @@ func getExceptions(rootSpan opentracing.Span) []string {
 
 	allExceptions := []string{}
 
-	opt := metav1.ListOptions{
-		LabelSelector: "app=cleanoldtags",
-	}
-
-	cms, err := api.Clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), opt)
+	datas, err := api.GetCleanOldTagsConfig()
 	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Fatal()
+		return nil, err
 	}
 
-	log.Infof("found exception configmaps=%d", len(cms.Items))
-
-	for _, cm := range cms.Items {
-		podNamespace := os.Getenv("POD_NAMESPACE")
-
-		cleanoldtags, err := api.Clientset.
-			CoreV1().
-			ConfigMaps(podNamespace).
-			Get(context.TODO(), cm.Name, metav1.GetOptions{})
-		if err != nil {
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				Fatal()
-		}
-
-		data := cleanoldtags.Data["exceptions"]
+	for _, data := range datas {
 		for _, row := range strings.Split(data, "\n") {
 			data := strings.Split(row, ":")
 			if len(data) == config.KeyValueLength {
@@ -180,10 +166,10 @@ func getExceptions(rootSpan opentracing.Span) []string {
 		}
 	}
 
-	return allExceptions
+	return allExceptions, nil
 }
 
-func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string {
+func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) ([]string, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("cleanOldTagsByProject", opentracing.ChildOf(rootSpan.Context()))
 
@@ -198,14 +184,14 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string
 		}
 	}
 
-	opt := metav1.ListOptions{
-		LabelSelector: *config.Get().IngressFilter,
+	ingresss, err := api.GetIngress()
+	if err != nil {
+		return nil, err
 	}
 
-	ingresss, _ := api.Clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
-	for _, ingress := range ingresss.Items {
-		if ingress.Annotations[config.LabelGitProjectID] == projectID {
-			tag := ingress.Annotations[config.LabelRegistryTag]
+	for _, ingress := range ingresss {
+		if ingress.IngressAnotations[config.LabelGitProjectID] == projectID {
+			tag := ingress.IngressAnotations[config.LabelRegistryTag]
 			if !utilsgo.StringInSlice(tag, nonDelete) {
 				nonDelete = append(nonDelete, tag)
 			}
@@ -214,7 +200,7 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) []string
 
 	log.Infof("projectID=%s, tags to not delete=%s", projectID, nonDelete)
 
-	return nonDelete
+	return nonDelete, nil
 }
 
 func exec(
@@ -222,7 +208,7 @@ func exec(
 	hub *registry.Registry,
 	checkRepository string,
 	tagsToLeaveArray []string,
-) []string {
+) ([]string, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("exec", opentracing.ChildOf(rootSpan.Context()))
 
@@ -236,10 +222,7 @@ func exec(
 
 	repositories, err := hub.Repositories()
 	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Fatal()
+		return nil, errors.Wrap(err, "can not list repositories")
 	}
 
 	releasePattern, err := regexp.Compile(*config.Get().ReleasePatern)
@@ -247,10 +230,7 @@ func exec(
 	releaseMaxDate := time.Time{}
 
 	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Fatal()
+		return nil, errors.Wrap(err, "can not compile regexp")
 	}
 
 	log.Debug("start list")
@@ -372,5 +352,5 @@ func exec(
 		}
 	}
 
-	return deleteCommand
+	return deleteCommand, nil
 }

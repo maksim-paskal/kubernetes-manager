@@ -26,10 +26,9 @@ services:
       rclone --quiet sync s3:AWS_S3_BUCKET /var/lib/registry
 
       /app/kubernetes-manager \
-      --mode=cleanOldTags \
+      --cleanOldTags \
       --registry.url="http://127.0.0.1:5000" \
-      --registry.directory=/var/lib/registry/ \
-      --kubeconfig.path=/opt/kubeconfig
+      --registry.directory=/var/lib/registry/
 
       cat cleanOldTags.sh
 

@@ -13,7 +13,6 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -23,7 +22,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +31,10 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -46,9 +42,9 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pods, err := api.Clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: "status.phase=Running",
-	})
+	namespace := r.URL.Query()["namespace"]
+
+	count, err := api.GetRunningPodsCount(namespace[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -63,7 +59,7 @@ func getRunningPodsCount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "max-age=10")
 
-	_, err = w.Write([]byte(fmt.Sprintf("{\"count\":%d}", len(pods.Items))))
+	_, err = w.Write([]byte(fmt.Sprintf("{\"count\":%d}", count)))
 	if err != nil {
 		log.
 			WithError(err).

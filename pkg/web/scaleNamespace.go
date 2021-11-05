@@ -13,23 +13,17 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func scaleNamespace(w http.ResponseWriter, r *http.Request) {
@@ -39,13 +33,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-	version := 1
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace", "replicas"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -53,47 +44,10 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(r.URL.Query()["version"]) == 1 {
-		var err error
-
-		version, err = strconv.Atoi(r.URL.Query()["version"][0])
-		if err != nil {
-			http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error("can not parse version ", version)
-
-			return
-		}
-	}
-
-	if version != 1 {
-		http.Error(w, errUnSupportedVersion.Error(), http.StatusInternalServerError)
-		log.
-			WithError(errUnSupportedVersion).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error("can not parse version ", version)
-
-		return
-	}
-
+	namespace := r.URL.Query()["namespace"]
 	replicas := r.URL.Query()["replicas"]
 
-	if len(replicas) < 1 {
-		http.Error(w, errNoReplicas.Error(), http.StatusInternalServerError)
-		log.
-			WithError(errNoReplicas).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	ds, err := api.Clientset.AppsV1().Deployments(namespace[0]).List(context.TODO(), metav1.ListOptions{})
+	replicasInt, err := utils.ConvertStringToInt64(replicas[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -105,50 +59,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//nolint: dupl
-	for _, d := range ds.Items {
-		dps, err := api.Clientset.AppsV1().Deployments(namespace[0]).Get(context.TODO(), d.Name, metav1.GetOptions{})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		i, err := utils.ConvertStringToInt64(replicas[0])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		i32 := int32(i)
-		dps.Spec.Replicas = &i32
-		_, errUpdate := api.Clientset.AppsV1().Deployments(namespace[0]).Update(context.TODO(), dps, metav1.UpdateOptions{})
-
-		if errUpdate != nil {
-			http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
-			log.
-				WithError(errUpdate).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-	}
-
-	// scale statefullsets
-	sf, err := api.Clientset.AppsV1().StatefulSets(namespace[0]).List(context.TODO(), metav1.ListOptions{})
+	err = api.ScaleNamespace(namespace[0], int32(replicasInt))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -158,48 +69,6 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			Error()
 
 		return
-	}
-
-	//nolint:dupl
-	for _, s := range sf.Items {
-		ss, err := api.Clientset.AppsV1().StatefulSets(namespace[0]).Get(context.TODO(), s.Name, metav1.GetOptions{})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		i, err := utils.ConvertStringToInt64(replicas[0])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		i32 := int32(i)
-		ss.Spec.Replicas = &i32
-		_, errUpdate := api.Clientset.AppsV1().StatefulSets(namespace[0]).Update(context.TODO(), ss, metav1.UpdateOptions{})
-
-		if errUpdate != nil {
-			http.Error(w, errUpdate.Error(), http.StatusInternalServerError)
-			log.
-				WithError(errUpdate).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
 	}
 
 	type ResultData struct {
@@ -215,36 +84,8 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 			Stdout: fmt.Sprintf("all Deployments/StatefulSets in namespace scaled to %s", replicas[0]),
 		},
 	}
+
 	js, err := json.Marshal(result)
-	if err != nil { //nolint:wsl
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	/*patch namespace*/
-	type metadataStringValue struct {
-		Annotations map[string]string `json:"annotations"`
-	}
-
-	type patchStringValue struct {
-		Metadata metadataStringValue `json:"metadata"`
-	}
-
-	payload := patchStringValue{
-		Metadata: metadataStringValue{
-			Annotations: map[string]string{config.LabelLastScaleDate: time.Now().Format(time.RFC3339)},
-		},
-	}
-	payloadBytes, _ := json.Marshal(payload)
-	ns := api.Clientset.CoreV1().Namespaces()
-	_, err = ns.Patch(context.TODO(), namespace[0], types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.

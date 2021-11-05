@@ -13,18 +13,8 @@ limitations under the License.
 package web
 
 import (
-	"bytes"
-	"context"
-
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
-	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/remotecommand"
 )
 
 type execContainerParams struct {
@@ -35,100 +25,17 @@ type execContainerParams struct {
 	command       string
 }
 
-type execContainerResults struct {
-	Stdout   string
-	Stderr   string
-	ExecCode string
-}
-
-func execContainer(rootSpan opentracing.Span, params execContainerParams) (execContainerResults, error) {
+func execContainer(rootSpan opentracing.Span, params execContainerParams) (api.ExecContainerResults, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("execContainer", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
 
-	span.SetTag("params", params)
-
-	if len(params.podname) == 0 {
-		span.LogKV("event", "pod list start")
-
-		pods, err := api.Clientset.CoreV1().Pods(params.namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: params.labelSelector,
-			FieldSelector: "status.phase=Running",
-		})
-
-		span.LogKV("event", "pod list end")
-
-		if err != nil {
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				Error()
-
-			return execContainerResults{}, errors.Wrap(err, "error list pods")
-		}
-
-		if len(pods.Items) == 0 {
-			log.
-				WithError(errNoPodInStatusRunning).
-				WithField(logrushookopentracing.SpanKey, span).
-				Error()
-
-			return execContainerResults{}, errNoPodInStatusRunning
-		}
-
-		params.podname = pods.Items[0].Name
-	}
-
-	req := api.Clientset.CoreV1().RESTClient().
-		Post().
-		Namespace(params.namespace).
-		Resource("pods").
-		Name(params.podname).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: params.container,
-			Command:   []string{"/bin/sh", "-c", params.command},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	span.LogKV("event", "remotecommand start")
-
-	exec, err := remotecommand.NewSPDYExecutor(api.Restconfig, "POST", req.URL())
-	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Error()
-
-		return execContainerResults{}, errors.Wrap(err, "error in NewSPDYExecutor")
-	}
-
-	span.LogKV("event", "remotecommand end")
-
-	var stdout, stderr bytes.Buffer
-
-	span.LogKV("event", "stream start")
-
-	err = exec.Stream(remotecommand.StreamOptions{
-		Stdin:  nil,
-		Stdout: &stdout,
-		Stderr: &stderr,
-		Tty:    false,
-	})
-
-	span.LogKV("event", "stream end")
-
-	results := execContainerResults{
-		Stdout: stdout.String(),
-		Stderr: stderr.String(),
-	}
-	if err != nil {
-		results.ExecCode = err.Error()
-	}
-
-	return results, nil
+	return api.ExecContainer(
+		params.namespace,
+		params.podname,
+		params.labelSelector,
+		params.container,
+		params.command,
+	)
 }

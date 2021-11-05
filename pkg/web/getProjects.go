@@ -15,22 +15,14 @@ package web
 import (
 	"encoding/json"
 	"net/http"
-	"sort"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	"github.com/xanzy/go-gitlab"
 )
-
-type getProjectsResult struct {
-	Name        string
-	Description string
-	WebURL      string
-}
 
 func getProjects(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
@@ -39,21 +31,7 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	projects, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{
-		Topic: config.Get().ExternalServicesTopic,
-	})
+	projects, err := api.GetGitlabProjects()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -66,22 +44,12 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type ResultType struct {
-		Result []getProjectsResult `json:"result"`
+		Result []api.GetGitlabProjectsItem `json:"result"`
 	}
 
-	result := ResultType{}
-
-	result.Result = make([]getProjectsResult, len(projects))
-
-	for i, project := range projects {
-		result.Result[i].Name = project.NameWithNamespace
-		result.Result[i].Description = project.Description
-		result.Result[i].WebURL = project.WebURL
+	result := ResultType{
+		Result: projects,
 	}
-
-	sort.SliceStable(result.Result, func(i, j int) bool {
-		return result.Result[i].Name < result.Result[j].Name
-	})
 
 	js, err := json.Marshal(result)
 	if err != nil {

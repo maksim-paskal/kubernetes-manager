@@ -1,7 +1,8 @@
-KUBECONFIG=$(HOME)/.kube/example-kubeconfig
+KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
+test-namespace=test-kubernetes-manager
 
 build:
-	goreleaser build --rm-dist --skip-validate
+	goreleaser build --rm-dist --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64/kubernetes-manager ./kubernetes-manager
 	docker build --pull . -t paskalmaksim/kubernetes-manager:dev
 security-scan:
@@ -13,23 +14,36 @@ push:
 	docker push paskalmaksim/kubernetes-manager:dev
 test:
 	./scripts/validate-license.sh
+	go fmt ./cmd/... ./pkg/...
+	go vet ./cmd/... ./pkg/...
 	./scripts/test-pkg.sh
 	go mod tidy
 	golangci-lint run -v
 	cd front && yarn lint
+testIntegration:
+	cp ${KUBECONFIG} ./integration-tests/testdata/kubeconfig
+	kubectl delete ns ${test-namespace} || true
+	kubectl create ns ${test-namespace}
+	kubectl -n ${test-namespace} apply -f ./integration-tests/kubernetes
+	kubectl -n ${test-namespace} wait --for=condition=available deployment --all --timeout=600s
+
+	GOFLAGS="-count=1" POD_NAMESPACE=${test-namespace} CONFIG=testdata/config_test.yaml go test -race ./integration-tests
+coverage:
+	go tool cover -html=coverage.out
 testChart:
-	helm lint --strict ./chart/kubernetes-manager
-	helm lint --strict ./chart/kubernetes-manager-test
-	helm template ./chart/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./chart/kubernetes-manager-test | kubectl apply --dry-run=client --validate=true -f -
+	helm lint --strict ./charts/kubernetes-manager
+	helm lint --strict ./charts/kubernetes-manager-test
+	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./charts/kubernetes-manager-test | kubectl apply --dry-run=client --validate=true -f -
 install:
-	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./chart/kubernetes-manager --set registry.image=paskalmaksim/kubernetes-manager:dev --set service.type=LoadBalancer
-	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./chart/kubernetes-manager-test
+	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=paskalmaksim/kubernetes-manager:dev --set service.type=LoadBalancer
+	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./charts/kubernetes-manager-test
 clean:
-	helm uninstall kubernetes-manager -n kubernetes-manager
-	helm uninstall kubernetes-manager -n kubernetes-manager-test
-	kubectl delete namespace kubernetes-manager
-	kubectl delete namespace kubernetes-manager-test
+	helm uninstall kubernetes-manager -n kubernetes-manager || true
+	helm uninstall kubernetes-manager -n kubernetes-manager-test || true
+	kubectl delete namespace kubernetes-manager || true
+	kubectl delete namespace kubernetes-manager-test || true
+	kubectl delete ns ${test-namespace} || true
 upgrade:
 	go get -v -u k8s.io/api@v0.20.9 || true
 	go get -v -u k8s.io/apimachinery@v0.20.9
@@ -37,4 +51,9 @@ upgrade:
 	go mod tidy
 	cd front && yarn update-latest
 run:
-	POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main --log.level=DEBUG --kubeconfig.path=$(KUBECONFIG) $(args)
+	cp ${KUBECONFIG} ./kubeconfig
+	POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main --config=config.yaml --log.level=DEBUG $(args)
+heap:
+	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
+allocs:
+	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap

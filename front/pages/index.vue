@@ -34,7 +34,10 @@
           <b-dropdown-item target="_blank" href="__FRONT_SLACK_URL__">
             <img height="24" alt="slack" src="~assets/slack.png" />&nbsp;Report
             Issue
-          </b-dropdown-item> </b-dropdown
+          </b-dropdown-item> 
+          <b-dropdown-divider></b-dropdown-divider>
+          <b-dropdown-item disabled>__APPLICATION_VERSION__</b-dropdown-item>
+          </b-dropdown
         >&nbsp;
         <b-form-input
           v-model="filter"
@@ -127,25 +130,19 @@
             </b-card>
 
           </b-tab>
-          <b-tab key="tab1" title="mysql" :disabled="!isMysqlTab">
-            <pre>{{ tab1Data }}</pre>
-            <div v-if="tab1Data != null">
+          <b-tab key="tab1" title="services">
+            <div>
+              <b-table striped hover :items="tab1Data" :fields="tab1DataFields"/>
+              <br />
               <b-button @click="showTab(1, true, true)">Refresh</b-button>
               <b-button
-                v-if="tab1Data.result == 'found'"
                 target="_blank"
-                v-bind:href="tab1Data.phpmyadminURL"
+                href="__FRONT_PHPMYADMIN_URL__"
                 >Open Phpmyadmin</b-button
-              >
-              <b-button
-                v-if="tab1Data.result == 'found'"
-                variant="outline-primary"
-                @click="makeAPICall('exec', 'mysqlMigrations')"
-                >Migrations</b-button
               >
             </div>
           </b-tab>
-          <b-tab key="tab2" title="mongo" :disabled="!isMongoTab">
+          <b-tab key="tab2" title="mongo" :disabled="true">
             <pre>{{ tab2Data }}</pre>
             <div v-if="tab2Data != null">
               <b-button @click="showTab(2, true, true)">Refresh</b-button>
@@ -168,7 +165,7 @@
               header="Pause branch"
               class="text-center"
             >
-              <div>branch autopause will be at 16:00 UTC</div>
+              <div>branch autopause __SCALEDOWN_MIN__:00 - __SCALEDOWN_MAX__:00 UTC</div>
               <br />
               <b-button
                 @click="makeAPICall('scaleNamespace', 'none', '&replicas=0')"
@@ -358,22 +355,22 @@
                 <b-tab title="2. Configure">
                   <b-card-text>
                     "Save As" this
-                    <a target="_blank" href="/getKubeConfig">file</a> to
-                    /tmp/kubeconfig
+                    <a target="_blank" :href="`/getKubeConfig?cluster=${infoModal.content.Cluster}`">file</a> to
+                    /tmp/kubeconfig-{{ infoModal.content.Cluster }}
                   </b-card-text>
                 </b-tab>
                 <b-tab title="3. Test">
                   <b-card-text
-                    >kubectl --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} get pods</b-card-text
+                    >kubectl --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} get pods</b-card-text
                   >
                 </b-tab>
                 <b-tab title="4. Shell">
                   <b-card-text
-                    >kubectl --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} exec -it `kubectl
-                    --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} get pods -l{{
+                    >kubectl --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} exec -it `kubectl
+                    --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} get pods -l{{
                       this.defaultPodInfo[0]
                     }}
                     -o jsonpath='{.items[0].metadata.name}'` -c
@@ -382,10 +379,10 @@
                 </b-tab>
                 <b-tab title="5. Logs">
                   <b-card-text
-                    >kubectl --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} logs `kubectl
-                    --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} get pods -l{{
+                    >kubectl --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} logs `kubectl
+                    --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} get pods -l{{
                       this.defaultPodInfo[0]
                     }}
                     -o jsonpath='{.items[0].metadata.name}'` -c
@@ -394,10 +391,10 @@
                 </b-tab>
                 <b-tab title="6. Clear memcahed">
                   <b-card-text
-                    >kubectl --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} delete `kubectl
-                    --kubeconfig=/tmp/kubeconfig -n
-                    {{ infoModal.content.Namespace }} get pods -l=app=memcached
+                    >kubectl --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} delete `kubectl
+                    --kubeconfig=/tmp/kubeconfig-{{ infoModal.content.Cluster }} -n
+                    {{ infoModal.content.NamespaceName }} get pods -l=app=memcached
                     -o name`</b-card-text
                   >
                 </b-tab>
@@ -409,7 +406,7 @@
             <div>
               <b-table striped hover :items="tab7Data" :fields="tab7DataFields">
                 <template #cell(WebURL)="data">
-                  <b-button target="_blank" :href="data.item.WebURL+'/-/pipelines/new?var[BUILD]=true&var[NAMESPACE]='+infoModal.content.Namespace" variant="primary">Create Pipeline</b-button>
+                  <b-button target="_blank" :href="data.item.WebURL+'/-/pipelines/new?var[BUILD]=true&var[NAMESPACE]='+infoModal.content.NamespaceName" variant="primary">Create Pipeline</b-button>
                 </template>
                 <template #cell(Name)="data">
                   <b-link target="_blank" :href="data.item.WebURL">{{ data.item.Name }}</b-link>
@@ -520,10 +517,19 @@ export default {
       },
       tabIndex: null,
       tab1Data: null,
+      tab1DataFields: [
+        { key: 'ServiceHost', label: 'Service Host'},
+        { key: 'Ports', label: 'Service Ports' },
+      ],
       tab2Data: null,
       tab4Data: null,
       tab5Data: null,
       tab7Data: null,
+      tab7DataFields: [
+        { key: 'Name', label: 'Service'},
+        { key: 'Description', label: 'Description' },
+        { key: 'WebURL', label: 'Options' },
+      ],
       debug_enabled: "unknown",
       debug_text: "",
       gitOrigin: "",
@@ -537,8 +543,6 @@ export default {
       podsNamesSelectedTotal: 0,
       podsNamesSelected: null,
 
-      isMysqlTab: false,
-      isMongoTab: false,
       hasDefaultPod: false,
     };
   },
@@ -547,7 +551,7 @@ export default {
       this.showTab(this.tabIndex, true);
     },
     getNamespacedString(data) {
-      return data.replace(/__Namespace__/g, this.infoModal.content.Namespace);
+      return data.replace(/__Namespace__/g, this.infoModal.content.NamespaceName);
     },
     getNamespaceStatus(data) {
       const total = data.RunningPodsCount;
@@ -631,6 +635,7 @@ export default {
         switch (api) {
           case "scaleNamespace":
           case "deleteALL":
+          case "disableHPA":
             break;
           default:
             if (!this.podsNamesSelected) {
@@ -720,8 +725,6 @@ export default {
           );
 
           this.podsNames = [];
-          this.isMysqlTab = false;
-          this.isMongoTab = false;
 
           this.podsNames.push({
             value: null,
@@ -733,15 +736,6 @@ export default {
           }
 
           result.forEach((pod) => {
-            switch (pod.PodLabels["app"]) {
-              case "mysql":
-                this.isMysqlTab = true;
-                break;
-              case "mongo":
-                this.isMongoTab = true;
-                break;
-            }
-
             pod.PodContainers.forEach((container) => {
               if (defaultPod) {
                 if (
@@ -765,24 +759,28 @@ export default {
 
         switch (row) {
           case 1:
-            if (force || this.tab1Data == null) {
-              this.tab1Data = {
-                result: "found",
-                server: `mysql.${this.infoModal.content.Namespace}.svc.cluster.local`,
-                phpmyadminURL: "__FRONT_PHPMYADMIN_URL__",
-              };
+            if (!force && this.tab1Data!=null) return;
+
+            const tab1Result = await this.$axios.$get(
+              this.makeAPICallUrl("getServices")
+            );
+
+            if (tab1Result.result.ExecCode) {
+              throw tab1Result.result;
             }
+
+            this.tab1Data = tab1Result.result
             break;
           case 2:
             if (force || this.tab2Data == null) {
-              const { result } = await this.$axios.$get(
+              const tab2Result = await this.$axios.$get(
                 this.makeAPICallUrl("exec", "mongoInfo")
               );
-              if (result.ExecCode) {
-                throw result;
+              if (tab2Result.result.ExecCode) {
+                throw tab2Result.result;
               }
 
-              this.tab2Data = JSON.parse(result.Stdout);
+              this.tab2Data = JSON.parse(tab2Result.result.Stdout);
             }
             break;
           case 4:
@@ -864,19 +862,14 @@ export default {
           case 7:
             if (!force && this.tab7Data!=null) return;
 
-            const { result } = await this.$axios.$get(
+            const tab7Result = await this.$axios.$get(
               this.makeAPICallUrl("getProjects")
             );
 
-            if (result.ExecCode) {
-              throw result;
+            if (tab7Result.result.ExecCode) {
+              throw tab7Result.result;
             }
-            this.tab7DataFields = [
-              { key: 'Name', label: 'Service'},
-              { key: 'Description', label: 'Description' },
-              { key: 'WebURL', label: 'Options' },
-            ]
-            this.tab7Data = result
+            this.tab7Data = tab7Result.result
             break;
         }
       } catch (e) {
@@ -904,7 +897,7 @@ export default {
         this.hasDefaultPod = false;
       }
 
-      this.infoModal.title = item.Namespace;
+      this.infoModal.title = item.NamespaceName;
       this.infoModal.content = item; //JSON.stringify(item, null, 2);
       this.$refs["info-modal"].show();
       this.showTab(this.tabIndex);

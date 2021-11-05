@@ -1,0 +1,3 @@
+domain: yourdomain.com
+gitTag: some-git-tag
+registryTag: some-docker-tag

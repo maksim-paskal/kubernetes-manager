@@ -15,19 +15,9 @@ package web
 import "errors"
 
 var (
-	errNoNamespace          = errors.New("no namespace")
-	errNoPod                = errors.New("no pod")
+	errNoQueryParam         = errors.New("no query parameter")
 	errNoPodSelected        = errors.New("no pod selected")
-	errNoLabelSelector      = errors.New("LabelSelector not set")
-	errNoTag                = errors.New("no tag")
-	errNoProjectID          = errors.New("projectID not set")
-	errNoText               = errors.New("no text")
-	errNoOrigin             = errors.New("no origin")
-	errNoBranch             = errors.New("no branch")
-	errNoCommand            = errors.New("no comand")
-	errNoReplicas           = errors.New("no replicas")
 	errNoComandFound        = errors.New("no command found")
 	errNoPodInStatusRunning = errors.New("pod in status Running not found")
 	errUserDeleteALL        = errors.New("user requested deleteALL")
-	errUnSupportedVersion   = errors.New("unsupported version")
 )

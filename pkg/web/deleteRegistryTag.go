@@ -13,17 +13,15 @@ limitations under the License.
 package web
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	"github.com/xanzy/go-gitlab"
 )
 
 func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +31,10 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	tag := r.URL.Query()["tag"]
-
-	if len(tag) < 1 {
-		http.Error(w, errNoTag.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"tag"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoTag).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -46,10 +42,13 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tag := r.URL.Query()["tag"]
+
 	if utils.IsSystemBranch(tag[0]) {
 		w.Header().Set("Content-Type", "application/json")
+
 		_, err := w.Write([]byte("{status:'ok',warning:'registry tag can not be deleted'}"))
-		if err != nil { //nolint:wsl
+		if err != nil {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
@@ -62,31 +61,7 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 
 	projectID := r.URL.Query()["projectID"]
 
-	if len(projectID) < 1 {
-		http.Error(w, errNoProjectID.Error(), http.StatusInternalServerError)
-		log.
-			WithError(errNoProjectID).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	span.LogKV("params", fmt.Sprintf("projectID=%s,tag=%s", projectID[0], tag[0]))
-
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-	}
-
-	span.LogKV("event", "ListRegistryRepositories")
-
-	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID[0], nil)
+	err := api.DeleteGitlabRegistryTag(projectID[0], tag[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -96,15 +71,6 @@ func deleteRegistryTag(w http.ResponseWriter, r *http.Request) {
 			Error()
 
 		return
-	}
-
-	for _, gitRepo := range gitRepos {
-		span.LogKV("DeleteRegistryRepositoryTag", fmt.Sprintf("gitRepo.ID=%d", gitRepo.ID))
-
-		_, err := git.ContainerRegistry.DeleteRegistryRepositoryTag(projectID[0], gitRepo.ID, tag[0])
-		if err != nil {
-			span.LogKV("warning", err)
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

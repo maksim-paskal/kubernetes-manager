@@ -13,7 +13,6 @@ limitations under the License.
 package utils
 
 import (
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -55,22 +54,6 @@ func DiffToNow(t time.Time) int {
 	t1 := time.Now()
 
 	return int(t1.Sub(t).Hours() / config.HoursInDay)
-}
-
-// returns defaultValue if env with name not found.
-func GetEnvDefault(name string, defaultValue string) string {
-	r := os.Getenv(name)
-	defaultValueLen := len(defaultValue)
-
-	if defaultValueLen == 0 {
-		return r
-	}
-
-	if len(r) == 0 {
-		return defaultValue
-	}
-
-	return r
 }
 
 func ConvertStringToInt64(value string) (int64, error) {

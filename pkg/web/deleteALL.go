@@ -15,7 +15,6 @@ package web
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
@@ -33,12 +32,10 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) != 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace", "registry-tag", "git-project-id"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -46,10 +43,15 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	namespace := r.URL.Query()["namespace"]
+	tag := r.URL.Query()["registry-tag"]
+	projectID := r.URL.Query()["git-project-id"]
+
 	if utils.IsSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
+
 		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not be deleted'}"))
-		if err != nil { //nolint:wsl
+		if err != nil {
 			log.
 				WithError(err).
 				WithField(logrushookopentracing.SpanKey, span).
@@ -66,50 +68,24 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 		WithFields(logrushooksentry.AddRequest(r)).
 		Warn()
 
+	deleteALLResult := api.DeleteALL(namespace[0], tag[0], projectID[0])
+
 	type ResultData struct {
-		DeleteNamespaceResultBody   api.HTTPResponse
-		DeleteRegistryTagResultBody api.HTTPResponse
+		Stdout api.DeleteALLResult
 	}
 
 	type ResultType struct {
-		Result ResultData `json:"result"`
+		ScaleNamespaceResult ResultData `json:"result"`
 	}
 
 	result := ResultType{
-		Result: ResultData{},
+		ScaleNamespaceResult: ResultData{
+			Stdout: deleteALLResult,
+		},
 	}
 
-	ch3 := make(chan api.HTTPResponse)
-	q := make(url.Values)
-
-	q.Add("namespace", namespace[0])
-
-	go api.MakeAPICall(span, "/api/deleteNamespace", q, ch3)
-
-	result.Result.DeleteNamespaceResultBody = (<-ch3)
-
-	projectID := r.URL.Query()["git-project-id"]
-	tag := r.URL.Query()["registry-tag"]
-
-	if len(projectID) == 1 && len(tag) == 1 {
-		ch4 := make(chan api.HTTPResponse)
-		q = make(url.Values)
-		q.Add("projectID", r.URL.Query()["git-project-id"][0])
-		q.Add("tag", r.URL.Query()["registry-tag"][0])
-
-		go api.MakeAPICall(span, "/api/deleteRegistryTag", q, ch4)
-
-		result.Result.DeleteRegistryTagResultBody = (<-ch4)
-	} else {
-		result.Result.DeleteRegistryTagResultBody = api.HTTPResponse{
-			Status: "not executed",
-			Body:   "projectID or tag not set",
-		}
-	}
-
-	span.LogKV("result", result)
 	js, err := json.Marshal(result)
-	if err != nil { //nolint:wsl
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
@@ -124,10 +100,13 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
+
+		return
 	}
 }
