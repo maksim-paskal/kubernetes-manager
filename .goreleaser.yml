@@ -6,7 +6,6 @@ dockers:
   - paskalmaksim/kubernetes-manager:{{ .Tag }}
   extra_files:
   - front/
-  - config.yaml
 builds:
 - dir: ./cmd/main
   env:

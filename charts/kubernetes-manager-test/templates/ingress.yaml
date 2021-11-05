@@ -7,18 +7,17 @@ metadata:
     kubernetes-manager: "true"
   annotations:
     kubernetes-manager/git-project-origin: "git@github.com:maksim-paskal/kubernetes-manager.git"
-    kubernetes-manager/git-branch: some-git-tag
+    kubernetes-manager/git-branch: {{ .Values.gitTag }}
     kubernetes-manager/requiredRunningPodsCount: "1"
-    #kubernetes-manager/git-project-id: gitlab-project-id
-    #kubernetes-manager/registry-tag: some-docker-tag
-    #kubernetes-manager/requiredRunningPodsCount: "1"
-    #kubernetes-manager/default-pod: app=nginx:nginx
+    kubernetes-manager/git-project-id: gitlab-project-id
+    kubernetes-manager/registry-tag: {{ .Values.registryTag }}
+    kubernetes-manager/default-pod: app=nginx:nginx
 spec:
   tls:
   - hosts:
-    - backend-some-feature-branch.yourdomain.com
+    - backend-some-feature-branch.{{ .Values.domain }}
   rules:
-  - host: backend-some-feature-branch.yourdomain.com
+  - host: backend-some-feature-branch.{{ .Values.domain }}
     http:
       paths:
       - path: /
@@ -28,7 +27,7 @@ spec:
             name: nginx-deployment
             port:
               number: 80
-  - host: frontenf-some-feature-branch.yourdomain.com
+  - host: frontenf-some-feature-branch.{{ .Values.domain }}
     http:
       paths:
       - path: /
@@ -38,7 +37,7 @@ spec:
             name: nginx-deployment
             port:
               number: 80
-  - host: static-some-feature-branch.yourdomain.com
+  - host: static-some-feature-branch.{{ .Values.domain }}
     http:
       paths:
       - path: /

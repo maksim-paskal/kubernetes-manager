@@ -48,7 +48,7 @@ func main() {
 	var err error
 
 	if err = config.Load(); err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal()
 	}
 
 	logLevel, err := log.ParseLevel(*config.Get().LogLevel)
@@ -85,7 +85,7 @@ func main() {
 
 	log.Infof("Starting kubernetes-manager %s...", config.GetVersion())
 
-	err = api.MakeAuth()
+	err = api.Init()
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
@@ -115,27 +115,33 @@ func main() {
 	}
 	defer closer.Close()
 
-	if *config.Get().Mode == "batch" {
+	if *config.Get().ExecuteCleanOldTags {
 		span := tracer.StartSpan("main")
 
 		defer span.Finish()
 
-		batch.Execute(span)
+		if err := cleanoldtags.Execute(span); err != nil {
+			log.WithError(err).Error()
+		}
 
 		return
 	}
 
-	if *config.Get().Mode == "cleanOldTags" {
+	if *config.Get().ExecuteBatch {
 		span := tracer.StartSpan("main")
 
 		defer span.Finish()
 
-		cleanoldtags.Execute(span)
+		if err := batch.Execute(span); err != nil {
+			log.WithError(err).Error()
+		}
 
 		return
 	}
 
-	go batch.Schedule()
+	if *config.Get().BatchShedule {
+		go batch.Schedule()
+	}
 
 	web.StartServer()
 }

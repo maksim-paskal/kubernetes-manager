@@ -13,22 +13,15 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
-	utilsgo "github.com/maksim-paskal/utils-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getIngress(w http.ResponseWriter, r *http.Request) {
@@ -38,40 +31,13 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	type IngressList struct {
-		Namespace               string
-		NamespaceStatus         string
-		NamespaceCreated        string
-		NamespaceCreatedDays    int
-		NamespaceLastScaled     string
-		NamespaceLastScaledDays int
-		IngressName             string
-		IngressAnotations       map[string]string
-		IngressLabels           map[string]string
-		Hosts                   []string
-		GitBranch               string
-		RunningPodsCount        int
-	}
-
 	type IngressListResult struct {
-		Result []IngressList `json:"result"`
+		Result []api.GetIngressList `json:"result"`
 	}
 
 	var result IngressListResult
 
-	opt := metav1.ListOptions{
-		LabelSelector: *config.Get().IngressFilter,
-	}
-	if *config.Get().IngressNoFiltration {
-		opt = metav1.ListOptions{}
-	}
-
-	span.LogKV("event", "start ingress list")
-
-	ingresss, err := api.Clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
-
-	span.LogKV("event", "end ingress list")
-
+	ingress, err := api.GetIngress()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -83,66 +49,10 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	span.LogKV("event", "start range")
+	result.Result = ingress
 
-	for _, ingress := range ingresss.Items {
-		var item IngressList
-
-		span.LogKV("event", "search namespace="+ingress.Namespace)
-		namespace, err := api.Clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
-		if err != nil { //nolint:wsl
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		item.GitBranch = ingress.Annotations[config.LabelGitBranch]
-
-		if len(namespace.GetAnnotations()[config.LabelLastScaleDate]) > 0 {
-			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[config.LabelLastScaleDate])
-			if err != nil {
-				log.
-					WithError(err).
-					WithField(logrushookopentracing.SpanKey, span).
-					WithFields(logrushooksentry.AddRequest(r)).
-					Warn()
-			} else {
-				item.NamespaceLastScaled = lastScaleDate.String()
-				item.NamespaceLastScaledDays = utils.DiffToNow(lastScaleDate)
-			}
-		}
-
-		item.Namespace = namespace.Name
-		item.NamespaceStatus = string(namespace.Status.Phase)
-		item.NamespaceCreated = namespace.CreationTimestamp.String()
-		item.RunningPodsCount = -1
-		item.NamespaceCreatedDays = utils.DiffToNow(namespace.CreationTimestamp.Time)
-
-		item.IngressName = ingress.Name
-		item.IngressAnotations = ingress.Annotations
-		item.IngressLabels = ingress.Labels
-
-		for _, rule := range ingress.Spec.Rules {
-			host := fmt.Sprintf("%s://%s", *config.Get().IngressHostDefaultProtocol, rule.Host)
-			if !utilsgo.StringInSlice(host, item.Hosts) {
-				item.Hosts = append(item.Hosts, host)
-			}
-		}
-
-		if len(item.Hosts) > 0 {
-			result.Result = append(result.Result, item)
-		}
-	}
-
-	span.LogKV("event", "end range")
-	span.LogKV("event", "result", result)
 	js, err := json.Marshal(result)
-	if err != nil { //nolint:wsl
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).

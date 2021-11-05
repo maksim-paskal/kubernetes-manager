@@ -15,5 +15,4 @@
 # limitations under the License.
 set -ex
 
-go test -race ./cmd/main
-go test ./pkg/... -args -config=config_test.yaml
+CONFIG=testdata/config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...

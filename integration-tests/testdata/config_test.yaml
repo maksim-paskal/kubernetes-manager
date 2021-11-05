@@ -1,0 +1,6 @@
+ingressFilter: "test-kubernetes-manager=true"
+
+kubernetesendpoints:
+- name: default
+  kubeconfigpath: testdata/kubeconfig
+  kubeconfigserver: https://some-public-kubernetes-endpoint

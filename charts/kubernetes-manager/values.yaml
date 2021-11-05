@@ -1,0 +1,66 @@
+registry:
+  image: paskalmaksim/kubernetes-manager:latest
+  imagePullPolicy: Always
+
+createDeployment: true
+
+resources: {}
+
+jaeger:
+  agentOnHost: false 
+sentry:
+  enabled: false
+  host: ""
+
+service:
+  type: ClusterIP
+
+config:
+  # aws-dev: |
+  #   apiVersion: v1
+  #   clusters:
+  #   - cluster:
+  #       certificate-authority-data: "<DATA>"
+  #       server: "https://kubernetes-api"
+  #     name: kubernetes-manager
+  #   contexts:
+  #   - context:
+  #       cluster: kubernetes-manager
+  #       user: kubernetes-manager
+  #     name: kubernetes-manager
+  #   current-context: kubernetes-manager
+  #   kind: Config
+  #   preferences: {}
+  #   users:
+  #   - name: kubernetes-manager
+  #     user:
+  #       token: "<TOKEN>"
+  
+  config.yaml: |
+    kubernetesendpoints:
+    - name: default
+      kubeconfigserver: https://some-public-kubernetes-endpoint
+    # - name: aws-dev
+    #   kubeconfigpath: /config/aws-dev
+    #   kubeconfigserver: https://aws-kubernetes-endpoint
+
+env: {}
+# - name: FRONT_PHPMYADMIN_URL
+#   value: https://phpmyadmin.example.com
+# - name: FRONT_DEBUG_SERVER_NAME
+#   value: dev.example.com
+# - name: FRONT_SENTRY_DSN
+#   value: https://id@sentry/1
+
+args: []
+# - --log.level=INFO
+# - --kubeconfig.server=https://kubernetes-api
+# - --gitlab.url=https://git/api/v4
+# - --gitlab.token=git-token
+# - --system.gitTags=^master$,^release-.*
+# - --system.namespaces=kube-system
+
+ingress:
+  enabled: false
+  host: "test.com"
+  annotations: {}

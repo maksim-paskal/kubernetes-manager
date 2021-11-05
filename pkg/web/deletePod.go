@@ -13,20 +13,15 @@ limitations under the License.
 package web
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func deletePod(w http.ResponseWriter, r *http.Request) {
@@ -36,12 +31,10 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -49,80 +42,15 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	GracePeriodSeconds := int64(0)
-
-	opt := &metav1.DeleteOptions{
-		GracePeriodSeconds: &GracePeriodSeconds,
-	}
-
-	var podName string
-
-	LabelSelector := r.URL.Query()["LabelSelector"]
+	namespace := r.URL.Query()["namespace"]
 	pod := r.URL.Query()["pod"]
+	labelSelector := r.URL.Query()["LabelSelector"]
 
-	if len(pod) > 0 {
-		podinfo := strings.Split(pod[0], ":")
-
-		if len(podinfo) != config.KeyValueLength {
-			http.Error(w, errNoPodSelected.Error(), http.StatusInternalServerError)
-			log.
-				WithError(errNoPodSelected).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		podName = podinfo[0]
-	} else {
-		if len(LabelSelector) < 1 {
-			http.Error(w, errNoLabelSelector.Error(), http.StatusInternalServerError)
-			log.
-				WithError(errNoLabelSelector).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		pods, err1 := api.Clientset.CoreV1().Pods(namespace[0]).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: LabelSelector[0],
-			FieldSelector: "status.phase=Running",
-		})
-
-		if err1 != nil {
-			http.Error(w, err1.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err1).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		if len(pods.Items) == 0 {
-			http.Error(w, errNoPodInStatusRunning.Error(), http.StatusInternalServerError)
-			log.
-				WithError(errNoPodInStatusRunning).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-
-			return
-		}
-
-		podName = pods.Items[0].Name
-	}
-
-	err2 := api.Clientset.CoreV1().Pods(namespace[0]).Delete(context.TODO(), podName, *opt)
-
-	if err2 != nil {
-		http.Error(w, err2.Error(), http.StatusInternalServerError)
+	err := api.DeletePod(namespace[0], pod[0], labelSelector[0])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(err2).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -140,7 +68,7 @@ func deletePod(w http.ResponseWriter, r *http.Request) {
 
 	result := ResultType{
 		Result: ResultData{
-			Stdout: fmt.Sprintf("deleted %s pod", podName),
+			Stdout: "pod deleted",
 		},
 	}
 

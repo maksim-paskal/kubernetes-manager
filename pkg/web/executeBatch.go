@@ -30,11 +30,21 @@ func executeBatch(w http.ResponseWriter, r *http.Request) {
 
 	defer span.Finish()
 
-	batch.Execute(span)
+	if err := batch.Execute(span); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			WithFields(logrushooksentry.AddRequest(r)).
+			Error()
+
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	_, err := w.Write([]byte("{status:'ok'}"))
-	if err != nil { //nolint:wsl
+	if err != nil {
 		log.
 			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).

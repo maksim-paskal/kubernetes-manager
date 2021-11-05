@@ -28,7 +28,6 @@ type getInfoDBCommandsType struct {
 	filterStdout  func(param execContainerParams, stdout string) string
 }
 
-//nolint:gocyclo
 func initPodCommands() map[string]getInfoDBCommandsType {
 	m := make(map[string]getInfoDBCommandsType)
 
@@ -46,11 +45,11 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:       command.String(),
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			return nil
@@ -64,18 +63,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/mongoMigrations",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -97,18 +92,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/xdebugInfo",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -130,18 +121,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/enableXdebug",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -163,25 +150,17 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/setPhpSettings",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "text", "pod"}); err != nil {
+				return err
 			}
 
+			namespace := r.URL.Query()["namespace"]
 			text := r.URL.Query()["text"]
 
-			if len(text) != 1 {
-				return errNoText
-			}
 			param.namespace = namespace[0]
 			param.command = fmt.Sprintf("%s %s", param.command, text)
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -203,19 +182,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/getPhpSettings",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
 
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -237,33 +211,18 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/enableGit",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
+			if err := checkParams(r, []string{"namespace", "origin", "branch", "pod"}); err != nil {
+				return err
+			}
+
 			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
-			}
-
 			origin := r.URL.Query()["origin"]
-
-			if len(origin) != 1 {
-				return errNoOrigin
-			}
-
 			branch := r.URL.Query()["branch"]
-
-			if len(origin) != 1 {
-				return errNoBranch
-			}
 
 			param.namespace = namespace[0]
 			param.command = fmt.Sprintf("%s %s %s", param.command, origin[0], branch[0])
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
-
 			podinfo := strings.Split(pod[0], ":")
 
 			if len(podinfo) != config.KeyValueLength {
@@ -284,19 +243,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/getGitPubKey",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
 
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -318,18 +272,14 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/gitFetch",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -351,17 +301,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/clearCache",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -383,18 +329,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/getGitBranch",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+			namespace := r.URL.Query()["namespace"]
 
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 
@@ -416,17 +357,13 @@ func initPodCommands() map[string]getInfoDBCommandsType {
 			command:   "/kubernetes-manager/mysqlMigrations",
 		},
 		beforeExecute: func(param *execContainerParams, r *http.Request) error {
-			namespace := r.URL.Query()["namespace"]
-
-			if len(namespace) != 1 {
-				return errNoNamespace
+			if err := checkParams(r, []string{"namespace", "pod"}); err != nil {
+				return err
 			}
+
+			namespace := r.URL.Query()["namespace"]
 			param.namespace = namespace[0]
 			pod := r.URL.Query()["pod"]
-
-			if len(pod) != 1 {
-				return errNoPod
-			}
 
 			podinfo := strings.Split(pod[0], ":")
 

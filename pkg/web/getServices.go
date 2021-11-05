@@ -13,8 +13,9 @@ limitations under the License.
 package web
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
+	"regexp"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
@@ -22,22 +23,21 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getNamespace(w http.ResponseWriter, r *http.Request) {
+const getServicesRegexpFilter = "mysql"
+
+func getServices(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getNamespace", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("getServices", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
-	namespace := r.URL.Query()["namespace"]
-
-	if len(namespace) < 1 {
-		http.Error(w, errNoNamespace.Error(), http.StatusInternalServerError)
+	if err := checkParams(r, []string{"namespace"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
-			WithError(errNoNamespace).
+			WithError(err).
 			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
@@ -45,7 +45,39 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := api.Clientset.CoreV1().Namespaces().Get(context.TODO(), namespace[0], metav1.GetOptions{})
+	namespace := r.URL.Query()["namespace"]
+
+	services, err := api.GetServices(namespace[0])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			WithFields(logrushooksentry.AddRequest(r)).
+			Error()
+
+		return
+	}
+
+	type ResultType struct {
+		Result []api.GetServicesItem `json:"result"`
+	}
+
+	filterRegexp := regexp.MustCompile(getServicesRegexpFilter)
+
+	servicesFiltered := make([]api.GetServicesItem, 0)
+
+	for _, service := range services {
+		if filterRegexp.MatchString(service.Name) {
+			servicesFiltered = append(servicesFiltered, service)
+		}
+	}
+
+	result := ResultType{
+		Result: servicesFiltered,
+	}
+
+	js, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -58,7 +90,7 @@ func getNamespace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte("{status:'ok'}"))
+	_, err = w.Write(js)
 
 	if err != nil {
 		log.

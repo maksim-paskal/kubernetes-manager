@@ -4,7 +4,7 @@ WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate
 
-FROM alpine:3.14
+FROM alpine:latest
 
 COPY --from=front /app/dist /app/dist
 COPY ./kubernetes-manager /app/kubernetes-manager
@@ -28,7 +28,6 @@ ENV RCLONE_CONFIG_S3_REGION=eu-central-1
 
 COPY --from=registry:2.7.1 /bin/registry /usr/local/bin
 COPY --from=registry:2.7.1 /etc/docker/registry/config.yml /etc/docker/registry/config.yml
-COPY config.yaml /app/config.yaml
 
 RUN apk add --no-cache ca-certificates curl \
 && cd /tmp \
@@ -37,4 +36,6 @@ RUN apk add --no-cache ca-certificates curl \
 && mv rclone-v1.51.0-linux-amd64/rclone /usr/local/bin \
 && rm -rf /tmp/*
 
-CMD /app/kubernetes-manager --front.dist=/app/dist --config=/app/config.yaml
+ENTRYPOINT [ "/app/kubernetes-manager" ]
+
+CMD [ "--front.dist=/app/dist" ]

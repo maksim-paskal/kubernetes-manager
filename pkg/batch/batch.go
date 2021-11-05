@@ -13,8 +13,6 @@ limitations under the License.
 package batch
 
 import (
-	"context"
-	"net/url"
 	"strings"
 	"time"
 
@@ -23,25 +21,65 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	ScaleDownUtcHourMinPeriod = 16
+	ScaleDownUtcHourMaxPeriod = 22
 )
 
 func Schedule() {
-	duration, err := time.ParseDuration("30m")
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-
 	tracer := opentracing.GlobalTracer()
 
 	for {
-		<-time.After(duration)
-		span := tracer.StartSpan("scheduleBatch") //nolint:wsl
-		Execute(span)
+		<-time.After(*config.Get().BatchShedulePeriod)
+
+		span := tracer.StartSpan("scheduleBatch")
+
+		utcHour := time.Now().UTC().Hour()
+
+		if utcHour >= ScaleDownUtcHourMinPeriod && utcHour <= ScaleDownUtcHourMaxPeriod {
+			if err := scaleDownALL(span); err != nil {
+				log.WithError(err).Error()
+			}
+		}
+
+		if err := Execute(span); err != nil {
+			log.WithError(err).Error()
+		}
+
 		span.Finish()
 	}
+}
+
+func scaleDownALL(rootSpan opentracing.Span) error {
+	tracer := opentracing.GlobalTracer()
+	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
+
+	defer span.Finish()
+
+	ingresses, err := api.GetIngress()
+	if err != nil {
+		return errors.Wrap(err, "error listing ingresses")
+	}
+
+	for _, ingress := range ingresses {
+		go func(ingress api.GetIngressList) {
+			log := log.WithField("namespace", ingress.Namespace)
+
+			log.Info("scaledown")
+
+			err := api.ScaleNamespace(ingress.Namespace, 0)
+			if err != nil {
+				log.WithError(err).Error()
+			}
+		}(ingress)
+	}
+
+	return nil
 }
 
 func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProjectID string, gitBranch string) bool {
@@ -76,7 +114,7 @@ func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProje
 	return false
 }
 
-func Execute(rootSpan opentracing.Span) {
+func Execute(rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
 
@@ -90,30 +128,19 @@ func Execute(rootSpan opentracing.Span) {
 			Error()
 	}
 
-	opt := metav1.ListOptions{
-		LabelSelector: *config.Get().IngressFilter,
+	ingresss, err := api.GetIngress()
+	if err != nil {
+		return errors.Wrap(err, "error list ingress")
 	}
 
-	ingresss, _ := api.Clientset.ExtensionsV1beta1().Ingresses("").List(context.TODO(), opt)
-
-	for _, ingress := range ingresss.Items {
-		gitBranch := ingress.Annotations[config.LabelGitBranch]
-		gitProjectID := ingress.Annotations[config.LabelGitProjectID]
+	for _, ingress := range ingresss {
+		gitBranch := ingress.IngressAnotations[config.LabelGitBranch]
+		gitProjectID := ingress.IngressAnotations[config.LabelGitProjectID]
 
 		log := log.WithFields(log.Fields{
 			"gitProjectID": gitProjectID,
 			"gitBranch":    gitBranch,
 		})
-
-		namespace, err := api.Clientset.CoreV1().Namespaces().Get(context.TODO(), ingress.Namespace, metav1.GetOptions{})
-		if err != nil {
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				Error()
-
-			return
-		}
 
 		isDeleteBranch := false
 
@@ -130,20 +157,9 @@ func Execute(rootSpan opentracing.Span) {
 
 				log.WithField("isDeleteBranch", isDeleteBranch).Debug("git branch not found")
 			}
-		} else if len(namespace.GetAnnotations()[config.LabelLastScaleDate]) > 0 {
-			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[config.LabelLastScaleDate])
-			if err != nil {
-				log.
-					WithError(err).
-					WithField(logrushookopentracing.SpanKey, span).
-					Warn()
-			}
-			if utils.DiffToNow(lastScaleDate) > *config.Get().RemoveBranchLastScaleDate {
-				isDeleteBranch = true
-
-				log.WithField("isDeleteBranch", isDeleteBranch).Debug("lastScaleDate > removeBranchLastScaleDate")
-			}
-		} else if utils.DiffToNow(namespace.CreationTimestamp.Time) > 1 {
+		} else if ingress.NamespaceLastScaledDays > *config.Get().RemoveBranchLastScaleDate {
+			isDeleteBranch = true
+		} else if ingress.NamespaceCreatedDays > 1 {
 			isDeleteBranch = getLastCommitBranch(span, git, gitProjectID, gitBranch)
 
 			log.WithField("isDeleteBranch", isDeleteBranch).Debug("namespace.CreationTimestamp.Time > 1h")
@@ -152,22 +168,15 @@ func Execute(rootSpan opentracing.Span) {
 		log.Debugf("isDeleteBranch=%t", isDeleteBranch)
 
 		if isDeleteBranch {
-			span.LogKV("delete branch", gitBranch)
+			deleteALLResult := api.DeleteALL(
+				ingress.Namespace,
+				ingress.IngressAnotations[config.LabelRegistryTag],
+				ingress.IngressAnotations[config.LabelGitProjectID],
+			)
 
-			ch1 := make(chan api.HTTPResponse)
-			q := make(url.Values)
-
-			q.Add("namespace", ingress.Namespace)
-
-			for k, v := range ingress.Annotations {
-				if strings.HasPrefix(k, "kubernetes-manager") {
-					q.Add(k[19:], v)
-				}
-			}
-
-			go api.MakeAPICall(span, "/api/deleteALL", q, ch1)
-
-			span.LogKV("result", <-ch1)
+			log.Info(deleteALLResult.JSON())
 		}
 	}
+
+	return nil
 }

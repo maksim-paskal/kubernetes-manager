@@ -13,7 +13,7 @@ helm upgrade kubernetes-manager \
   --install \
   --create-namespace \
   --namespace kubernetes-manager \
-  ./chart/kubernetes-manager \
+  ./charts/kubernetes-manager \
   --set service.type=LoadBalancer
 ```
 
@@ -25,7 +25,7 @@ helm upgrade kubernetes-manager-test \
   --install \
   --create-namespace \
   --namespace kubernetes-manager-test \
-  ./chart/kubernetes-manager-test
+  ./charts/kubernetes-manager-test
 ```
 ### Setup you own Ingress
 you need to add annotation and label to your Ingress controller
@@ -66,7 +66,7 @@ rules:
   resources: ["namespaces"]
   verbs: ["delete","patch"]
 - apiGroups: [""]
-  resources: ["pods"]
+  resources: ["pods","services"]
   verbs: ["get","list","delete"]
 - apiGroups: ["apps"]
   resources: ["deployments","statefulsets"]

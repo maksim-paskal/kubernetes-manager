@@ -1,5 +1,8 @@
 test.sh
 dist
 /kubernetes-manager
-kubeconfig
+kubeconfig*
 __debug_bin
+coverage.out
+deploy-*
+config-test.yaml

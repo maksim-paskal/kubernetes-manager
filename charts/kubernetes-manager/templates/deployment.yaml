@@ -1,27 +1,47 @@
+{{- if .Values.createDeployment -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+{{ toYaml .Values.config | indent 2 }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-manager
+  name: {{ .Release.Name }}
   labels:
-    app: kubernetes-manager
+    app: {{ .Release.Name }}
 spec:
   selector:
     matchLabels:
-      app: kubernetes-manager
+      app: {{ .Release.Name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: kubernetes-manager
+        app: {{ .Release.Name }}
+        revision: {{ .Release.Revision | quote }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9000'
     spec:
-      serviceAccountName: kubernetes-manager
+      serviceAccountName: {{ .Release.Name }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Release.Name }}-config
       containers:
-      - name: kubernetes-manager
+      - name: {{ .Release.Name }}
         resources:
 {{ toYaml .Values.resources | indent 9 }}
         image: {{ .Values.registry.image }}
         imagePullPolicy: {{ .Values.registry.imagePullPolicy }}
         env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         {{ if .Values.jaeger.agentOnHost }}
         - name: JAEGER_AGENT_HOST
           valueFrom:
@@ -36,36 +56,51 @@ spec:
 {{ if .Values.env}}
 {{ toYaml .Values.env | indent 8 }}
 {{ end }}
-        command:
-        - /app/kubernetes-manager
+        args:
         - --front.dist=/app/dist
+        - --config=/config/config.yaml
         {{ range .Values.args }}
         - {{ . }}
         {{ end }}
         ports:
         - containerPort: 9000
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 9000
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/healthz
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubernetes-manager
+  name: {{ .Release.Name }}
   labels:
-    app: kubernetes-manager
+    app: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
   ports:
   - port: 9000
     protocol: TCP
   selector:
-    app: kubernetes-manager
+    app: {{ .Release.Name }}
 {{ if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kubernetes-manager
+  name: {{ .Release.Name }}
   labels:
-    app: kubernetes-manager
+    app: {{ .Release.Name }}
 {{- if .Values.ingress.annotations }}
   annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
@@ -82,7 +117,8 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: kubernetes-manager
+            name: {{ .Release.Name }}
             port:
               number: 9000
 {{ end }}
+{{- end -}}

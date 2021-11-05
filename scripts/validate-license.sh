@@ -20,6 +20,7 @@ find_files() {
   find . -not \( \
     \( \
       -wholename './vendor' \
+      -o -wholename './deploy-*' \
       -o -wholename '*testdata*' \
       -o -wholename '*third_party*' \
       -o -wholename '*node_modules*' \
@@ -44,7 +45,7 @@ if (( ${#failed_copyright_header[@]} > 0 )); then
   exit 1
 fi
 
-if grep --exclude-dir=.git --exclude=validate-license.sh --exclude=test.sh -rn . -e 'alldigital'; then
+if grep --exclude-dir=.git --exclude=validate-license.sh --exclude=test.sh --exclude=./deploy-* -rn . -e 'alldigital'; then
   echo "Some files have bad links"
   exit 1
 fi

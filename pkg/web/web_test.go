@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
 )
@@ -32,6 +33,8 @@ var (
 
 func TestVersion(t *testing.T) {
 	t.Parallel()
+
+	time.Sleep(time.Second)
 
 	url := fmt.Sprintf("%s/api/version", ts.URL)
 	t.Log(url)

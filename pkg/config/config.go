@@ -17,7 +17,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -27,6 +29,7 @@ const (
 	defaultRemoveBranchLastScaleDate = 10
 	defaultNotDeleteDays             = 10
 	defaultRemoveBranchDaysInactive  = 20
+	defaultBatchShedulePeriod        = 30 * time.Minute
 
 	HoursInDay            = 24
 	KeyValueLength        = 2
@@ -37,18 +40,30 @@ const (
 	LabelRegistryTag      = "kubernetes-manager/registry-tag"
 )
 
+type KubernetesEndpoint struct {
+	Name             string
+	KubeConfigPath   string
+	KubeConfigServer string
+}
+
 //nolint:gochecknoglobals
 var config = Type{
-	ConfigPath: flag.String("config", "config.yaml", "config"),
+	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
 	LogLevel:   flag.String("log.level", "INFO", "logging level"),
 
-	KubeConfigServer: flag.String("kubeconfig.server", os.Getenv("KUBERNETES_ENDPOINT"), ""),
-	KubeConfigPath:   flag.String("kubeconfig.path", "", "path to kubeconfig"),
+	KubernetesEndpoints: []KubernetesEndpoint{{
+		Name:             "default",
+		KubeConfigServer: GetEnvDefault("DEFAULT_CONFIG_SERVER", "https://cluster-public"),
+		KubeConfigPath:   "",
+	}},
 
-	Mode:                     flag.String("mode", "web", "run mode"),
 	Port:                     flag.Int("server.port", defaultPort, ""),
 	FrontDist:                flag.String("front.dist", "front/dist", ""),
 	RemoveBranchDaysInactive: flag.Int("batch.removeBranchDaysInactive", defaultRemoveBranchDaysInactive, ""),
+	ExecuteCleanOldTags:      flag.Bool("executeCleanOldTags", false, "execute CleanOldTags"),
+	ExecuteBatch:             flag.Bool("executeBatch", false, "execute Batch"),
+	BatchShedule:             flag.Bool("batch", true, "enable batch operations"),
+	BatchShedulePeriod:       flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
 
 	GitlabToken: flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
 	GitlabURL:   flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
@@ -67,47 +82,50 @@ var config = Type{
 	ReleasePatern:        flag.String("release.pattern", `release-(\d{4}\d{2}\d{2}).*`, ""),
 	ReleaseNotDeleteDays: flag.Int("release.notDeleteDays", defaultNotDeleteDays, ""),
 
-	MakeAPICallServer: flag.String("makeAPICall.server", "127.0.0.1", ""),
+	SystemNamespaces: flag.String("system.namespaces", GetEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
+	SystemGitTags:    flag.String("system.gitTags", GetEnvDefault("SYSTEM_GIT_TAGS", "^master$,^release-.*"), ""),
 
-	SystemNamespaces: flag.String("system.namespaces", getEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
-	SystemGitTags:    flag.String("system.gitTags", getEnvDefault("SYSTEM_GIT_TAGS", "^master$,^release-.*"), ""),
-
-	ExternalServicesTopic: flag.String("externalServicesTopic", getEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
+	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 }
 
 type Type struct {
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
-	KubeConfigServer           *string `yaml:"kubeConfigServer"`
-	KubeConfigPath             *string `yaml:"kubeConfigPath"`
-	Mode                       *string `yaml:"mode"`
-	Port                       *int    `yaml:"port"`
-	FrontDist                  *string `yaml:"frontDist"`
-	RemoveBranchDaysInactive   *int    `yaml:"removeBranchDaysInactive"`
-	GitlabToken                *string `yaml:"gitlabToken"`
-	GitlabURL                  *string `yaml:"gitlabUrl"`
-	IngressFilter              *string `yaml:"ingressFilter"`
-	IngressNoFiltration        *bool   `yaml:"ingressNoFiltration"`
-	IngressHostDefaultProtocol *string `yaml:"ingressHostDefaultProtocol"`
-	RemoveBranchLastScaleDate  *int    `yaml:"removeBranchLastScaleDate"`
-	RegistryDirectory          *string `yaml:"registryDirectory"`
-	RegistryURL                *string `yaml:"registryUrl"`
-	RegistryUser               *string `yaml:"registryUser"`
-	RegistryPassword           *string `yaml:"registryPassword"`
-	ReleasePatern              *string `yaml:"releasePatern"`
-	ReleaseNotDeleteDays       *int    `yaml:"releaseNotDeleteDays"`
-	MakeAPICallServer          *string `yaml:"makeApiCallServer"`
-	SystemNamespaces           *string `yaml:"systemNamespaces"`
-	SystemGitTags              *string `yaml:"systemGitTags"`
-	ExternalServicesTopic      *string `yaml:"externalServicesTopic"`
+	KubernetesEndpoints        []KubernetesEndpoint
+	Port                       *int           `yaml:"port"`
+	FrontDist                  *string        `yaml:"frontDist"`
+	RemoveBranchDaysInactive   *int           `yaml:"removeBranchDaysInactive"`
+	GitlabToken                *string        `yaml:"gitlabToken"`
+	GitlabURL                  *string        `yaml:"gitlabUrl"`
+	IngressFilter              *string        `yaml:"ingressFilter"`
+	IngressNoFiltration        *bool          `yaml:"ingressNoFiltration"`
+	IngressHostDefaultProtocol *string        `yaml:"ingressHostDefaultProtocol"`
+	RemoveBranchLastScaleDate  *int           `yaml:"removeBranchLastScaleDate"`
+	RegistryDirectory          *string        `yaml:"registryDirectory"`
+	RegistryURL                *string        `yaml:"registryUrl"`
+	RegistryUser               *string        `yaml:"registryUser"`
+	RegistryPassword           *string        `yaml:"registryPassword"`
+	ReleasePatern              *string        `yaml:"releasePatern"`
+	ReleaseNotDeleteDays       *int           `yaml:"releaseNotDeleteDays"`
+	SystemNamespaces           *string        `yaml:"systemNamespaces"`
+	SystemGitTags              *string        `yaml:"systemGitTags"`
+	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
+	BatchShedule               *bool          `yaml:"batchShedule"`
+	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
+	ExecuteBatch               *bool          `yaml:"executeBatch"`
+	ExecuteCleanOldTags        *bool          `yaml:"executeCleanOldTags"`
 }
 
 func Load() error {
-	configByte, err := ioutil.ReadFile(*config.ConfigPath)
-	if err != nil {
-		log.Debug(err)
+	if len(*config.ConfigPath) == 0 {
+		log.Debug("config file not set - nothing to load")
 
 		return nil
+	}
+
+	configByte, err := ioutil.ReadFile(*config.ConfigPath)
+	if err != nil {
+		return errors.Wrap(err, "can not load config file")
 	}
 
 	err = yaml.Unmarshal(configByte, &config)
@@ -131,7 +149,7 @@ func String() string {
 	return string(out)
 }
 
-func getEnvDefault(name string, defaultValue string) string {
+func GetEnvDefault(name string, defaultValue string) string {
 	r := os.Getenv(name)
 	defaultValueLen := len(defaultValue)
 
