@@ -1,3 +1,0 @@
-#!/bin/sh
-
-if [[ -f /php-fpm.d/extra-php-fpm.conf  ]]; then (cat /php-fpm.d/extra-php-fpm.conf) fi

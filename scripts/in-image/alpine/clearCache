@@ -1,4 +1,0 @@
-#!/bin/sh
-rm -rf /app/var/cache1
-mv /app/var/cache/ /app/var/cache1
-echo ok

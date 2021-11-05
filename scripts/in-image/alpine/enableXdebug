@@ -1,9 +1,0 @@
-#!/bin/sh
-apk -q add --no-cache --virtual .build-deps $PHPIZE_DEPS
-pecl install xdebug-2.5.5
-docker-php-ext-enable xdebug
-apk -q del .build-deps
-
-cp /kubernetes-manager/xdebug.ini /usr/local/etc/php/conf.d/15-xdebug.ini
-
-pkill -USR2 -o php-fpm
