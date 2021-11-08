@@ -27,21 +27,26 @@ import (
 )
 
 const (
-	ScaleDownUtcHourMinPeriod = 16
-	ScaleDownUtcHourMaxPeriod = 22
+	ScaleDownHourMinPeriod = 19
+	ScaleDownHourMaxPeriod = 23
 )
 
 func Schedule() {
 	tracer := opentracing.GlobalTracer()
+
+	batchSheduleTimezone, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
 
 	for {
 		<-time.After(*config.Get().BatchShedulePeriod)
 
 		span := tracer.StartSpan("scheduleBatch")
 
-		utcHour := time.Now().UTC().Hour()
+		utcHour := time.Now().In(batchSheduleTimezone).Hour()
 
-		if utcHour >= ScaleDownUtcHourMinPeriod && utcHour <= ScaleDownUtcHourMaxPeriod {
+		if utcHour >= ScaleDownHourMinPeriod && utcHour <= ScaleDownHourMaxPeriod {
 			if err := scaleDownALL(span); err != nil {
 				log.WithError(err).Error()
 			}

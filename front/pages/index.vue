@@ -165,7 +165,7 @@
               header="Pause branch"
               class="text-center"
             >
-              <div>branch autopause __SCALEDOWN_MIN__:00 - __SCALEDOWN_MAX__:00 UTC</div>
+              <div>branch autopause __SCALEDOWN_MIN__:00 - __SCALEDOWN_MAX__:00 __SCALEDOWN_TIMEZONE__</div>
               <br />
               <b-button
                 @click="makeAPICall('scaleNamespace', 'none', '&replicas=0')"
