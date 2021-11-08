@@ -51,6 +51,10 @@ func main() {
 		log.WithError(err).Fatal()
 	}
 
+	if err = config.CheckConfig(); err != nil {
+		log.WithError(err).Fatal()
+	}
+
 	logLevel, err := log.ParseLevel(*config.Get().LogLevel)
 	if err != nil {
 		log.WithError(err).Fatal()

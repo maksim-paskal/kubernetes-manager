@@ -30,6 +30,7 @@ const (
 	defaultNotDeleteDays             = 10
 	defaultRemoveBranchDaysInactive  = 20
 	defaultBatchShedulePeriod        = 30 * time.Minute
+	defaultBatchTimezone             = "UTC"
 
 	HoursInDay            = 24
 	KeyValueLength        = 2
@@ -64,6 +65,7 @@ var config = Type{
 	ExecuteBatch:             flag.Bool("executeBatch", false, "execute Batch"),
 	BatchShedule:             flag.Bool("batch", true, "enable batch operations"),
 	BatchShedulePeriod:       flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
+	BatchSheduleTimezone:     flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
 	GitlabToken: flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
 	GitlabURL:   flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
@@ -112,6 +114,7 @@ type Type struct {
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
 	BatchShedule               *bool          `yaml:"batchShedule"`
 	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
+	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
 	ExecuteBatch               *bool          `yaml:"executeBatch"`
 	ExecuteCleanOldTags        *bool          `yaml:"executeCleanOldTags"`
 }
@@ -130,7 +133,16 @@ func Load() error {
 
 	err = yaml.Unmarshal(configByte, &config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error while yaml.Unmarshal")
+	}
+
+	return nil
+}
+
+func CheckConfig() error {
+	_, err := time.LoadLocation(*config.BatchSheduleTimezone)
+	if err != nil {
+		return errors.Wrap(err, "error in parsing timezone")
 	}
 
 	return nil
