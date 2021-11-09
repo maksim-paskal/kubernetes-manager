@@ -28,7 +28,7 @@ import (
 
 const (
 	ScaleDownHourMinPeriod = 19
-	ScaleDownHourMaxPeriod = 23
+	ScaleDownHourMaxPeriod = 5
 )
 
 func Schedule() {
@@ -44,9 +44,9 @@ func Schedule() {
 
 		span := tracer.StartSpan("scheduleBatch")
 
-		utcHour := time.Now().In(batchSheduleTimezone).Hour()
+		timezoneHour := time.Now().In(batchSheduleTimezone).Hour()
 
-		if utcHour >= ScaleDownHourMinPeriod && utcHour <= ScaleDownHourMaxPeriod {
+		if timezoneHour >= ScaleDownHourMinPeriod || timezoneHour <= ScaleDownHourMaxPeriod {
 			if err := scaleDownALL(span); err != nil {
 				log.WithError(err).Error()
 			}
