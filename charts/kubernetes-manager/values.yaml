@@ -64,3 +64,19 @@ ingress:
   enabled: false
   host: "test.com"
   annotations: {}
+
+cleanOldTags:
+  enabled: false
+  schedule: "0 1 * * *"
+  persistence:
+    enabled: false
+    size: "100Gi"
+    storageClassName: null
+  nodeSelector: {}
+  rclone:
+    sync: "s3:<some-s3-bucket>"
+  resources:
+    requests:
+      cpu: 3
+      memory: 4Gi
+  env: []
