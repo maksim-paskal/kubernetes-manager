@@ -15,7 +15,6 @@ package web
 import (
 	"fmt"
 	"io/ioutil"
-	"mime"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -50,16 +49,6 @@ func GetContentReplacer() *strings.Replacer {
 func serveFiles(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(*config.Get().FrontDist, filepath.Clean(r.URL.Path))
 
-	mimeType := mime.TypeByExtension(filepath.Ext(path))
-
-	if len(mimeType) > 0 {
-		w.Header().Add("Content-Type", mimeType)
-
-		if mimeType == "application/javascript" {
-			w.Header().Add("Cache-Control", "max-age=31557600")
-		}
-	}
-
 	read, err := ioutil.ReadFile(path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -76,6 +65,8 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newContents := replacer.Replace(string(read))
+
+	w.Header().Set("Cache-Control", "public, max-age=86400")
 
 	_, err = w.Write([]byte(newContents))
 

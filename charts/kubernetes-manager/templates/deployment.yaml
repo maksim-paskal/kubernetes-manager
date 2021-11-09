@@ -1,11 +1,4 @@
 {{- if .Values.createDeployment -}}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-config
-data:
-{{ toYaml .Values.config | indent 2 }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,30 +31,9 @@ spec:
         image: {{ .Values.registry.image }}
         imagePullPolicy: {{ .Values.registry.imagePullPolicy }}
         env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        {{ if .Values.jaeger.agentOnHost }}
-        - name: JAEGER_AGENT_HOST
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: status.hostIP
-        {{ end }}
-        {{ if .Values.sentry.enabled }}
-        - name: "SENTRY_DSN"
-          value: {{ .Values.sentry.host }}
-        {{ end }}
-{{ if .Values.env}}
-{{ toYaml .Values.env | indent 8 }}
-{{ end }}
+{{ include "env" . | nindent 8 }}
         args:
-        - --front.dist=/app/dist
-        - --config=/config/config.yaml
-        {{ range .Values.args }}
-        - {{ . }}
-        {{ end }}
+{{ include "args" . | nindent 8 }}
         ports:
         - containerPort: 9000
         volumeMounts:

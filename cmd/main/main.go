@@ -61,14 +61,9 @@ func main() {
 	}
 
 	log.SetLevel(logLevel)
+	log.SetReportCaller(true)
 
 	log.Debugf("Using config:\n%s", config.String())
-
-	log.SetLevel(logLevel)
-
-	if logLevel >= log.DebugLevel {
-		log.SetReportCaller(true)
-	}
 
 	hookSentry, err := logrushooksentry.NewHook(logrushooksentry.Options{
 		Release: config.GetVersion(),

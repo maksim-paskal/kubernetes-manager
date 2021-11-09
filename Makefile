@@ -31,9 +31,9 @@ testIntegration:
 coverage:
 	go tool cover -html=coverage.out
 testChart:
-	helm lint --strict ./charts/kubernetes-manager
+	helm lint --strict ./charts/kubernetes-manager --set cleanOldTags.enabled=true
 	helm lint --strict ./integration-tests/chart
-	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./charts/kubernetes-manager --set cleanOldTags.enabled=true | kubectl apply --dry-run=client --validate=true -f -
 	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
 	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=paskalmaksim/kubernetes-manager:dev --set service.type=LoadBalancer

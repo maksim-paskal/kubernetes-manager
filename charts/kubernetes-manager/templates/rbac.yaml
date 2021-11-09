@@ -21,7 +21,10 @@ metadata:
   name: {{ .Release.Name }}-role
 rules:
 - apiGroups: [""]
-  resources: ["serviceaccounts","secrets"]
+  resources: ["configmaps"]
+  verbs: ["list"]
+- apiGroups: [""]
+  resources: ["serviceaccounts","secrets","configmaps"]
   verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
