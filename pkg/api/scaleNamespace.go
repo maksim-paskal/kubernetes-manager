@@ -18,8 +18,14 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+const (
+	scaleRetryMaxCount = 3
+	scaleRetryTimeout  = time.Second
 )
 
 // ScaleNamespace scale deployments and statefullsets.
@@ -37,6 +43,11 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	for _, d := range ds.Items {
+		log := log.WithFields(log.Fields{
+			"namespace":  ns,
+			"deployment": d.Name,
+		})
+
 		dps, err := clientset.AppsV1().Deployments(namespace).Get(Ctx, d.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting deployment")
@@ -44,9 +55,22 @@ func ScaleNamespace(ns string, replicas int32) error {
 
 		dps.Spec.Replicas = &replicas
 
-		_, err = clientset.AppsV1().Deployments(namespace).Update(Ctx, dps, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "error scaling deployment")
+		try := 0
+
+		for {
+			_, err = clientset.AppsV1().Deployments(namespace).Update(Ctx, dps, metav1.UpdateOptions{})
+			if err == nil {
+				break
+			}
+
+			try++
+
+			if try >= scaleRetryMaxCount {
+				return errors.Wrap(err, "error scaling deployment")
+			}
+
+			log.WithError(err).Error()
+			time.Sleep(scaleRetryTimeout)
 		}
 	}
 
@@ -56,16 +80,34 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	for _, s := range sf.Items {
+		log := log.WithFields(log.Fields{
+			"namespace":    ns,
+			"statefullset": s.Name,
+		})
+
 		ss, err := clientset.AppsV1().StatefulSets(namespace).Get(Ctx, s.Name, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrap(err, "error getting deployment")
+			return errors.Wrap(err, "error getting statefullset")
 		}
 
 		ss.Spec.Replicas = &replicas
 
-		_, err = clientset.AppsV1().StatefulSets(namespace).Update(Ctx, ss, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "error scaling statefullset")
+		try := 0
+
+		for {
+			_, err = clientset.AppsV1().StatefulSets(namespace).Update(Ctx, ss, metav1.UpdateOptions{})
+			if err == nil {
+				break
+			}
+
+			try++
+
+			if try >= scaleRetryMaxCount {
+				return errors.Wrap(err, "error scaling statefullset")
+			}
+
+			log.WithError(err).Error()
+			time.Sleep(scaleRetryTimeout)
 		}
 	}
 
