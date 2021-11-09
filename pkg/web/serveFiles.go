@@ -13,11 +13,11 @@ limitations under the License.
 package web
 
 import (
+	"fmt"
 	"io/ioutil"
 	"mime"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
@@ -28,11 +28,11 @@ import (
 
 var replacer *strings.Replacer
 
-func initReplacer() {
-	replacer = strings.NewReplacer(
+func GetContentReplacer() *strings.Replacer {
+	return strings.NewReplacer(
 		"__APPLICATION_VERSION__", config.GetVersion(),
-		"__SCALEDOWN_MIN__", strconv.Itoa(batch.ScaleDownHourMinPeriod),
-		"__SCALEDOWN_MAX__", strconv.Itoa(batch.ScaleDownHourMaxPeriod),
+		"__SCALEDOWN_MIN__", fmt.Sprintf("%02d", batch.ScaleDownHourMinPeriod),
+		"__SCALEDOWN_MAX__", fmt.Sprintf("%02d", batch.ScaleDownHourMaxPeriod),
 		"__SCALEDOWN_TIMEZONE__", *config.Get().BatchSheduleTimezone,
 		"__FRONT_PHPMYADMIN_URL__", config.GetEnvDefault("FRONT_PHPMYADMIN_URL", ""),
 		"__FRONT_DEBUG_SERVER_NAME__", config.GetEnvDefault("FRONT_DEBUG_SERVER_NAME", ""),
@@ -72,7 +72,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if replacer == nil {
-		initReplacer()
+		replacer = GetContentReplacer()
 	}
 
 	newContents := replacer.Replace(string(read))

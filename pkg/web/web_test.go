@@ -67,3 +67,21 @@ func TestVersion(t *testing.T) {
 		t.Fatal("no version")
 	}
 }
+
+func TestReplacer(t *testing.T) {
+	t.Parallel()
+
+	replacer := web.GetContentReplacer()
+
+	tests := make(map[string]string)
+
+	tests["__SCALEDOWN_MIN__"] = "19"
+	tests["__SCALEDOWN_MAX__"] = "05"
+	tests["__SCALEDOWN_TIMEZONE__"] = "UTC"
+
+	for test, want := range tests {
+		if result := replacer.Replace(test); result != want {
+			t.Fatal("want=" + want + "; got=" + result)
+		}
+	}
+}
