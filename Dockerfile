@@ -1,5 +1,7 @@
 FROM node:14 as front
 
+ARG APPVERSION=dev
+
 WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate

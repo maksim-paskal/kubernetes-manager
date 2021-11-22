@@ -44,6 +44,7 @@ module.exports = {
   ** Build configuration
   */
   build: {
+    publicPath: "/_nuxt/"+process.env.APPVERSION+"/",
     /*
     ** Run ESLint on save
     */
