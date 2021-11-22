@@ -4,6 +4,8 @@ dockers:
   image_templates:
   - paskalmaksim/kubernetes-manager:latest
   - paskalmaksim/kubernetes-manager:{{ .Tag }}
+  build_flag_templates:
+  - --build-arg=APPVERSION={{.ShortCommit}}
   extra_files:
   - front/
 builds:
