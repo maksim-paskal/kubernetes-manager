@@ -12,7 +12,10 @@ limitations under the License.
 */
 package api
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type DeleteALLResultOperation struct {
 	Result string
@@ -43,10 +46,10 @@ func DeleteALL(ns string, tag string, projectID string) DeleteALLResult {
 
 	result := DeleteALLResult{
 		DeleteNamespaceResult: DeleteALLResultOperation{
-			Result: "Namespace deleted",
+			Result: fmt.Sprintf("Namespace %s deleted", ns),
 		},
 		DeleteGitlabRegistryTagResult: DeleteALLResultOperation{
-			Result: "Registry tag deleted",
+			Result: fmt.Sprintf("Registry tag %s deleted", tag),
 		},
 	}
 

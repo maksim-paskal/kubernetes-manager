@@ -20,4 +20,6 @@ var (
 	errNoPodSelected        = errors.New("no pod selected")
 	errNoLabelSelector      = errors.New("LabelSelector not set")
 	errNoPodInStatusRunning = errors.New("pod in status Running not found")
+	errIsSystemNamespace    = errors.New("this namespace is system")
+	errIsSystemBranch       = errors.New("this git branch is system")
 )

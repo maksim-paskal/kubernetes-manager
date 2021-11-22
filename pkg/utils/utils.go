@@ -28,25 +28,15 @@ const (
 )
 
 func IsSystemBranch(gitBranch string) bool {
-	for _, gitBranchRegexp := range strings.Split(*config.Get().SystemGitTags, ",") {
-		re := regexp.MustCompile(gitBranchRegexp)
-		if re.MatchString(strings.ToLower(gitBranch)) {
-			return true
-		}
-	}
+	re := regexp.MustCompile(*config.Get().SystemGitTags)
 
-	return false
+	return re.MatchString(strings.ToLower(gitBranch))
 }
 
 func IsSystemNamespace(namespace string) bool {
-	for _, namespaceRegexp := range strings.Split(*config.Get().SystemNamespaces, ",") {
-		re := regexp.MustCompile(namespaceRegexp)
-		if re.MatchString(strings.ToLower(namespace)) {
-			return true
-		}
-	}
+	re := regexp.MustCompile(*config.Get().SystemNamespaces)
 
-	return false
+	return re.MatchString(strings.ToLower(namespace))
 }
 
 // returns hours between current time and input time.

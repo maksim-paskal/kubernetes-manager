@@ -1,6 +1,6 @@
 registry:
-  image: paskalmaksim/kubernetes-manager:latest
-  imagePullPolicy: Always
+  image: paskalmaksim/kubernetes-manager:v0.2.8
+  imagePullPolicy: IfNotPresent
 
 createDeployment: true
 
@@ -57,7 +57,7 @@ args: []
 # - --kubeconfig.server=https://kubernetes-api
 # - --gitlab.url=https://git/api/v4
 # - --gitlab.token=git-token
-# - --system.gitTags=^master$,^release-.*
+# - --system.gitTags=^master$|^release-.*
 # - --system.namespaces=kube-system
 
 ingress:
