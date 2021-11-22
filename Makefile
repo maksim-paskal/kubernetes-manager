@@ -57,3 +57,22 @@ heap:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
 allocs:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
+chart-index:
+	rm -rf .cr-index
+	mkdir .cr-index
+	cr index \
+	--owner maksim-paskal \
+	--git-repo kubernetes-manager \
+	--release-name-template "helm-chart-{{ .Version }}" \
+	--charts-repo https://maksim-paskal.github.io/kubernetes-manager \
+	--push \
+	--token $(CR_TOKEN)
+chart-upload:
+	rm -rf .cr-release-packages
+	cr package ./charts/kubernetes-manager
+	cr upload \
+	--owner maksim-paskal \
+	--git-repo kubernetes-manager \
+	--commit "`git rev-parse HEAD`" \
+	--release-name-template "helm-chart-{{ .Version }}" \
+	--token $(CR_TOKEN)

@@ -6,3 +6,4 @@ __debug_bin
 coverage.out
 deploy-*
 config-test.yaml
+/.cr-*
