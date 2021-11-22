@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,6 +26,10 @@ func DeleteNamespace(ns string) error {
 	}
 
 	namespace := getNamespace(ns)
+
+	if utils.IsSystemNamespace(namespace) {
+		return errors.Wrap(errIsSystemNamespace, namespace)
+	}
 
 	err = clientset.CoreV1().Namespaces().Delete(Ctx, namespace, metav1.DeleteOptions{})
 	if err != nil {

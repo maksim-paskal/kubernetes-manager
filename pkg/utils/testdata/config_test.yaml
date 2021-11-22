@@ -1,1 +1,1 @@
-systemNamespaces: "^kube-system$,^app$"
+systemNamespaces: "^kube-system$|^app$"

@@ -13,6 +13,7 @@ limitations under the License.
 package batch
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -143,34 +144,43 @@ func Execute(rootSpan opentracing.Span) error {
 		gitProjectID := ingress.IngressAnotations[config.LabelGitProjectID]
 
 		log := log.WithFields(log.Fields{
+			"namespace":    ingress.Namespace,
 			"gitProjectID": gitProjectID,
 			"gitBranch":    gitBranch,
 		})
 
+		if utils.IsSystemNamespace(ingress.NamespaceName) {
+			log.Debugf("%s is system namespace", ingress.NamespaceName)
+
+			continue
+		}
+
+		if utils.IsSystemBranch(gitBranch) {
+			log.Debugf("%s is system branch", gitBranch)
+
+			continue
+		}
+
 		isDeleteBranch := false
+		deleteReason := "branch will not deleted"
 
 		_, _, err = git.Branches.GetBranch(gitProjectID, gitBranch)
 
 		//nolint:gocritic
-		if utils.IsSystemBranch(gitBranch) {
-			isDeleteBranch = false
-
-			log.WithField("isDeleteBranch", isDeleteBranch).Debug("is system branch")
-		} else if err != nil {
+		if err != nil {
 			if strings.Contains(err.Error(), "404 Branch Not Found") {
 				isDeleteBranch = true
-
-				log.WithField("isDeleteBranch", isDeleteBranch).Debug("git branch not found")
+				deleteReason = "git branch not found"
 			}
 		} else if ingress.NamespaceLastScaledDays > *config.Get().RemoveBranchLastScaleDate {
 			isDeleteBranch = true
+			deleteReason = fmt.Sprintf("ingress.NamespaceLastScaledDays > %d", *config.Get().RemoveBranchLastScaleDate)
 		} else if ingress.NamespaceCreatedDays > 1 {
 			isDeleteBranch = getLastCommitBranch(span, git, gitProjectID, gitBranch)
-
-			log.WithField("isDeleteBranch", isDeleteBranch).Debug("namespace.CreationTimestamp.Time > 1h")
+			deleteReason = "namespace.NamespaceCreatedDays > 1"
 		}
 
-		log.Debugf("isDeleteBranch=%t", isDeleteBranch)
+		log.WithField("isDeleteBranch", isDeleteBranch).Debug(deleteReason)
 
 		if isDeleteBranch {
 			deleteALLResult := api.DeleteALL(

@@ -85,7 +85,7 @@ var config = Type{
 	ReleaseNotDeleteDays: flag.Int("release.notDeleteDays", defaultNotDeleteDays, ""),
 
 	SystemNamespaces: flag.String("system.namespaces", GetEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
-	SystemGitTags:    flag.String("system.gitTags", GetEnvDefault("SYSTEM_GIT_TAGS", "^master$,^release-.*"), ""),
+	SystemGitTags:    flag.String("system.gitTags", GetEnvDefault("SYSTEM_GIT_TAGS", "^master$|^release-.*"), ""),
 
 	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 }
