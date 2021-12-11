@@ -13,12 +13,14 @@ There are many feature branches in cluster - and it's sometime hard to detect wh
 ### Kubernetes Manager installation
 
 ```bash
-git clone git@github.com:maksim-paskal/kubernetes-manager.git
+helm repo add maksim-paskal-kubernetes-manager https://maksim-paskal.github.io/kubernetes-manager
+helm repo update
+
 helm upgrade kubernetes-manager \
   --install \
   --create-namespace \
   --namespace kubernetes-manager \
-  ./charts/kubernetes-manager \
+  maksim-paskal-kubernetes-manager/kubernetes-manager \
   --set service.type=LoadBalancer
 ```
 
