@@ -18,7 +18,7 @@ test:
 	go vet ./cmd/... ./pkg/...
 	./scripts/test-pkg.sh
 	go mod tidy
-	golangci-lint run -v
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
 	cd front && yarn lint
 testIntegration:
 	cp ${KUBECONFIG} ./integration-tests/testdata/kubeconfig
@@ -45,9 +45,9 @@ clean:
 	kubectl delete namespace kubernetes-manager-test || true
 	kubectl delete ns ${test-namespace} || true
 upgrade:
-	go get -v -u k8s.io/api@v0.20.9 || true
-	go get -v -u k8s.io/apimachinery@v0.20.9
-	go get -v -u k8s.io/client-go@v0.20.9
+	go get -v -u k8s.io/api@v0.20.13 || true
+	go get -v -u k8s.io/apimachinery@v0.20.13
+	go get -v -u k8s.io/client-go@v0.20.13
 	go mod tidy
 	cd front && yarn update-latest
 run:
