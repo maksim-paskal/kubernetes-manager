@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -30,6 +31,10 @@ func DisableMTLS(ns string) error {
 	}
 
 	namespace := getNamespace(ns)
+
+	if utils.IsSystemNamespace(namespace) {
+		return errors.Wrap(errIsSystemNamespace, namespace)
+	}
 
 	controlPlane, err := clientset.AppsV1().Deployments(namespace).Get(Ctx, envoyControlPlaneName, metav1.GetOptions{})
 	if err != nil {

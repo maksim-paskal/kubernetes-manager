@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -44,22 +43,6 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	namespace := r.URL.Query()["namespace"]
-
-	if utils.IsSystemNamespace(namespace[0]) {
-		w.Header().Set("Content-Type", "application/json")
-
-		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not disable autoscale'}"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.
-				WithError(err).
-				WithField(logrushookopentracing.SpanKey, span).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-		}
-
-		return
-	}
 
 	err := api.DisableHPA(namespace[0])
 	if err != nil {
