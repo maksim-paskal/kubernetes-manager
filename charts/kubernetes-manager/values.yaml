@@ -68,6 +68,12 @@ ingress:
 cleanOldTags:
   enabled: false
   schedule: "0 1 * * *"
+  preGarbageCollect: []
+  # uncomment if need to ne deleted some image
+  #- rm -rf /var/lib/registry/docker/registry/v2/repositories/<image-path>
+  pushgateway:
+    enabled: false
+    url: http://prometheus-pushgateway.prometheus.svc.cluster.local:9091/metrics/job/kubernetes-manager
   persistence:
     enabled: false
     size: "100Gi"
