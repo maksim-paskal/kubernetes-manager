@@ -132,14 +132,31 @@
           </b-tab>
           <b-tab key="tab1" title="services">
             <div>
-              <b-table striped hover :items="tab1Data" :fields="tab1DataFields"/>
+              <b-form-input
+                v-model="serviceFilter"
+                autocomplete="off"
+                placeholder="Type to Search"
+              />
+              <b-table striped hover :items="tab1Data" :fields="tab1DataFields" :filter="serviceFilter">
+                <template v-slot:cell(Ports)="row">
+                  <b-button
+                    size="sm"
+                    variant="outline-primary"
+                    @click="showProxyDialog(row)"
+                    >proxy</b-button
+                  >
+                  <b-button
+                    v-if="/.*mysql.*.svc.cluster.local$/.test(row.item.ServiceHost)"
+                    size="sm"
+                    variant="outline-primary"
+                    target="_blank"
+                    :href="`__FRONT_PHPMYADMIN_URL__?host=${row.item.ServiceHost}`"
+                    >phpmyadmin</b-button
+                  >&nbsp;{{ row.value }}
+                </template>
+              </b-table>
               <br />
               <b-button @click="showTab(1, true, true)">Refresh</b-button>
-              <b-button
-                target="_blank"
-                href="__FRONT_PHPMYADMIN_URL__"
-                >Open Phpmyadmin</b-button
-              >
             </div>
           </b-tab>
           <b-tab key="tab2" title="mongo" :disabled="true">
@@ -181,6 +198,11 @@
             <b-card bg-variant="light" header="Autoscaling" class="text-center">
               <b-button @click="makeAPICall('disableHPA', 'none')"
                 >Disable autoscaling</b-button
+              >
+            </b-card>
+            <b-card bg-variant="light" header="Envoy Control Plane" class="text-center">
+              <b-button @click="makeAPICall('disableMTLS', 'none')"
+                >Disable mTLS verification</b-button
               >
             </b-card>
             <br />
@@ -404,7 +426,12 @@
 
           <b-tab key="tab7" title="external services">
             <div>
-              <b-table striped hover :items="tab7Data" :fields="tab7DataFields">
+              <b-form-input
+                v-model="externalServiceFilter"
+                autocomplete="off"
+                placeholder="Type to Search"
+              />
+              <b-table striped hover :items="tab7Data" :fields="tab7DataFields" :filter="externalServiceFilter">
                 <template #cell(WebURL)="data">
                   <b-button target="_blank" :href="data.item.WebURL+'/-/pipelines/new?var[BUILD]=true&var[NAMESPACE]='+infoModal.content.NamespaceName" variant="primary">Create Pipeline</b-button>
                 </template>
@@ -507,6 +534,8 @@ export default {
       error: null,
       items: [],
       filter: null,
+      serviceFilter: null,
+      externalServiceFilter: null,
       infoModal: {
         id: "info-modal",
         title: "",
@@ -908,6 +937,18 @@ export default {
       } else {
         this.error = e;
       }
+    },
+    showProxyDialog(row) {
+      const port = row.item.Ports.split(",")[0]
+      var proxyType = "pod"
+      if (/.+.svc.cluster.local$/.test(row.item.ServiceHost)){
+        proxyType = "svc"
+      }
+      const proxyString = `kubectl --kubeconfig=/tmp/kubeconfig-${this.infoModal.content.Cluster} -n ${this.infoModal.content.NamespaceName} port-forward ${proxyType}/${row.item.Name} ${port}`
+      this.$bvModal.msgBoxOk(proxyString,{
+        size: 'xl',
+        centered: true
+      });
     },
   },
 };

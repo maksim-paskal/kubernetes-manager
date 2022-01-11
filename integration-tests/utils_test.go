@@ -24,8 +24,8 @@ import (
 
 const (
 	NS           = "default:test-kubernetes-manager"
-	PODLABELS    = "app=nginx"
-	PODCONTAINER = "nginx"
+	PODLABELS    = "app=envoy-control-plane"
+	PODCONTAINER = "envoy-control-plane"
 )
 
 var errWaitTimeExpired = errors.New("time expired")

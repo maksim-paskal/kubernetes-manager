@@ -2,14 +2,15 @@ KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
 test-namespace=test-kubernetes-manager
 
 build:
-	goreleaser build --rm-dist --snapshot --skip-validate
+	git tag -d `git tag -l "helm-chart-*"`
+	go run github.com/goreleaser/goreleaser@latest build --rm-dist --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64/kubernetes-manager ./kubernetes-manager
-	docker build --pull . -t paskalmaksim/kubernetes-manager:dev
+	docker build --pull --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t paskalmaksim/kubernetes-manager:dev
 security-scan:
-	trivy fs --ignore-unfixed .
+	go run github.com/aquasecurity/trivy/cmd/trivy@latest fs --ignore-unfixed .
 security-check:
 	# https://github.com/aquasecurity/trivy
-	trivy --ignore-unfixed paskalmaksim/kubernetes-manager:dev
+	go run github.com/aquasecurity/trivy/cmd/trivy@latest --ignore-unfixed paskalmaksim/kubernetes-manager:dev
 push:
 	docker push paskalmaksim/kubernetes-manager:dev
 test:

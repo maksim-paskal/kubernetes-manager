@@ -88,7 +88,7 @@ rules:
   resources: ["deployments/scale"]
   verbs: ["patch"]
 - apiGroups: [""]
-  resources: ["pods/exec"]
+  resources: ["pods/exec","pods/portforward"]
   verbs: ["create"]
 - apiGroups: [""]
   resources: ["pods/log"]

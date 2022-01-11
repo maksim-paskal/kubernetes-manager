@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy-control-plane
+  labels:
+    app: envoy-control-plane
+spec:
+  selector:
+    matchLabels:
+      app: envoy-control-plane
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: envoy-control-plane
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: envoy-control-plane
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - sleep 1h
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-control-plane
+spec:
+  type: ClusterIP
+  selector:
+    app: envoy-control-plane
+  ports:
+  - protocol: TCP
+    port: 80

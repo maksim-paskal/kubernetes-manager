@@ -1,4 +1,4 @@
-FROM node:14 as front
+FROM node:lts as front
 
 ARG APPVERSION=dev
 
