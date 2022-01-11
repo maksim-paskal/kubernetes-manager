@@ -25,10 +25,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func disableHPA(w http.ResponseWriter, r *http.Request) {
+func disableMTLS(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("disableHPA", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("disableMTLS", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
@@ -48,7 +48,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 	if utils.IsSystemNamespace(namespace[0]) {
 		w.Header().Set("Content-Type", "application/json")
 
-		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not disable autoscale'}"))
+		_, err := w.Write([]byte("{status:'ok',warning:'namespace can not disable mTLS'}"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.
@@ -61,7 +61,7 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := api.DisableHPA(namespace[0])
+	err := api.DisableMTLS(namespace[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -73,17 +73,17 @@ func disableHPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type ResultData struct {
+	type ResultDataMTLS struct {
 		Stdout string
 	}
 
 	type ResultType struct {
-		ScaleNamespaceResult ResultData `json:"result"`
+		ScaleNamespaceResult ResultDataMTLS `json:"result"`
 	}
 
 	result := ResultType{
-		ScaleNamespaceResult: ResultData{
-			Stdout: "Autoscale disabled",
+		ScaleNamespaceResult: ResultDataMTLS{
+			Stdout: "mTLS verification disabled",
 		},
 	}
 

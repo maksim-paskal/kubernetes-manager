@@ -30,7 +30,7 @@ func DeleteGitlabRegistryTag(tag string, projectID string) error {
 		return errors.Wrap(err, "can not connect to Gitlab API")
 	}
 
-	gitRepos, _, err := git.ContainerRegistry.ListRegistryRepositories(projectID, nil)
+	gitRepos, _, err := git.ContainerRegistry.ListProjectRegistryRepositories(projectID, nil)
 	if err != nil {
 		return errors.Wrap(err, "can list registry by projectID")
 	}

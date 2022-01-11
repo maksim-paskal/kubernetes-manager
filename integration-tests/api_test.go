@@ -22,6 +22,8 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 )
 
+const TotalTestCount = 4
+
 var counters sync.Map
 
 func init() { //nolint:gochecknoinits
@@ -131,6 +133,11 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = api.DisableMTLS(NS)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	err = api.DeletePod(NS, "", PODLABELS)
 	if err != nil {
 		t.Fatal(err)
@@ -162,7 +169,17 @@ func TestServices(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(list) != 1 {
+	serviceFound := false
+
+	for _, service := range list {
+		if service.ServiceHost == "envoy-control-plane.test-kubernetes-manager.svc.cluster.local" {
+			serviceFound = true
+
+			break
+		}
+	}
+
+	if !serviceFound {
 		t.Fatal("service not found")
 	}
 
@@ -184,7 +201,7 @@ func TestDeleteNamespace(t *testing.T) {
 		})
 
 		// Total compleated test for deleting namespace
-		if count >= 4 {
+		if count >= TotalTestCount {
 			break
 		}
 

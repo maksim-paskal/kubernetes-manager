@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
@@ -25,7 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const getServicesRegexpFilter = "mysql"
+const mysqlRegexpFilter = ".*mysql.*\\.svc\\.cluster\\.local$"
 
 func getServices(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
@@ -63,18 +64,22 @@ func getServices(w http.ResponseWriter, r *http.Request) {
 		Result []api.GetServicesItem `json:"result"`
 	}
 
-	filterRegexp := regexp.MustCompile(getServicesRegexpFilter)
+	filterRegexp := regexp.MustCompile(mysqlRegexpFilter)
 
-	servicesFiltered := make([]api.GetServicesItem, 0)
+	mysqlServices := make([]api.GetServicesItem, 0)
+	otherServices := make([]api.GetServicesItem, 0)
 
 	for _, service := range services {
-		if filterRegexp.MatchString(service.Name) {
-			servicesFiltered = append(servicesFiltered, service)
+		if filterRegexp.MatchString(service.ServiceHost) {
+			mysqlServices = append(mysqlServices, service)
+		} else if !strings.Contains(service.ServiceHost, ".svc.cluster.local") {
+			// display only pods
+			otherServices = append(otherServices, service)
 		}
 	}
 
 	result := ResultType{
-		Result: servicesFiltered,
+		Result: append(mysqlServices, otherServices...),
 	}
 
 	js, err := json.Marshal(result)

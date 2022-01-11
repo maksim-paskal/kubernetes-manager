@@ -28,6 +28,7 @@ type GetServicesItem struct {
 	Ports        string
 }
 
+// Return services and pods with port.
 func GetServices(ns string) ([]GetServicesItem, error) {
 	clientset, err := getClientset(ns)
 	if err != nil {
@@ -41,18 +42,20 @@ func GetServices(ns string) ([]GetServicesItem, error) {
 		return nil, errors.Wrap(err, "error listing services")
 	}
 
-	result := make([]GetServicesItem, len(list.Items))
+	result := make([]GetServicesItem, 0)
 
-	for i, service := range list.Items {
-		result[i].Name = service.Name
-		result[i].ServiceHost = fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
+	for _, service := range list.Items {
+		item := GetServicesItem{}
+
+		item.Name = service.Name
+		item.ServiceHost = fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
 
 		if len(service.Spec.ExternalName) > 0 {
-			result[i].ExternalName = service.Spec.ExternalName
+			item.ExternalName = service.Spec.ExternalName
 		}
 
 		if len(service.Spec.ExternalIPs) > 0 {
-			result[i].ExternalName = service.Spec.ExternalIPs[0]
+			item.ExternalName = service.Spec.ExternalIPs[0]
 		}
 
 		ports := make([]string, len(service.Spec.Ports))
@@ -60,7 +63,36 @@ func GetServices(ns string) ([]GetServicesItem, error) {
 			ports[y] = strconv.Itoa(int(service.Spec.Ports[y].Port))
 		}
 
-		result[i].Ports = strings.Join(ports, ",")
+		item.Ports = strings.Join(ports, ",")
+
+		result = append(result, item)
+	}
+
+	podList, err := clientset.CoreV1().Pods(namespace).List(Ctx, metav1.ListOptions{
+		FieldSelector: runningPodSelector,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "error listing pods")
+	}
+
+	for _, pod := range podList.Items {
+		ports := make([]string, 0)
+
+		for _, container := range pod.Spec.Containers {
+			for _, containerPort := range container.Ports {
+				ports = append(ports, strconv.Itoa(int(containerPort.ContainerPort)))
+			}
+		}
+
+		if len(ports) > 0 {
+			item := GetServicesItem{
+				Name:        pod.Name,
+				ServiceHost: pod.Name,
+				Ports:       strings.Join(ports, ","),
+			}
+
+			result = append(result, item)
+		}
 	}
 
 	return result, nil
