@@ -944,8 +944,14 @@ export default {
       if (/.+.svc.cluster.local$/.test(row.item.ServiceHost)){
         proxyType = "svc"
       }
-      const proxyString = `kubectl --kubeconfig=/tmp/kubeconfig-${this.infoModal.content.Cluster} -n ${this.infoModal.content.NamespaceName} port-forward ${proxyType}/${row.item.Name} ${port}`
-      this.$bvModal.msgBoxOk(proxyString,{
+      const proxyString = `"Save As" this <a target="_blank" href="/getKubeConfig?cluster=${this.infoModal.content.Cluster}">file</a> to /tmp/kubeconfig-${this.infoModal.content.Cluster}` +
+      `<br/><br/><textarea disabled style="width:100%" onclick="alert(1);this.focus();this.select()">kubectl --kubeconfig=/tmp/kubeconfig-${this.infoModal.content.Cluster} -n ${this.infoModal.content.NamespaceName} port-forward ${proxyType}/${row.item.Name} ${port}</textarea>`
+
+      const h = this.$createElement
+      const messageVNode = h('div', { domProps: { innerHTML: proxyString } })
+
+      this.$bvModal.msgBoxOk([messageVNode],{
+        title: "Create proxy to remote service",
         size: 'xl',
         centered: true
       });
