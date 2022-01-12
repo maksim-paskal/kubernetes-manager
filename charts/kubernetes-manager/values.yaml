@@ -82,7 +82,7 @@ cleanOldTags:
   rclone:
     sync: "s3:<some-s3-bucket>"
   resources:
-    requests:
-      cpu: 3
-      memory: 4Gi
+    requests: {}
+      # cpu: 1
+      # memory: 4Gi
   env: []

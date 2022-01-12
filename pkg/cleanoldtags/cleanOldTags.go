@@ -52,12 +52,12 @@ func Execute(rootSpan opentracing.Span) error {
 
 	exceptions, err = getExceptions(span)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error in getExceptions")
 	}
 
 	ingresss, err := api.GetIngress()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error in get ingress")
 	}
 
 	for _, ingress := range ingresss {
@@ -93,7 +93,7 @@ func Execute(rootSpan opentracing.Span) error {
 
 		tagsNotDelete, err := cleanOldTagsByProject(rootSpan, projectID)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "error in cleanOldTagsByProject")
 		}
 
 		item := RegistryData{
@@ -152,7 +152,7 @@ func getExceptions(rootSpan opentracing.Span) ([]string, error) {
 
 	datas, err := api.GetCleanOldTagsConfig()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error in GetCleanOldTagsConfig")
 	}
 
 	for _, data := range datas {
@@ -186,7 +186,7 @@ func cleanOldTagsByProject(rootSpan opentracing.Span, projectID string) ([]strin
 
 	ingresss, err := api.GetIngress()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error in GetIngress")
 	}
 
 	for _, ingress := range ingresss {
@@ -236,7 +236,7 @@ func exec(
 	log.Debug("start list")
 
 	for _, repository := range repositories {
-		log.Debugf("repository=%s", repository)
+		log.Infof("repository=%s", repository)
 
 		if strings.HasPrefix(repository, checkRepository) {
 			tags, err := hub.Tags(repository)

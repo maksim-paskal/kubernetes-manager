@@ -15,10 +15,19 @@ package api
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var errNoPodNamespace = errors.New("set env POD_NAMESPACE")
+
 func GetCleanOldTagsConfig() ([]string, error) {
+	podNamespace := os.Getenv("POD_NAMESPACE")
+
+	if len(podNamespace) == 0 {
+		return nil, errNoPodNamespace
+	}
+
 	result := make([]string, 0)
 
 	opt := metav1.ListOptions{
@@ -26,20 +35,18 @@ func GetCleanOldTagsConfig() ([]string, error) {
 	}
 
 	for _, clientset := range clientsetCluster {
-		cms, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(Ctx, opt)
+		cms, err := clientset.CoreV1().ConfigMaps(podNamespace).List(Ctx, opt)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error listing ConfigMaps")
 		}
 
 		for _, cm := range cms.Items {
-			podNamespace := os.Getenv("POD_NAMESPACE")
-
 			cleanoldtags, err := clientset.
 				CoreV1().
 				ConfigMaps(podNamespace).
 				Get(Ctx, cm.Name, metav1.GetOptions{})
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "error getting ConfigMaps")
 			}
 
 			result = append(result, cleanoldtags.Data["exceptions"])
