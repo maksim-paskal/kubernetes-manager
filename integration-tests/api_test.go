@@ -68,6 +68,11 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = api.SaveNamespaceAnnotation(NS, map[string]string{"test": "value"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	ingress, err := api.GetIngress()
 	if err != nil {
 		t.Fatal(err)

@@ -27,7 +27,10 @@ type DeleteALLResult struct {
 }
 
 func (t *DeleteALLResult) JSON() string {
-	result, _ := json.Marshal(t)
+	result, err := json.Marshal(t)
+	if err != nil {
+		return err.Error()
+	}
 
 	return string(result)
 }

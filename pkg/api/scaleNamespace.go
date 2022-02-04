@@ -13,14 +13,12 @@ limitations under the License.
 package api
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -112,47 +110,10 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	if replicas > 0 {
-		err = saveNamespaceLastScaleDate(ns)
+		err = SaveNamespaceAnnotation(ns, map[string]string{config.LabelLastScaleDate: time.Now().Format(time.RFC3339)})
 		if err != nil {
 			return errors.Wrap(err, "error saving lastScaleDate")
 		}
-	}
-
-	return nil
-}
-
-func saveNamespaceLastScaleDate(ns string) error {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return errors.Wrap(err, "can not get clientset")
-	}
-
-	namespace := getNamespace(ns)
-
-	type metadataStringValue struct {
-		Annotations map[string]string `json:"annotations"`
-	}
-
-	type patchStringValue struct {
-		Metadata metadataStringValue `json:"metadata"`
-	}
-
-	payload := patchStringValue{
-		Metadata: metadataStringValue{
-			Annotations: map[string]string{config.LabelLastScaleDate: time.Now().Format(time.RFC3339)},
-		},
-	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return errors.Wrap(err, "error marshaling payload")
-	}
-
-	namespaces := clientset.CoreV1().Namespaces()
-
-	_, err = namespaces.Patch(Ctx, namespace, types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
-	if err != nil {
-		return err
 	}
 
 	return nil

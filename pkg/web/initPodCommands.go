@@ -28,7 +28,7 @@ type getInfoDBCommandsType struct {
 	filterStdout  func(param execContainerParams, stdout string) string
 }
 
-func initPodCommands() map[string]getInfoDBCommandsType {
+func initPodCommands() map[string]getInfoDBCommandsType { //nolint:maintidx
 	m := make(map[string]getInfoDBCommandsType)
 
 	var command strings.Builder

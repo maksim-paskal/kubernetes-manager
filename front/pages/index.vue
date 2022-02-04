@@ -193,6 +193,10 @@
                 @click="makeAPICall('scaleNamespace', 'none', '&replicas=1')"
                 >Start</b-button
               >
+              <b-button
+                @click="makeAPICall('scaleDownDelay', 'none', '&duration=3h')"
+                >Delay autopause for next 3 hours</b-button
+              >
             </b-card>
             <br />
             <b-card bg-variant="light" header="Autoscaling" class="text-center">

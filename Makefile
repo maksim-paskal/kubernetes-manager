@@ -46,9 +46,9 @@ clean:
 	kubectl delete namespace kubernetes-manager-test || true
 	kubectl delete ns ${test-namespace} || true
 upgrade:
-	go get -v -u k8s.io/api@v0.20.13 || true
-	go get -v -u k8s.io/apimachinery@v0.20.13
-	go get -v -u k8s.io/client-go@v0.20.13
+	go get -v -u k8s.io/api@v0.20.15 || true
+	go get -v -u k8s.io/apimachinery@v0.20.15
+	go get -v -u k8s.io/client-go@v0.20.15
 	go mod tidy
 	cd front && yarn update-latest
 run:

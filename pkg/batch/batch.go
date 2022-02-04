@@ -35,7 +35,7 @@ const (
 func Schedule() {
 	tracer := opentracing.GlobalTracer()
 
-	batchSheduleTimezone, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
+	_, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
@@ -45,14 +45,6 @@ func Schedule() {
 
 		span := tracer.StartSpan("scheduleBatch")
 
-		timezoneHour := time.Now().In(batchSheduleTimezone).Hour()
-
-		if timezoneHour >= ScaleDownHourMinPeriod || timezoneHour <= ScaleDownHourMaxPeriod {
-			if err := scaleDownALL(span); err != nil {
-				log.WithError(err).Error()
-			}
-		}
-
 		if err := Execute(span); err != nil {
 			log.WithError(err).Error()
 		}
@@ -61,11 +53,37 @@ func Schedule() {
 	}
 }
 
+func IsScaleDownActive(now time.Time) bool {
+	batchSheduleTimezone, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+
+	timeMin := time.Date(now.Year(), now.Month(), now.Day(), ScaleDownHourMinPeriod, 0, 0, 0, batchSheduleTimezone)
+	timeMax := time.Date(now.Year(), now.Month(), now.Day(), ScaleDownHourMaxPeriod, 0, 0, 0, batchSheduleTimezone)
+
+	if now.After(timeMin) || now.Equal(timeMin) {
+		return true
+	}
+
+	if now.Before(timeMax) || now.Equal(timeMax) {
+		return true
+	}
+
+	return false
+}
+
 func scaleDownALL(rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
+
+	if !IsScaleDownActive(time.Now()) {
+		log.Debug("scaleDownALL not in period")
+
+		return nil
+	}
 
 	ingresses, err := api.GetIngress()
 	if err != nil {
@@ -75,6 +93,18 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 	for _, ingress := range ingresses {
 		go func(ingress api.GetIngressList) {
 			log := log.WithField("namespace", ingress.Namespace)
+
+			scaleDelayText := ingress.NamespaceAnotations[config.LabelScaleDownDelay]
+			if len(scaleDelayText) > 0 {
+				scaleDelayTime, err := time.Parse(time.RFC3339, scaleDelayText)
+				if err != nil {
+					log.WithError(err).Error(err)
+				} else if time.Now().Before(scaleDelayTime) {
+					log.Info("scale down delay is active")
+					// do not scale down if delay is active
+					return
+				}
+			}
 
 			log.Info("scaledown")
 
@@ -125,6 +155,10 @@ func Execute(rootSpan opentracing.Span) error {
 	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
+
+	if err := scaleDownALL(span); err != nil {
+		log.WithError(err).Error()
+	}
 
 	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
 	if err != nil {

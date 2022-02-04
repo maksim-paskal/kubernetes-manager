@@ -15,9 +15,9 @@ require (
 	github.com/uber/jaeger-lib v2.4.1+incompatible
 	github.com/xanzy/go-gitlab v0.54.3
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/api v0.20.14
-	k8s.io/apimachinery v0.20.14
-	k8s.io/client-go v0.20.14
+	k8s.io/api v0.20.15
+	k8s.io/apimachinery v0.20.15
+	k8s.io/client-go v0.20.15
 )
 
 require (
