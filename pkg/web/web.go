@@ -39,6 +39,7 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/api/executeBatch", executeBatch)
 	mux.HandleFunc("/getKubeConfig", getKubeConfig)
 	mux.HandleFunc("/api/scaleNamespace", scaleNamespace)
+	mux.HandleFunc("/api/scaleDownDelay", scaleDownDelay)
 	mux.HandleFunc("/api/getRunningPodsCount", getRunningPodsCount)
 	mux.HandleFunc("/api/version", getAPIversion)
 	mux.HandleFunc("/api/getPods", getPods)

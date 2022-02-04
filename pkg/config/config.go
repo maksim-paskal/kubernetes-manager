@@ -34,6 +34,7 @@ const (
 
 	HoursInDay            = 24
 	KeyValueLength        = 2
+	LabelScaleDownDelay   = "kubernetes-manager/scaleDownDelay"
 	LabelLastScaleDate    = "kubernetes-manager/lastScaleDate"
 	LabelGitBranch        = "kubernetes-manager/git-branch"
 	LabelGitProjectID     = "kubernetes-manager/git-project-id"
