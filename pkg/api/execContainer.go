@@ -16,6 +16,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -29,6 +30,8 @@ type ExecContainerResults struct {
 }
 
 func ExecContainer(ns string, pod string, labelSelector string, container string, command string) (ExecContainerResults, error) { //nolint:lll
+	log.Debugf("container=%s,command=%s", container, command)
+
 	clientset, err := getClientset(ns)
 	if err != nil {
 		return ExecContainerResults{}, errors.Wrap(err, "can not get clientset")
