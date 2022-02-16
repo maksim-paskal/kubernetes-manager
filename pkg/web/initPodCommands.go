@@ -158,7 +158,7 @@ func initPodCommands() map[string]getInfoDBCommandsType { //nolint:maintidx
 			text := r.URL.Query()["text"]
 
 			param.namespace = namespace[0]
-			param.command = fmt.Sprintf("%s %s", param.command, text)
+			param.command = fmt.Sprintf("%s %s", param.command, text[0])
 
 			pod := r.URL.Query()["pod"]
 
