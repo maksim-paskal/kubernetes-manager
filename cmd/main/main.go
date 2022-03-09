@@ -15,9 +15,7 @@ package main
 import (
 	"flag"
 	"fmt"
-
-	//nolint:gosec
-	_ "net/http/pprof"
+	_ "net/http/pprof" //nolint:gosec
 	"os"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
