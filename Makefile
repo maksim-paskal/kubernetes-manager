@@ -1,18 +1,20 @@
 KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
 test-namespace=test-kubernetes-manager
+tag=dev
+image=paskalmaksim/kubernetes-manager:dev
 
 build:
 	git tag -d `git tag -l "helm-chart-*"`
 	go run github.com/goreleaser/goreleaser@latest build --rm-dist --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64/kubernetes-manager ./kubernetes-manager
-	docker build --pull --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t paskalmaksim/kubernetes-manager:dev
+	docker build --pull --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
 security-scan:
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest fs --ignore-unfixed .
 security-check:
 	# https://github.com/aquasecurity/trivy
-	go run github.com/aquasecurity/trivy/cmd/trivy@latest --ignore-unfixed paskalmaksim/kubernetes-manager:dev
+	go run github.com/aquasecurity/trivy/cmd/trivy@latest --ignore-unfixed $(image)
 push:
-	docker push paskalmaksim/kubernetes-manager:dev
+	docker push $(image)
 test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/... ./pkg/...
@@ -37,7 +39,7 @@ testChart:
 	helm template ./charts/kubernetes-manager --set cleanOldTags.enabled=true | kubectl apply --dry-run=client --validate=true -f -
 	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
-	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=paskalmaksim/kubernetes-manager:dev --set service.type=LoadBalancer
+	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=$(image) --set service.type=LoadBalancer
 	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./integration-tests/chart
 clean:
 	helm uninstall kubernetes-manager -n kubernetes-manager || true
@@ -77,3 +79,7 @@ chart-upload:
 	--commit "`git rev-parse HEAD`" \
 	--release-name-template "helm-chart-{{ .Version }}" \
 	--token $(CR_TOKEN)
+scan:
+	@trivy image \
+	-ignore-unfixed --no-progress --severity HIGH,CRITICAL \
+	$(image)
