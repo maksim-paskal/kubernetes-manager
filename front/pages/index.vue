@@ -131,6 +131,11 @@
 
           </b-tab>
           <b-tab key="tab1" title="services">
+            <b-alert variant="warning" show>
+              <b-button @click="makeAPICall('disableMTLS', 'none')"
+                >Disable mTLS verification</b-button
+              >&nbsp;For proper usage you must disable mutual TLS verification</b-alert
+            >
             <div>
               <b-form-input
                 v-model="serviceFilter"
@@ -949,13 +954,14 @@ export default {
         proxyType = "svc"
       }
       const proxyString = `"Save As" this <a target="_blank" href="/getKubeConfig?cluster=${this.infoModal.content.Cluster}">file</a> to /tmp/kubeconfig-${this.infoModal.content.Cluster}` +
-      `<br/><br/><textarea disabled style="width:100%" onclick="this.focus();this.select()">kubectl --kubeconfig=/tmp/kubeconfig-${this.infoModal.content.Cluster} -n ${this.infoModal.content.NamespaceName} port-forward ${proxyType}/${row.item.Name} ${port}:${port}</textarea>`
+      `<br/><br/><textarea readonly style="background-color:#eeeeee;border:0px;padding:10px;outline:none;width:100%" onclick="this.focus();this.select()">kubectl --kubeconfig=/tmp/kubeconfig-${this.infoModal.content.Cluster} -n ${this.infoModal.content.NamespaceName} port-forward ${proxyType}/${row.item.Name} ${port}:${port}</textarea>` +
+      `<br/><br/>this will listen localy 127.0.0.1:${port} and forward all requests to service in cluster, to listen other port for example 127.0.0.1:12345 - change end of command from ${port}:${port} to <strong>12345</strong>:${port}`
 
       const h = this.$createElement
       const messageVNode = h('div', { domProps: { innerHTML: proxyString } })
 
       this.$bvModal.msgBoxOk([messageVNode],{
-        title: "Create proxy to remote service",
+        title: `Create proxy to remote service: ${proxyType}/${row.item.Name}`,
         size: 'xl',
         centered: true
       });
