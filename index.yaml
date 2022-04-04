@@ -2,6 +2,14 @@ apiVersion: v1
 entries:
   kubernetes-manager:
   - apiVersion: v2
+    created: "2022-04-04T05:05:30.581754806Z"
+    digest: ac4a5b52159a9ecbeea01a216f3ce6ec24463255f1045948f0748db4112334f3
+    icon: https://helm.sh/img/helm.svg
+    name: kubernetes-manager
+    urls:
+    - https://github.com/maksim-paskal/kubernetes-manager/releases/download/helm-chart-0.0.6/kubernetes-manager-0.0.6.tgz
+    version: 0.0.6
+  - apiVersion: v2
     created: "2022-01-12T07:18:35.067906186Z"
     digest: ea56f6954d3efb6b13e007b8322089f212619ca1c82739313312815db80476e6
     icon: https://helm.sh/img/helm.svg
