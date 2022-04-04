@@ -3,7 +3,6 @@ module github.com/maksim-paskal/kubernetes-manager
 go 1.18
 
 require (
-	github.com/heroku/docker-registry-client v0.0.0-20211012143308-9463674c8930
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
 	github.com/maksim-paskal/logrus-hook-sentry v0.0.9
 	github.com/maksim-paskal/utils-go v0.0.5
@@ -27,8 +26,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v0.0.0-20171011171712-7484e51bf6af // indirect
-	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/getsentry/sentry-go v0.13.0 // indirect
 	github.com/go-logr/logr v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -49,7 +46,6 @@ require (
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect

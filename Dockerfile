@@ -21,23 +21,8 @@ ENV FRONT_PHPMYADMIN_URL=https://aaa
 ENV FRONT_DEBUG_SERVER_NAME=bbb
 ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
-# rclone params for cleanOldTags
-ENV RCLONE_CONFIG_S3_TYPE=s3
-ENV RCLONE_CONFIG_S3_PROVIDER=AWS
-ENV RCLONE_CONFIG_S3_ACCESS_KEY_ID=change-it
-ENV RCLONE_CONFIG_S3_SECRET_ACCESS_KEY=change-it
-ENV RCLONE_CONFIG_S3_REGION=eu-central-1
-
-COPY --from=registry:2.7.1 /bin/registry /usr/local/bin
-COPY --from=registry:2.7.1 /etc/docker/registry/config.yml /etc/docker/registry/config.yml
-
 RUN apk upgrade \
-&& apk add --no-cache ca-certificates curl tzdata \
-&& cd /tmp \
-&& curl -o rclone.zip https://downloads.rclone.org/v1.51.0/rclone-v1.51.0-linux-amd64.zip \
-&& unzip rclone.zip \
-&& mv rclone-v1.51.0-linux-amd64/rclone /usr/local/bin \
-&& rm -rf /tmp/*
+&& apk add --no-cache ca-certificates tzdata
 
 ENTRYPOINT [ "/app/kubernetes-manager" ]
 

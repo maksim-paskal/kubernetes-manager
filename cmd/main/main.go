@@ -20,7 +20,6 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/cleanoldtags"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
@@ -111,18 +110,6 @@ func main() {
 		log.WithError(err).Fatal("Could not initialize jaeger tracer")
 	}
 	defer closer.Close()
-
-	if *config.Get().ExecuteCleanOldTags {
-		span := tracer.StartSpan("main")
-
-		defer span.Finish()
-
-		if err := cleanoldtags.Execute(span); err != nil {
-			log.WithError(err).Error()
-		}
-
-		return
-	}
 
 	if *config.Get().ExecuteBatch {
 		span := tracer.StartSpan("main")
