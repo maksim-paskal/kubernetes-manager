@@ -27,7 +27,6 @@ import (
 const (
 	defaultPort                      = 9000
 	defaultRemoveBranchLastScaleDate = 10
-	defaultNotDeleteDays             = 10
 	defaultRemoveBranchDaysInactive  = 20
 	defaultBatchShedulePeriod        = 30 * time.Minute
 	defaultBatchTimezone             = "UTC"
@@ -62,7 +61,6 @@ var config = Type{
 	Port:                     flag.Int("server.port", defaultPort, ""),
 	FrontDist:                flag.String("front.dist", "front/dist", ""),
 	RemoveBranchDaysInactive: flag.Int("batch.removeBranchDaysInactive", defaultRemoveBranchDaysInactive, ""),
-	ExecuteCleanOldTags:      flag.Bool("executeCleanOldTags", false, "execute CleanOldTags"),
 	ExecuteBatch:             flag.Bool("executeBatch", false, "execute Batch"),
 	BatchShedule:             flag.Bool("batch", true, "enable batch operations"),
 	BatchShedulePeriod:       flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
@@ -76,14 +74,6 @@ var config = Type{
 	IngressNoFiltration:        flag.Bool("ingress.no-filtration", false, ""),
 
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
-
-	RegistryDirectory: flag.String("registry.directory", os.Getenv("REGISTRY_DIRECTORY"), ""),
-	RegistryURL:       flag.String("registry.url", os.Getenv("REGISTRY_URL"), ""),
-	RegistryUser:      flag.String("registry.user", os.Getenv("REGISTRY_USER"), ""),
-	RegistryPassword:  flag.String("registry.password", os.Getenv("REGISTRY_PASSWORD"), ""),
-
-	ReleasePatern:        flag.String("release.pattern", `release-(\d{4}\d{2}\d{2}).*`, ""),
-	ReleaseNotDeleteDays: flag.Int("release.notDeleteDays", defaultNotDeleteDays, ""),
 
 	SystemNamespaces: flag.String("system.namespaces", GetEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
 	SystemGitTags:    flag.String("system.gitTags", GetEnvDefault("SYSTEM_GIT_TAGS", "^master$|^release-.*"), ""),
@@ -104,12 +94,6 @@ type Type struct {
 	IngressNoFiltration        *bool          `yaml:"ingressNoFiltration"`
 	IngressHostDefaultProtocol *string        `yaml:"ingressHostDefaultProtocol"`
 	RemoveBranchLastScaleDate  *int           `yaml:"removeBranchLastScaleDate"`
-	RegistryDirectory          *string        `yaml:"registryDirectory"`
-	RegistryURL                *string        `yaml:"registryUrl"`
-	RegistryUser               *string        `yaml:"registryUser"`
-	RegistryPassword           *string        `yaml:"registryPassword"`
-	ReleasePatern              *string        `yaml:"releasePatern"`
-	ReleaseNotDeleteDays       *int           `yaml:"releaseNotDeleteDays"`
 	SystemNamespaces           *string        `yaml:"systemNamespaces"`
 	SystemGitTags              *string        `yaml:"systemGitTags"`
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
@@ -117,7 +101,6 @@ type Type struct {
 	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
 	ExecuteBatch               *bool          `yaml:"executeBatch"`
-	ExecuteCleanOldTags        *bool          `yaml:"executeCleanOldTags"`
 }
 
 func Load() error {

@@ -125,7 +125,7 @@ GITLAB_TOKEN=some-token
 
 [Delete feature branch when it was merged into main](pkg/batch/README.md)
 
-[Clear old docker registry tags](pkg/cleanoldtags/README.md)
+[Clear old docker registry tags](https://github.com/maksim-paskal/gitlab-registry-cleaner)
 
 ## Development environment
 
