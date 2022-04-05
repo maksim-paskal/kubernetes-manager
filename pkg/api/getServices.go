@@ -21,11 +21,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var allowedServiceLabels = []string{
+	"app",
+}
+
 type GetServicesItem struct {
 	Name         string
 	ServiceHost  string
 	ExternalName string
 	Ports        string
+	Labels       string
 }
 
 // Return services and pods with port.
@@ -49,6 +54,7 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 
 		item.Name = service.Name
 		item.ServiceHost = fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
+		item.Labels = getFilteredLabels(service.Labels)
 
 		if len(service.Spec.ExternalName) > 0 {
 			item.ExternalName = service.Spec.ExternalName
@@ -89,6 +95,7 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 				Name:        pod.Name,
 				ServiceHost: pod.Name,
 				Ports:       strings.Join(ports, ","),
+				Labels:      getFilteredLabels(pod.Labels),
 			}
 
 			result = append(result, &item)
@@ -96,4 +103,16 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 	}
 
 	return result, nil
+}
+
+func getFilteredLabels(labels map[string]string) string {
+	result := make([]string, 0)
+
+	for key, value := range labels {
+		if stringInSlice(key, allowedServiceLabels) {
+			result = append(result, fmt.Sprintf("%s=%s", key, value))
+		}
+	}
+
+	return strings.Join(result, ",")
 }
