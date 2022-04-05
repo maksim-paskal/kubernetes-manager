@@ -131,6 +131,9 @@
                 placeholder="Type to Search"
               />
               <b-table striped hover :items="tab1Data" :fields="tab1DataFields" :filter="serviceFilter">
+                <template v-slot:cell(ServiceHost)="row">
+                  {{ row.item.ServiceHost }}&nbsp;<span v-if="row.item.Labels" class="badge rounded-pill bg-primary">{{ row.item.Labels }}</span>
+                </template>
                 <template v-slot:cell(Ports)="row">
                   <b-button
                     size="sm"

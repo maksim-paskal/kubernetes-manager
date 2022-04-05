@@ -6,6 +6,7 @@ config=config.yaml
 
 build:
 	git tag -d `git tag -l "helm-chart-*"`
+	git tag -d `git tag -l "kubernetes-manager-*"`
 	go run github.com/goreleaser/goreleaser@latest build --rm-dist --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64/kubernetes-manager ./kubernetes-manager
 	docker build --pull --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
