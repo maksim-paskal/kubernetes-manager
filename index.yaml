@@ -2,6 +2,14 @@ apiVersion: v1
 entries:
   kubernetes-manager:
   - apiVersion: v2
+    created: "2022-04-05T13:02:49.366695843Z"
+    digest: 90dc810338503d1cd253004000eba5588955423b8654887c26cd0e0becebfe6c
+    icon: https://helm.sh/img/helm.svg
+    name: kubernetes-manager
+    urls:
+    - https://github.com/maksim-paskal/kubernetes-manager/releases/download/kubernetes-manager-0.0.8/kubernetes-manager-0.0.8.tgz
+    version: 0.0.8
+  - apiVersion: v2
     created: "2022-04-04T05:05:30.581754806Z"
     digest: ac4a5b52159a9ecbeea01a216f3ce6ec24463255f1045948f0748db4112334f3
     icon: https://helm.sh/img/helm.svg
@@ -49,4 +57,13 @@ entries:
     urls:
     - https://github.com/maksim-paskal/kubernetes-manager/releases/download/helm-chart-0.0.1/kubernetes-manager-0.0.1.tgz
     version: 0.0.1
+  kubernetes-manager-rbac:
+  - apiVersion: v2
+    created: "2022-04-05T13:02:49.478857646Z"
+    digest: 54d1d9250da3c8275dbfb0f1fd8ccb3b0866d4d639c4c29b687f01ec879d25c7
+    icon: https://helm.sh/img/helm.svg
+    name: kubernetes-manager-rbac
+    urls:
+    - https://github.com/maksim-paskal/kubernetes-manager/releases/download/kubernetes-manager-rbac-0.0.2/kubernetes-manager-rbac-0.0.2.tgz
+    version: 0.0.2
 generated: "2021-11-22T15:32:01.049662+02:00"
