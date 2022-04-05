@@ -28,24 +28,24 @@ type GetClusterKubeconfigResult struct {
 	Token       string
 }
 
-func GetClusterKubeconfig(cluster string) (GetClusterKubeconfigResult, error) {
+func GetClusterKubeconfig(cluster string) (*GetClusterKubeconfigResult, error) {
 	clientset := clientsetCluster[cluster]
 	if clientset == nil {
-		return GetClusterKubeconfigResult{}, errNoCluster
+		return &GetClusterKubeconfigResult{}, errNoCluster
 	}
 
 	namespace := os.Getenv("POD_NAMESPACE")
 
 	sa, err := clientset.CoreV1().ServiceAccounts(namespace).Get(Ctx, "kubernetes-manager", metav1.GetOptions{})
 	if err != nil {
-		return GetClusterKubeconfigResult{}, errors.Wrap(err, "error getting service account")
+		return &GetClusterKubeconfigResult{}, errors.Wrap(err, "error getting service account")
 	}
 
 	secretName := sa.Secrets[0].Name
 
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(Ctx, secretName, metav1.GetOptions{})
 	if err != nil {
-		return GetClusterKubeconfigResult{}, errors.Wrap(err, "error getting secret")
+		return &GetClusterKubeconfigResult{}, errors.Wrap(err, "error getting secret")
 	}
 
 	clusterEndpoint := ""
@@ -65,5 +65,5 @@ func GetClusterKubeconfig(cluster string) (GetClusterKubeconfigResult, error) {
 		Token:       string(secret.Data["token"]),
 	}
 
-	return result, nil
+	return &result, nil
 }

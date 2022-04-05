@@ -34,6 +34,7 @@ module.exports = {
   target: 'static',
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
+    'bootstrap-icons/font/bootstrap-icons.css',
     '~/css/main.css'
   ],
   /*
@@ -49,6 +50,8 @@ module.exports = {
     ** Run ESLint on save
     */
     extend(config, { isDev, isClient }) {
+      config.devtool = 'source-map'
+      
       if (isDev && isClient) {
         config.module.rules.push({
           enforce: 'pre',

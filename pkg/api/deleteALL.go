@@ -35,7 +35,7 @@ func (t *DeleteALLResult) JSON() string {
 	return string(result)
 }
 
-func DeleteALL(ns string, tag string, projectID string) DeleteALLResult {
+func DeleteALL(ns string, tag string, projectID string) *DeleteALLResult {
 	deleteNamespace := make(chan error)
 	deleteGitlabRegistryTag := make(chan error)
 
@@ -68,5 +68,5 @@ func DeleteALL(ns string, tag string, projectID string) DeleteALLResult {
 		}
 	}
 
-	return result
+	return &result
 }

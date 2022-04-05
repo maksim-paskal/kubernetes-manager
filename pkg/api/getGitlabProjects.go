@@ -21,12 +21,17 @@ import (
 )
 
 type GetGitlabProjectsItem struct {
-	Name        string
-	Description string
-	WebURL      string
+	ProjectID     int
+	Name          string
+	Description   string
+	DefaultBranch string
+	WebURL        string
+	TagsList      []string
+	PodRunning    *GetPodByImageResult
+	Deploy        bool
 }
 
-func GetGitlabProjects() ([]GetGitlabProjectsItem, error) {
+func GetGitlabProjects(namespace string) ([]*GetGitlabProjectsItem, error) {
 	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
 	if err != nil {
 		return nil, errors.Wrap(err, "can not connect to Gitlab")
@@ -39,12 +44,26 @@ func GetGitlabProjects() ([]GetGitlabProjectsItem, error) {
 		return nil, errors.Wrap(err, "can not list projects")
 	}
 
-	result := make([]GetGitlabProjectsItem, len(projects))
+	result := make([]*GetGitlabProjectsItem, 0)
 
-	for i, project := range projects {
-		result[i].Name = project.NameWithNamespace
-		result[i].Description = project.Description
-		result[i].WebURL = project.WebURL
+	for _, project := range projects {
+		item := GetGitlabProjectsItem{
+			ProjectID:     project.ID,
+			Name:          project.NameWithNamespace,
+			Description:   project.Description,
+			DefaultBranch: project.DefaultBranch,
+			WebURL:        project.WebURL,
+			TagsList:      formatProjectTags(project.TagList),
+		}
+
+		podByImage, err := GetPodByImage(namespace, project.PathWithNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "can not get pod images")
+		}
+
+		item.PodRunning = podByImage
+
+		result = append(result, &item)
 	}
 
 	sort.SliceStable(result, func(i, j int) bool {
@@ -52,4 +71,19 @@ func GetGitlabProjects() ([]GetGitlabProjectsItem, error) {
 	})
 
 	return result, nil
+}
+
+func formatProjectTags(tags []string) []string {
+	formatedTags := make([]string, 0)
+
+	for _, tag := range tags {
+		// ignore filter tag
+		if tag == *config.Get().ExternalServicesTopic {
+			continue
+		}
+
+		formatedTags = append(formatedTags, tag)
+	}
+
+	return formatedTags
 }

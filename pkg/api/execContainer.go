@@ -29,12 +29,12 @@ type ExecContainerResults struct {
 	ExecCode string
 }
 
-func ExecContainer(ns string, pod string, labelSelector string, container string, command string) (ExecContainerResults, error) { //nolint:lll
+func ExecContainer(ns string, pod string, labelSelector string, container string, command string) (*ExecContainerResults, error) { //nolint:lll
 	log.Debugf("container=%s,command=%s", container, command)
 
 	clientset, err := getClientset(ns)
 	if err != nil {
-		return ExecContainerResults{}, errors.Wrap(err, "can not get clientset")
+		return &ExecContainerResults{}, errors.Wrap(err, "can not get clientset")
 	}
 
 	namespace := getNamespace(ns)
@@ -46,7 +46,7 @@ func ExecContainer(ns string, pod string, labelSelector string, container string
 			FieldSelector: runningPodSelector,
 		})
 		if err != nil {
-			return ExecContainerResults{}, errors.Wrap(err, "can not list pods")
+			return &ExecContainerResults{}, errors.Wrap(err, "can not list pods")
 		}
 
 		podName = pods.Items[0].Name
@@ -71,7 +71,7 @@ func ExecContainer(ns string, pod string, labelSelector string, container string
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
-		return ExecContainerResults{}, errors.Wrap(err, "can not execute command")
+		return &ExecContainerResults{}, errors.Wrap(err, "can not execute command")
 	}
 
 	var stdout, stderr bytes.Buffer
@@ -91,5 +91,5 @@ func ExecContainer(ns string, pod string, labelSelector string, container string
 		results.ExecCode = err.Error()
 	}
 
-	return results, nil
+	return &results, nil
 }

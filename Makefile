@@ -2,6 +2,7 @@ KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
 test-namespace=test-kubernetes-manager
 tag=dev
 image=paskalmaksim/kubernetes-manager:dev
+config=config.yaml
 
 build:
 	git tag -d `git tag -l "helm-chart-*"`
@@ -35,8 +36,10 @@ coverage:
 	go tool cover -html=coverage.out
 testChart:
 	helm lint --strict ./charts/kubernetes-manager
+	helm lint --strict ./charts/kubernetes-manager-rbac
 	helm lint --strict ./integration-tests/chart
 	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./charts/kubernetes-manager-rbac | kubectl apply --dry-run=client --validate=true -f -
 	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
 	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=$(image) --set service.type=LoadBalancer
@@ -55,7 +58,7 @@ upgrade:
 	cd front && yarn update-latest
 run:
 	cp ${KUBECONFIG} ./kubeconfig
-	POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main --config=config.yaml --log.level=DEBUG $(args)
+	POD_NAME=kubernetes-manager POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main --config=$(config) --log.level=DEBUG $(args)
 heap:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
 allocs:

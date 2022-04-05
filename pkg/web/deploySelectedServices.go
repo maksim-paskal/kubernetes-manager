@@ -10,12 +10,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// nolint:dupl
 package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
+	"sync"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
@@ -25,14 +27,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getProjects(w http.ResponseWriter, r *http.Request) {
+func deploySelectedServices(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("deploySelectedServices", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
-	if err := checkParams(r, []string{"namespace"}); err != nil {
+	if err := checkParams(r, []string{"services", "namespace"}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
@@ -43,26 +45,56 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	namespace := r.URL.Query()["namespace"]
+	namespace := r.URL.Query()["namespace"][0]
+	services := r.URL.Query()["services"][0]
 
-	projects, err := api.GetGitlabProjects(namespace[0])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
+	projectPipelineDatas := strings.Split(services, ";")
 
-		return
+	var (
+		wg   sync.WaitGroup
+		lock sync.Mutex
+	)
+
+	results := make([]string, 0)
+
+	wg.Add(len(projectPipelineDatas))
+
+	for _, projectPipelineData := range projectPipelineDatas {
+		data := strings.Split(projectPipelineData, ":")
+
+		go func(namespace string, projectID string, branch string) {
+			defer wg.Done()
+
+			var resultText string
+
+			pipelineURL, err := api.CreateGitlabPipeline(namespace, projectID, branch)
+			if err != nil {
+				resultText = fmt.Sprintf("Pipeline not created %s", err.Error())
+			} else {
+				resultText = fmt.Sprintf("Pipeline created %s", pipelineURL)
+			}
+
+			lock.Lock()
+			defer lock.Unlock()
+
+			results = append(results, resultText)
+		}(namespace, data[0], data[1])
+	}
+
+	wg.Wait()
+
+	type ResultData struct {
+		Stdout string
 	}
 
 	type ResultType struct {
-		Result []*api.GetGitlabProjectsItem `json:"result"`
+		Result ResultData `json:"result"`
 	}
 
 	result := ResultType{
-		Result: projects,
+		Result: ResultData{
+			Stdout: strings.Join(results, "\n"),
+		},
 	}
 
 	js, err := json.Marshal(result)
@@ -78,8 +110,8 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(js)
 
+	_, err = w.Write(js)
 	if err != nil {
 		log.
 			WithError(err).

@@ -25,7 +25,7 @@ type execContainerParams struct {
 	command       string
 }
 
-func execContainer(rootSpan opentracing.Span, params execContainerParams) (api.ExecContainerResults, error) {
+func execContainer(rootSpan opentracing.Span, params execContainerParams) (*api.ExecContainerResults, error) {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("execContainer", opentracing.ChildOf(rootSpan.Context()))
 

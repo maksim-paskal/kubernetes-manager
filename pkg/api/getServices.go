@@ -29,7 +29,7 @@ type GetServicesItem struct {
 }
 
 // Return services and pods with port.
-func GetServices(ns string) ([]GetServicesItem, error) {
+func GetServices(ns string) ([]*GetServicesItem, error) {
 	clientset, err := getClientset(ns)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get clientset")
@@ -42,7 +42,7 @@ func GetServices(ns string) ([]GetServicesItem, error) {
 		return nil, errors.Wrap(err, "error listing services")
 	}
 
-	result := make([]GetServicesItem, 0)
+	result := make([]*GetServicesItem, 0)
 
 	for _, service := range list.Items {
 		item := GetServicesItem{}
@@ -65,7 +65,7 @@ func GetServices(ns string) ([]GetServicesItem, error) {
 
 		item.Ports = strings.Join(ports, ",")
 
-		result = append(result, item)
+		result = append(result, &item)
 	}
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(Ctx, metav1.ListOptions{
@@ -91,7 +91,7 @@ func GetServices(ns string) ([]GetServicesItem, error) {
 				Ports:       strings.Join(ports, ","),
 			}
 
-			result = append(result, item)
+			result = append(result, &item)
 		}
 	}
 

@@ -102,6 +102,24 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	alpineImage, err := api.GetPodByImage(NS, "alpine:latest")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !alpineImage.Found {
+		t.Fatal("alpine image must be found")
+	}
+
+	fakeImage, err := api.GetPodByImage(NS, "somefakeimage")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fakeImage.Found {
+		t.Fatal("fake image must not be found")
+	}
+
 	podName := pods[0].PodName
 
 	resultsByPodName, err := api.ExecContainer(NS, podName, "", PODCONTAINER, "ls")

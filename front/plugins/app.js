@@ -65,3 +65,6 @@ Vue.component('b-dropdown-divider', BDropdownDivider)
 
 import { BLink } from 'bootstrap-vue'
 Vue.component('b-link', BLink)
+
+import { FormCheckboxPlugin } from 'bootstrap-vue'
+Vue.use(FormCheckboxPlugin)

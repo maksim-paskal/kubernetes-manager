@@ -25,14 +25,16 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
+	"go.uber.org/atomic"
 )
 
-const (
-	ScaleDownHourMinPeriod = 19
-	ScaleDownHourMaxPeriod = 5
-)
+var isStoped = *atomic.NewBool(false)
 
 func Schedule() {
+	log.Info("starting batch")
+
+	isStoped.Store(false)
+
 	tracer := opentracing.GlobalTracer()
 
 	_, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
@@ -42,6 +44,10 @@ func Schedule() {
 
 	for {
 		<-time.After(*config.Get().BatchShedulePeriod)
+
+		if isStoped.Load() {
+			return
+		}
 
 		span := tracer.StartSpan("scheduleBatch")
 
@@ -53,14 +59,18 @@ func Schedule() {
 	}
 }
 
+func Stop() {
+	isStoped.Store(true)
+}
+
 func IsScaleDownActive(now time.Time) bool {
 	batchSheduleTimezone, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
 
-	timeMin := time.Date(now.Year(), now.Month(), now.Day(), ScaleDownHourMinPeriod, 0, 0, 0, batchSheduleTimezone)
-	timeMax := time.Date(now.Year(), now.Month(), now.Day(), ScaleDownHourMaxPeriod, 0, 0, 0, batchSheduleTimezone)
+	timeMin := time.Date(now.Year(), now.Month(), now.Day(), config.ScaleDownHourMinPeriod, 0, 0, 0, batchSheduleTimezone)
+	timeMax := time.Date(now.Year(), now.Month(), now.Day(), config.ScaleDownHourMaxPeriod, 0, 0, 0, batchSheduleTimezone)
 
 	if now.After(timeMin) || now.Equal(timeMin) {
 		return true
@@ -91,7 +101,7 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 	}
 
 	for _, ingress := range ingresses {
-		go func(ingress api.GetIngressList) {
+		go func(ingress *api.GetIngressList) {
 			log := log.WithField("namespace", ingress.Namespace)
 
 			scaleDelayText := ingress.NamespaceAnotations[config.LabelScaleDownDelay]
