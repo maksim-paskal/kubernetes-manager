@@ -31,7 +31,7 @@ const (
 var errWaitTimeExpired = errors.New("time expired")
 
 //nolint: goerr113
-func checkLastScaleDate(ingress api.GetIngressList) error {
+func checkLastScaleDate(ingress *api.GetIngressList) error {
 	lastScaleDate := ingress.NamespaceAnotations[config.LabelLastScaleDate]
 	if len(lastScaleDate) == 0 {
 		return fmt.Errorf("Namespace has no anotations")
@@ -46,7 +46,7 @@ func checkLastScaleDate(ingress api.GetIngressList) error {
 }
 
 //nolint: goerr113
-func checkIngress(ingress api.GetIngressList) error {
+func checkIngress(ingress *api.GetIngressList) error {
 	if want := "kubernetes-manager-test"; ingress.IngressName != want {
 		return fmt.Errorf("want=%s;got=%s", want, ingress.IngressName)
 	}
@@ -66,7 +66,7 @@ func checkIngress(ingress api.GetIngressList) error {
 	return nil
 }
 
-func waitForPodCount(count int) ([]api.GetPodsItem, error) {
+func waitForPodCount(count int) ([]*api.GetPodsItem, error) {
 	total := 0
 
 	for {

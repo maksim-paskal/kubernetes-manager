@@ -7,3 +7,4 @@ coverage.out
 deploy-*
 config-test.yaml
 /.cr-*
+/integration-tests/chart/charts

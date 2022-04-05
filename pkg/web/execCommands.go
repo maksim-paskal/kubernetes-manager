@@ -85,7 +85,7 @@ func execCommands(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type ResultType struct {
-		Result api.ExecContainerResults `json:"result"`
+		Result *api.ExecContainerResults `json:"result"`
 	}
 
 	if podExecute.filterStdout != nil {

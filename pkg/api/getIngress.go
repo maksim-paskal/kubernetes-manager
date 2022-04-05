@@ -18,7 +18,6 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
-	utilsgo "github.com/maksim-paskal/utils-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,8 +42,8 @@ type GetIngressList struct {
 }
 
 // GetIngress list all kubernetes-manager ingresses.
-func GetIngress() ([]GetIngressList, error) {
-	result := make([]GetIngressList, 0)
+func GetIngress() ([]*GetIngressList, error) {
+	result := make([]*GetIngressList, 0)
 
 	for cluster := range clientsetCluster {
 		items, err := getIngressFromCluster(cluster)
@@ -58,7 +57,7 @@ func GetIngress() ([]GetIngressList, error) {
 	return result, nil
 }
 
-func getIngressFromCluster(cluster string) ([]GetIngressList, error) {
+func getIngressFromCluster(cluster string) ([]*GetIngressList, error) {
 	opt := metav1.ListOptions{
 		LabelSelector: *config.Get().IngressFilter,
 	}
@@ -71,7 +70,7 @@ func getIngressFromCluster(cluster string) ([]GetIngressList, error) {
 		return nil, errors.Wrap(err, "can not get ingresses")
 	}
 
-	result := make([]GetIngressList, 0)
+	result := make([]*GetIngressList, 0)
 
 	for _, ingress := range ingresss.Items {
 		var item GetIngressList
@@ -108,12 +107,12 @@ func getIngressFromCluster(cluster string) ([]GetIngressList, error) {
 
 		for _, rule := range ingress.Spec.Rules {
 			host := fmt.Sprintf("%s://%s", *config.Get().IngressHostDefaultProtocol, rule.Host)
-			if !utilsgo.StringInSlice(host, item.Hosts) {
+			if !stringInSlice(host, item.Hosts) {
 				item.Hosts = append(item.Hosts, host)
 			}
 		}
 
-		result = append(result, item)
+		result = append(result, &item)
 	}
 
 	return result, nil

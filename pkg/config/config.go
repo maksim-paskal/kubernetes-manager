@@ -31,6 +31,9 @@ const (
 	defaultBatchShedulePeriod        = 30 * time.Minute
 	defaultBatchTimezone             = "UTC"
 
+	ScaleDownHourMinPeriod = 19
+	ScaleDownHourMaxPeriod = 5
+
 	HoursInDay            = 24
 	KeyValueLength        = 2
 	LabelScaleDownDelay   = "kubernetes-manager/scaleDownDelay"
@@ -41,10 +44,26 @@ const (
 	LabelRegistryTag      = "kubernetes-manager/registry-tag"
 )
 
+type Links struct {
+	SentryURL     string `yaml:"sentryUrl"`
+	SlackURL      string `yaml:"slackUrl"`
+	LogsURL       string `yaml:"logsUrl"`
+	PhpMyAdminURL string `yaml:"phpMyAdminUrl"`
+	MetricsURL    string `yaml:"metricsUrl"`
+	TracingURL    string `yaml:"tracingUrl"`
+}
+
+type Template struct {
+	NamespacePattern string // display template on some namespace
+	Display          string
+	Data             string
+}
+
 type KubernetesEndpoint struct {
 	Name             string
 	KubeConfigPath   string
 	KubeConfigServer string
+	Links            Links
 }
 
 //nolint:gochecknoglobals
@@ -62,7 +81,6 @@ var config = Type{
 	FrontDist:                flag.String("front.dist", "front/dist", ""),
 	RemoveBranchDaysInactive: flag.Int("batch.removeBranchDaysInactive", defaultRemoveBranchDaysInactive, ""),
 	ExecuteBatch:             flag.Bool("executeBatch", false, "execute Batch"),
-	BatchShedule:             flag.Bool("batch", true, "enable batch operations"),
 	BatchShedulePeriod:       flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
 	BatchSheduleTimezone:     flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
@@ -84,6 +102,9 @@ var config = Type{
 type Type struct {
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
+	Links                      Links   `yaml:"links"`
+	DebugTemplates             []Template
+	ExternalServicesTemplates  []Template
 	KubernetesEndpoints        []KubernetesEndpoint
 	Port                       *int           `yaml:"port"`
 	FrontDist                  *string        `yaml:"frontDist"`
@@ -97,7 +118,6 @@ type Type struct {
 	SystemNamespaces           *string        `yaml:"systemNamespaces"`
 	SystemGitTags              *string        `yaml:"systemGitTags"`
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
-	BatchShedule               *bool          `yaml:"batchShedule"`
 	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
 	ExecuteBatch               *bool          `yaml:"executeBatch"`
@@ -120,7 +140,37 @@ func Load() error {
 		return errors.Wrap(err, "error while yaml.Unmarshal")
 	}
 
+	loadDefaults(config)
+
 	return nil
+}
+
+func loadDefaults(config Type) {
+	for id := range config.KubernetesEndpoints {
+		if len(config.KubernetesEndpoints[id].Links.SentryURL) == 0 {
+			config.KubernetesEndpoints[id].Links.SentryURL = config.Links.SentryURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.LogsURL) == 0 {
+			config.KubernetesEndpoints[id].Links.LogsURL = config.Links.LogsURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.PhpMyAdminURL) == 0 {
+			config.KubernetesEndpoints[id].Links.PhpMyAdminURL = config.Links.PhpMyAdminURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.SlackURL) == 0 {
+			config.KubernetesEndpoints[id].Links.SlackURL = config.Links.SlackURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.MetricsURL) == 0 {
+			config.KubernetesEndpoints[id].Links.MetricsURL = config.Links.MetricsURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.TracingURL) == 0 {
+			config.KubernetesEndpoints[id].Links.TracingURL = config.Links.TracingURL
+		}
+	}
 }
 
 func CheckConfig() error {

@@ -1,1 +1,12 @@
 port: 3333
+
+links:
+  sentryUrl: "1"
+  slackUrl: "2"
+  logsUrl: "3"
+  phpMyAdminUrl: "4"
+  metricsUrl: "5"
+  tracingUrl: "6"
+
+kubernetesendpoints:
+- name: default

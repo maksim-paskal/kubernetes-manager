@@ -2,10 +2,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: kubernetes-manager-role
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation
 rules:
 - apiGroups: [""]
   resources: ["namespaces"]
@@ -33,10 +29,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: kubernetes-manager
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation
 roleRef:
   kind: Role
   name: kubernetes-manager-role
@@ -44,4 +36,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: kubernetes-manager
-  namespace: kubernetes-manager
+  namespace: {{ .Values.kubernetesManagerNamespace }}

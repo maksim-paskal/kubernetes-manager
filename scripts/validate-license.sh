@@ -45,7 +45,7 @@ if (( ${#failed_copyright_header[@]} > 0 )); then
   exit 1
 fi
 
-if grep --exclude-dir=.git --exclude=validate-license.sh --exclude=test.sh --exclude=./deploy-* -rn . -e 'alldigital'; then
+if grep --exclude-dir=.git --exclude=validate-license.sh --exclude=test.sh --exclude=./deploy-* --exclude=./config-test.yaml -rn . -e 'alldigital'; then
   echo "Some files have bad links"
   exit 1
 fi

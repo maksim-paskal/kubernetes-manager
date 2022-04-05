@@ -6,37 +6,15 @@
           :disabled="isBusy"
           variant="outline-secondary"
           @click="getIngress()"
-          >Refresh</b-button
+          ><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button
         >&nbsp;
         <b-dropdown variant="outline-secondary" text="Menu">
-          <b-dropdown-item target="_blank" href="__FRONT_SENTRY_URL__">
-            <img height="24" alt="sentry" src="~assets/sentry.png" />&nbsp;Open
-            Sentry
-          </b-dropdown-item>
-          <b-dropdown-item target="_blank" href="__FRONT_METRICS_URL__">
-            <img
-              height="24"
-              alt="grafana"
-              src="~assets/grafana.png"
-            />&nbsp;Open Metrics
-          </b-dropdown-item>
-          <b-dropdown-item target="_blank" href="__FRONT_LOGS_URL__">
-            <img
-              height="24"
-              alt="elasticsearch"
-              src="~assets/elasticsearch.png"
-            />&nbsp;Open Logs
-          </b-dropdown-item>
-          <b-dropdown-item target="_blank" href="__FRONT_TRACING_URL__">
-            <img height="24" alt="jaeger" src="~assets/jaeger.png" />&nbsp;Open
-            Tracing
-          </b-dropdown-item>
-          <b-dropdown-item target="_blank" href="__FRONT_SLACK_URL__">
-            <img height="24" alt="slack" src="~assets/slack.png" />&nbsp;Report
+          <b-dropdown-item target="_blank" v-if="this.config && this.config.Links.SlackURL" :href="this.config.Links.SlackURL">
+            <el style="font-size:24px" class="bi bi-slack"/>&nbsp;Report
             Issue
           </b-dropdown-item> 
           <b-dropdown-divider></b-dropdown-divider>
-          <b-dropdown-item disabled>__APPLICATION_VERSION__</b-dropdown-item>
+          <b-dropdown-item v-if="this.config" target="_blank" href="https://github.com/maksim-paskal/kubernetes-manager"><el style="font-size:24px" class="bi bi-github"/>&nbsp;{{ this.config.Version }}</b-dropdown-item>
           </b-dropdown
         >&nbsp;
         <b-form-input
@@ -98,32 +76,42 @@
       <b-card no-body v-if="!infoModal.loading">
         <b-tabs card @input="showTab" v-model="tabIndex">
           <b-tab key="tab0" title="info">
-            <b-button
-              :href="
-                getNamespacedString(
-                  '__FRONT_METRICS_URL__/__FRONT_METRICS_PATH__'
-                )
-              "
-              target="_blank"
-            >
+            <b-button v-if="this.infoModal.content.FrontConfig&&this.infoModal.content.FrontConfig.Links.MetricsURL"
+              :href="getNamespacedString(this.infoModal.content.FrontConfig.Links.MetricsURL)"
+              target="_blank">
               <img
                 height="16"
                 alt="grafana"
                 src="~assets/grafana.png"
               />&nbsp;Metrics
             </b-button>
-            <b-button
-              :href="
-                getNamespacedString('__FRONT_LOGS_URL__/__FRONT_LOGS_PATH__')
-              "
-              target="_blank"
-            >
+            <b-button v-if="this.infoModal.content.FrontConfig&&this.infoModal.content.FrontConfig.Links.LogsURL"
+              :href="getNamespacedString(this.infoModal.content.FrontConfig.Links.LogsURL)"
+              target="_blank">
               <img
                 height="16"
                 alt="elasticsearch"
                 src="~assets/elasticsearch.png"
               />&nbsp;Logs
             </b-button>
+            <b-button v-if="this.infoModal.content.FrontConfig&&this.infoModal.content.FrontConfig.Links.TracingURL"
+              :href="getNamespacedString(this.infoModal.content.FrontConfig.Links.TracingURL)"
+              target="_blank">
+              <img
+                height="16"
+                alt="jaeger"
+                src="~assets/jaeger.png"
+              />&nbsp;Traces
+            </b-button>
+              <b-button v-if="this.infoModal.content.FrontConfig&&this.infoModal.content.FrontConfig.Links.SentryURL"
+              :href="getNamespacedString(this.infoModal.content.FrontConfig.Links.SentryURL)"
+              target="_blank">
+              <img
+                height="16"
+                alt="sentry"
+                src="~assets/sentry.png"
+              />&nbsp;Sentry
+            </b-button> 
 
             <b-card class="mt-3" header="Namespace information">
               <pre class="m-0">{{ infoModal.content }}</pre>
@@ -151,28 +139,28 @@
                     >proxy</b-button
                   >
                   <b-button
-                    v-if="/.*mysql.*.svc.cluster.local$/.test(row.item.ServiceHost)"
+                    v-if="/.*mysql.*.svc.cluster.local$/.test(row.item.ServiceHost)&&infoModal.content.FrontConfig&&infoModal.content.FrontConfig.Links.PhpMyAdminURL"
                     size="sm"
                     variant="outline-primary"
                     target="_blank"
-                    :href="`__FRONT_PHPMYADMIN_URL__?host=${row.item.ServiceHost}`"
+                    :href="`${infoModal.content.FrontConfig.Links.PhpMyAdminURL}?host=${row.item.ServiceHost}`"
                     >phpmyadmin</b-button
                   >&nbsp;{{ row.value }}
                 </template>
               </b-table>
               <br />
-              <b-button @click="showTab(1, true, true)">Refresh</b-button>
+              <b-button @click="showTab(1, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
             </div>
           </b-tab>
           <b-tab key="tab2" title="mongo" :disabled="true">
             <pre>{{ tab2Data }}</pre>
             <div v-if="tab2Data != null">
-              <b-button @click="showTab(2, true, true)">Refresh</b-button>
+              <b-button @click="showTab(2, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
               <b-button
                 v-if="tab2Data.result == 'found'"
                 variant="danger"
                 @click="makeAPICall('exec', 'mongoDelete')"
-                >Delete</b-button
+                ><em class="bi bi-x-octagon-fill"/>&nbsp;Delete</b-button
               >
               <b-button
                 variant="outline-primary"
@@ -187,16 +175,16 @@
               header="Pause branch"
               class="text-center"
             >
-              <div>branch autopause __SCALEDOWN_MIN__:00 - __SCALEDOWN_MAX__:00 __SCALEDOWN_TIMEZONE__</div>
+              <div v-if="this.config">branch autopause {{ this.config.Batch.ScaleDownHourMinPeriod }}:00 - {{ this.config.Batch.ScaleDownHourMaxPeriod }}:00 {{ this.config.Batch.BatchSheduleTimezone }}</div>
               <br />
               <b-button
                 @click="makeAPICall('scaleNamespace', 'none', '&replicas=0')"
-                >Pause</b-button
+                ><em class="bi bi-pause-fill"/>&nbsp;Pause</b-button
               >
               <b-button
                 variant="success"
                 @click="makeAPICall('scaleNamespace', 'none', '&replicas=1')"
-                >Start</b-button
+                ><em class="bi bi-play-fill"/>&nbsp;Start</b-button
               >
               <b-button
                 @click="makeAPICall('scaleDownDelay', 'none', '&duration=3h')"
@@ -219,7 +207,7 @@
               <b-button
                 variant="danger"
                 @click="makeAPICall('deleteALL', 'projectID=')"
-                >Delete All</b-button
+                ><em class="bi bi-x-octagon-fill"/>&nbsp;Delete All</b-button
               >
             </b-card>
           </b-tab>
@@ -236,7 +224,7 @@
               :options="podsNames"
             />
             <div v-if="!podsNamesSelected">
-              <b-button @click="showTab(4, true, true)">Refresh</b-button>
+              <b-button @click="showTab(4, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
             </div>
             <div v-else>
               <b-card-text>
@@ -262,15 +250,7 @@
                       text="Templates"
                       class="m-2"
                     >
-                      <b-dropdown-item @click="templateAction(0)"
-                        >config xdebug</b-dropdown-item
-                      >
-                      <b-dropdown-item @click="templateAction(1)"
-                        >disable opcache</b-dropdown-item
-                      >
-                      <b-dropdown-item @click="templateAction(2)"
-                        >enable debug mode</b-dropdown-item
-                      >
+                      <b-dropdown-item v-for="(item, index) in this.config?this.filterTemplates(this.config.DebugTemplates):[]" :key="index" @click="templateAction(item.Data)">{{ item.Display }}</b-dropdown-item>
                     </b-dropdown>
                   </b-col>
                 </b-row>
@@ -280,7 +260,7 @@
                 Use
                 <strong>ngrok tcp 9000</strong>
               </b-card-text>
-              <b-button @click="showTab(4, true, true)">Refresh</b-button>
+              <b-button @click="showTab(4, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
               <b-button
                 variant="success"
                 @click="makeAPICall('exec', 'xdebugEnable')"
@@ -292,7 +272,7 @@
               <b-button
                 variant="danger"
                 @click="makeAPICall('deletePod', 'none')"
-                >Delete Pod</b-button
+                ><em class="bi bi-x-octagon-fill"/>&nbsp;Delete Pod</b-button
               >
             </div>
           </b-tab>
@@ -309,7 +289,7 @@
               :options="podsNames"
             />
             <div v-if="!podsNamesSelected">
-              <b-button @click="showTab(5, true, true)">Refresh</b-button>
+              <b-button @click="showTab(5, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
             </div>
             <div v-else>
               <b-card-text>
@@ -353,13 +333,13 @@
               </b-container>
 
               <br />
-              <b-button @click="showTab(5, true, true)">Refresh</b-button>
+              <b-button @click="showTab(5, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
               <b-button variant="success" @click="enableGit()">Init</b-button>
               <b-button @click="showPublicKey()">Show public key</b-button>
               <b-button
                 variant="danger"
                 @click="makeAPICall('deletePod', 'none')"
-                >Delete Pod</b-button
+                ><em class="bi bi-x-octagon-fill"/>&nbsp;Delete Pod</b-button
               >
               <b-button @click="makeAPICall('exec', 'gitFetch')"
                 >Fetch</b-button
@@ -441,15 +421,30 @@
                 placeholder="Type to Search"
               />
               <b-table striped hover :items="tab7Data" :fields="tab7DataFields" :filter="externalServiceFilter">
-                <template #cell(WebURL)="data">
-                  <b-button target="_blank" :href="data.item.WebURL+'/-/pipelines/new?var[BUILD]=true&var[NAMESPACE]='+infoModal.content.NamespaceName" variant="primary">Create Pipeline</b-button>
-                </template>
                 <template #cell(Name)="data">
                   <b-link target="_blank" :href="data.item.WebURL">{{ data.item.Name }}</b-link>
                 </template>
+                <template #cell(Running)="data">
+                  <em v-if="data.item.PodRunning.Found" :title=data.item.PodRunning.Tag class="bi bi-check-circle-fill" style="font-size:26px;color:green;"/>
+                </template>
+                <template #cell(Deploy)="data">
+                  <b-button style="width:100px" @click="getProjectBranches(data)" :variant="deployButtonVariant(data)">
+                    <div v-if="data.item.Deploy && data.item.Deploy.length <= 6">{{ data.item.Deploy }}</div>
+                    <div v-else-if="data.item.Deploy" :title=data.item.Deploy>{{ data.item.Deploy.substr(0, 3) }}...</div>
+                    <em v-else class="bi bi-dash-lg"/>
+                  </b-button>
+                </template>
+                <template #cell(Description)="data">
+                    {{ data.item.Description }}
+                    <div v-if="data.item.TagsList.length > 0"><div style="margin-left:5px" class="badge btn-secondary" v-bind:key="index" v-for="(item, index) in data.item.TagsList">{{ item }}</div></div>
+                </template>
               </b-table>
               <br />
-              <b-button @click="showTab(7, true, true)">Refresh</b-button>
+              <b-button @click="showTab(7, true, true)"><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button>
+              <b-button variant="success" :disabled=!tab7DataSelected @click="deploySelectedServices()">Deploy Selected</b-button>
+              <b-dropdown id="dropdown-2" offset="25" text="Templates" class="m-2">
+                <b-dropdown-item v-for="(item, index) in this.config?this.filterTemplates(this.config.ExternalServicesTemplates):[]" :key="index" @click="externalServiceTemplate(item.Data)">{{ item.Display }}</b-dropdown-item>
+              </b-dropdown>
             </div>
           </b-tab>
 
@@ -518,6 +513,9 @@
 
 <script>
 export default {
+  created() {
+    this.getFrontConfig();
+  },
   mounted() {
     this.getIngress();
   },
@@ -533,9 +531,10 @@ export default {
   },
   data() {
     return {
+      config: null,
       fields: [
-        { key: "Actions", sortable: false },
-        { key: "Status", sortable: false },
+        { key: "Actions", sortable: false, class: 'text-center'},
+        { key: "Status", sortable: false, class: 'text-center'},
         { key: "GitBranch", sortable: false },
         { key: "Hosts", sortable: false },
       ],
@@ -563,10 +562,12 @@ export default {
       tab4Data: null,
       tab5Data: null,
       tab7Data: null,
+      tab7DataSelected: false,
       tab7DataFields: [
+        { key: 'Running', label: 'Running', class: 'text-center'},
+        { key: 'Deploy', label: 'Deploy', class: 'text-center'},
         { key: 'Name', label: 'Service'},
-        { key: 'Description', label: 'Description' },
-        { key: 'WebURL', label: 'Options' },
+        { key: 'Description', label: 'Description', tdClass: 'col-lg-6'},
       ],
       debug_enabled: "unknown",
       debug_text: "",
@@ -585,6 +586,14 @@ export default {
     };
   },
   methods: {
+    async getFrontConfig() {
+      try {
+        this.config=await this.$axios.$get("/api/getFrontConfig");
+      } catch (e) {
+        console.error(e);
+        this.showAxiosError(e);
+      }
+    },
     async podsNamesChange() {
       this.showTab(this.tabIndex, true);
     },
@@ -612,7 +621,7 @@ export default {
         if (version) {
           url += `&version=${version}`;
         }
-        const { result } = await this.$axios.$get(url);
+        await this.$axios.$get(url);
       } catch (e) {
         console.error(e);
         this.showAxiosError(e);
@@ -623,37 +632,26 @@ export default {
       this.isBusy = true;
       this.error = null;
       try {
-        const { result } = await this.$axios.$get("/api/getIngress");
-        this.items = result;
+        const data1 = await this.$axios.$get("/api/getIngress");
+        this.items = data1.result;
 
         if (this.items) {
           this.items.forEach(async (el) => {
-            const result = await this.$axios.$get(
+            const data2 = await this.$axios.$get(
               "/api/getRunningPodsCount?namespace=" + el.Namespace
             );
-            el.RunningPodsCount = result.count;
+            el.RunningPodsCount = data2.count;
           });
         }
       } catch (e) {
         console.error(e);
         this.showAxiosError(e);
+      } finally {
+        this.isBusy = false;
       }
-      this.isBusy = false;
     },
-    async templateAction(id) {
-      switch (id) {
-        case 0:
-          this.debug_text +=
-            "env[XDEBUG_CONFIG]='remote_host=0.tcp.ngrok.io remote_port=17570'\nenv[PHP_IDE_CONFIG]='serverName=__FRONT_DEBUG_SERVER_NAME__'";
-          break;
-        case 1:
-          this.debug_text += "php_value[opcache.enable]=0";
-          break;
-        case 2:
-          this.debug_text += "env[APP_ENV]='dev'";
-          break;
-      }
-      this.debug_text += "\n";
+    async templateAction(data) {
+      this.debug_text += `${data}\n`;
     },
     async showPublicKey() {
       this.gitSyncShowPublicKey = !this.gitSyncShowPublicKey;
@@ -677,7 +675,7 @@ export default {
             break;
           default:
             if (!this.podsNamesSelected) {
-              throw "no pod selected";
+              throw new Error("no pod selected");
             }
         }
         var realy = await this.$bvModal.msgBoxConfirm("Realy?");
@@ -694,8 +692,7 @@ export default {
           throw result;
         }
 
-        switch (api) {
-          case "disableHPA":
+        if (api == "disableHPA") {
             await new Promise((resolve) => setTimeout(resolve, 10000));
             this.infoModal.loading = false;
             this.showTab(this.tabIndex, true, true);
@@ -730,7 +727,7 @@ export default {
         `&text=${btoa(this.debug_text)}`
       );
     },
-    async showTab(row, force, podsForce) {
+    async showTab(row, force, podsForce) { //NOSONAR
       if (this.infoModal.loading) return true;
       try {
         this.infoModal.loading = true;
@@ -907,6 +904,7 @@ export default {
             if (tab7Result.result.ExecCode) {
               throw tab7Result.result;
             }
+            this.tab7DataSelected = false
             this.tab7Data = tab7Result.result
             break;
         }
@@ -928,6 +926,7 @@ export default {
         this.tab2Data = null;
         this.tab4Data = null;
         this.tab5Data = null;
+        this.tab7Data = null;
 
         this.podsNamesSelectedTotal = 0;
         this.podsNamesSelected = null;
@@ -936,7 +935,15 @@ export default {
       }
 
       this.infoModal.title = item.NamespaceName;
-      this.infoModal.content = item; //JSON.stringify(item, null, 2);
+      this.infoModal.content = item;
+
+      for (let cluster of this.config.Clusters) {
+        if (cluster.ClusterName == this.infoModal.content.Cluster) {
+          this.infoModal.content.FrontConfig = cluster
+          break;
+        }
+      }
+
       this.$refs["info-modal"].show();
       this.showTab(this.tabIndex);
     },
@@ -966,6 +973,87 @@ export default {
         centered: true
       });
     },
+    getProjectBranches(data) {
+      const h = this.$createElement
+      const messageVNode = h('div', { domProps: { innerHTML: "Select branch: <select id='gitlabProjectBranchId' disabled><option value=false>Loading...</option></select>" } })
+      
+      this.$axios.$get(`/api/getProjectBranches?projectID=${data.item.ProjectID}`).then(httpData=>{
+         const select = document.getElementById("gitlabProjectBranchId")
+         select.innerHTML = ""
+         for (let row of httpData.result) {
+            var opt = document.createElement('option');
+            opt.value = row.Name;
+            opt.innerHTML = row.Name;
+            select.appendChild(opt);
+         }
+         select.disabled = false;
+         select.value = data.item.DefaultBranch;
+      })
+
+      this.$bvModal.msgBoxConfirm([messageVNode],{
+        title: data.item.Name,
+        centered: true
+      }).then(value => {
+        if (!value) return false;
+
+        const v = document.getElementById("gitlabProjectBranchId").value
+        if (!v) return false;
+
+        for (let row of this.tab7Data) {
+          if (data.item.ProjectID == row.ProjectID) {
+            row.Deploy=v
+            this.tab7DataSelected = true
+            break
+          }
+        }
+      })
+    },
+    externalServiceTemplate(projectIDs){
+      const ids = projectIDs.split(";")
+
+      for (let row of this.tab7Data) {
+        if (ids.includes(row.ProjectID.toString())) {
+          row.Deploy=row.DefaultBranch
+          this.tab7DataSelected = true
+        } else {
+          row.Deploy = false
+        }
+      }
+    },
+    filterTemplates(templates){
+      if (!templates) {
+        return []
+      }
+      return templates.filter(row => {
+        if (!row.NamespacePattern) {
+          return true
+        }
+
+        let filterResult = false
+
+        if (new RegExp(row.NamespacePattern).test(this.infoModal.content.NamespaceName)){
+          filterResult = true
+        }
+
+        return filterResult
+      })
+    },
+    deployButtonVariant(data){
+      if (data.item.Deploy){
+        return 'success'
+      }
+      return 'outline-secondary'
+    },
+    deploySelectedServices() {
+      let selectedServices = []
+      for (let row of this.tab7Data) {
+        if (row.Deploy) {
+          selectedServices[selectedServices.length] = `${row.ProjectID}:${row.Deploy}`
+        }
+      }
+
+      this.makeAPICall('deploySelectedServices', 'none', `&services=${encodeURIComponent(selectedServices.join(';'))}`)
+    }
   },
 };
 </script>

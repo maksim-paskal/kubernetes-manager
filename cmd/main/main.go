@@ -13,10 +13,12 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	_ "net/http/pprof" //nolint:gosec
 	"os"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
@@ -30,9 +32,16 @@ import (
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics"
+	"k8s.io/client-go/tools/leaderelection"
 )
 
 var version = flag.Bool("version", false, "version")
+
+const (
+	defaultLeaseDuration = 15 * time.Second
+	defaultRenewDeadline = 10 * time.Second
+	defaultRetryPeriod   = 2 * time.Second
+)
 
 func main() {
 	flag.Parse()
@@ -123,9 +132,35 @@ func main() {
 		return
 	}
 
-	if *config.Get().BatchShedule {
-		go batch.Schedule()
-	}
+	go RunLeaderElection()
 
 	web.StartServer()
+}
+
+func RunLeaderElection() {
+	podName := os.Getenv("POD_NAME")
+	podNamespace := os.Getenv("POD_NAMESPACE")
+
+	lock, err := api.GetLeaseLock(podNamespace, podName)
+	if err != nil {
+		log.WithError(err).Error()
+
+		return
+	}
+
+	leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
+		Lock:            lock,
+		ReleaseOnCancel: true,
+		LeaseDuration:   defaultLeaseDuration,
+		RenewDeadline:   defaultRenewDeadline,
+		RetryPeriod:     defaultRetryPeriod,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(c context.Context) {
+				batch.Schedule()
+			},
+			OnStoppedLeading: func() {
+				batch.Stop()
+			},
+		},
+	})
 }

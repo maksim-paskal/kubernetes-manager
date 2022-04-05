@@ -45,7 +45,7 @@ func getPods(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"]
 
 	type ResultType struct {
-		Result []api.GetPodsItem `json:"result"`
+		Result []*api.GetPodsItem `json:"result"`
 	}
 
 	podsData, err := api.GetPods(namespace[0])

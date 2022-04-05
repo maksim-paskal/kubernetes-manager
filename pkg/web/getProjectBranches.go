@@ -10,7 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// nolint:dupl
+//nolint: dupl
 package web
 
 import (
@@ -25,14 +25,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getProjects(w http.ResponseWriter, r *http.Request) {
+func getProjectBranches(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
-	if err := checkParams(r, []string{"namespace"}); err != nil {
+	if err := checkParams(r, []string{"projectID"}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
 			WithError(err).
@@ -43,9 +43,9 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	namespace := r.URL.Query()["namespace"]
+	projectID := r.URL.Query()["projectID"]
 
-	projects, err := api.GetGitlabProjects(namespace[0])
+	branches, err := api.GetGitlabProjectBranches(projectID[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -58,11 +58,11 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type ResultType struct {
-		Result []*api.GetGitlabProjectsItem `json:"result"`
+		Result []*api.GetGitlabProjectBranchItem `json:"result"`
 	}
 
 	result := ResultType{
-		Result: projects,
+		Result: branches,
 	}
 
 	js, err := json.Marshal(result)

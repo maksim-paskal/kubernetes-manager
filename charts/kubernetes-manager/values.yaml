@@ -1,10 +1,17 @@
 registry:
-  image: paskalmaksim/kubernetes-manager:v0.2.8
-  imagePullPolicy: IfNotPresent
+  image: paskalmaksim/kubernetes-manager:latest
+  imagePullPolicy: Always
 
 createDeployment: true
 
-resources: {}
+replicas: 2
+
+resources:
+  limits:
+    memory: 200Mi
+  requests:
+    cpu: 10m
+    memory: 200Mi
 
 jaeger:
   agentOnHost: false 
@@ -45,10 +52,6 @@ config:
     #   kubeconfigserver: https://aws-kubernetes-endpoint
 
 env: {}
-# - name: FRONT_PHPMYADMIN_URL
-#   value: https://phpmyadmin.example.com
-# - name: FRONT_DEBUG_SERVER_NAME
-#   value: dev.example.com
 # - name: FRONT_SENTRY_DSN
 #   value: https://id@sentry/1
 

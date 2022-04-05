@@ -55,7 +55,7 @@ func deleteALL(w http.ResponseWriter, r *http.Request) {
 	deleteALLResult := api.DeleteALL(namespace[0], tag[0], projectID[0])
 
 	type ResultData struct {
-		Stdout api.DeleteALLResult
+		Stdout *api.DeleteALLResult
 	}
 
 	type ResultType struct {

@@ -61,13 +61,13 @@ func getServices(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type ResultType struct {
-		Result []api.GetServicesItem `json:"result"`
+		Result []*api.GetServicesItem `json:"result"`
 	}
 
 	filterRegexp := regexp.MustCompile(mysqlRegexpFilter)
 
-	mysqlServices := make([]api.GetServicesItem, 0)
-	otherServices := make([]api.GetServicesItem, 0)
+	mysqlServices := make([]*api.GetServicesItem, 0)
+	otherServices := make([]*api.GetServicesItem, 0)
 
 	for _, service := range services {
 		if filterRegexp.MatchString(service.ServiceHost) {

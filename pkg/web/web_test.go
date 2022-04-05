@@ -75,9 +75,7 @@ func TestReplacer(t *testing.T) {
 
 	tests := make(map[string]string)
 
-	tests["__SCALEDOWN_MIN__"] = "19"
-	tests["__SCALEDOWN_MAX__"] = "05"
-	tests["__SCALEDOWN_TIMEZONE__"] = "UTC"
+	tests["https://__setry_id__@__setry_server__/1"] = "https://id@sentry/1"
 
 	for test, want := range tests {
 		if result := replacer.Replace(test); result != want {

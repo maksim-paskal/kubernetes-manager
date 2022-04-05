@@ -27,7 +27,7 @@ type GetPodsItem struct {
 	PodContainers []GetPodsItemContainers
 }
 
-func GetPods(ns string) ([]GetPodsItem, error) {
+func GetPods(ns string) ([]*GetPodsItem, error) {
 	clientset, err := getClientset(ns)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get clientset")
@@ -42,7 +42,7 @@ func GetPods(ns string) ([]GetPodsItem, error) {
 		return nil, errors.Wrap(err, "can not list pods")
 	}
 
-	podsData := make([]GetPodsItem, 0)
+	podsData := make([]*GetPodsItem, 0)
 
 	for _, pod := range pods.Items {
 		var podContainersData []GetPodsItemContainers
@@ -61,7 +61,7 @@ func GetPods(ns string) ([]GetPodsItem, error) {
 			PodContainers: podContainersData,
 		}
 
-		podsData = append(podsData, podData)
+		podsData = append(podsData, &podData)
 	}
 
 	return podsData, nil

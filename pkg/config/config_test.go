@@ -13,9 +13,11 @@ limitations under the License.
 package config_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"gopkg.in/yaml.v3"
 )
 
 func TestConfig(t *testing.T) {
@@ -27,5 +29,17 @@ func TestConfig(t *testing.T) {
 
 	if want := 3333; *config.Get().Port != want {
 		t.Fatalf("Port != %d", want)
+	}
+
+	links := config.Get().KubernetesEndpoints[0].Links
+
+	linksYaml, err := yaml.Marshal(&links)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Contains(string(linksYaml), "\"\"") {
+		t.Log(config.String())
+		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksYaml))
 	}
 }

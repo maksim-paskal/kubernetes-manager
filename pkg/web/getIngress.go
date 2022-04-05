@@ -32,7 +32,7 @@ func getIngress(w http.ResponseWriter, r *http.Request) {
 	defer span.Finish()
 
 	type IngressListResult struct {
-		Result []api.GetIngressList `json:"result"`
+		Result []*api.GetIngressList `json:"result"`
 	}
 
 	var result IngressListResult

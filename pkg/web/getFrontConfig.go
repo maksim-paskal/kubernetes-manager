@@ -10,7 +10,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// nolint:dupl
 package web
 
 import (
@@ -25,61 +24,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getProjects(w http.ResponseWriter, r *http.Request) {
+func getFrontConfig(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("getFrontConfig", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
-	if err := checkParams(r, []string{"namespace"}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	namespace := r.URL.Query()["namespace"]
-
-	projects, err := api.GetGitlabProjects(namespace[0])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	type ResultType struct {
-		Result []*api.GetGitlabProjectsItem `json:"result"`
-	}
-
-	result := ResultType{
-		Result: projects,
-	}
-
-	js, err := json.Marshal(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(js)
 
+	result := api.GetFrontConfig()
+
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		log.
+			WithError(err).
+			WithField(logrushookopentracing.SpanKey, span).
+			WithFields(logrushooksentry.AddRequest(r)).
+			Error()
+	}
+
+	_, err = w.Write(resultJSON)
+	//
 	if err != nil {
 		log.
 			WithError(err).

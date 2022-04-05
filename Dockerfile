@@ -17,8 +17,6 @@ ENV GITLAB_URL=https://git/api/v4
 ENV GITLAB_TOKEN=some-token
 ENV SYSTEM_GIT_TAGS=^master$|^release-.*
 ENV SYSTEM_NAMESPACES=^kube-system$
-ENV FRONT_PHPMYADMIN_URL=https://aaa
-ENV FRONT_DEBUG_SERVER_NAME=bbb
 ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
 RUN apk upgrade \

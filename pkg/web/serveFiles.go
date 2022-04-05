@@ -13,13 +13,11 @@ limitations under the License.
 package web
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	log "github.com/sirupsen/logrus"
@@ -29,19 +27,6 @@ var replacer *strings.Replacer
 
 func GetContentReplacer() *strings.Replacer {
 	return strings.NewReplacer(
-		"__APPLICATION_VERSION__", config.GetVersion(),
-		"__SCALEDOWN_MIN__", fmt.Sprintf("%02d", batch.ScaleDownHourMinPeriod),
-		"__SCALEDOWN_MAX__", fmt.Sprintf("%02d", batch.ScaleDownHourMaxPeriod),
-		"__SCALEDOWN_TIMEZONE__", *config.Get().BatchSheduleTimezone,
-		"__FRONT_PHPMYADMIN_URL__", config.GetEnvDefault("FRONT_PHPMYADMIN_URL", ""),
-		"__FRONT_DEBUG_SERVER_NAME__", config.GetEnvDefault("FRONT_DEBUG_SERVER_NAME", ""),
-		"__FRONT_SENTRY_URL__", config.GetEnvDefault("FRONT_SENTRY_URL", ""),
-		"__FRONT_METRICS_URL__", config.GetEnvDefault("FRONT_METRICS_URL", ""),
-		"__FRONT_LOGS_URL__", config.GetEnvDefault("FRONT_LOGS_URL", ""),
-		"__FRONT_TRACING_URL__", config.GetEnvDefault("FRONT_TRACING_URL", ""),
-		"__FRONT_SLACK_URL__", config.GetEnvDefault("FRONT_SLACK_URL", ""),
-		"__FRONT_METRICS_PATH__", config.GetEnvDefault("FRONT_METRICS_PATH", ""),
-		"__FRONT_LOGS_PATH__", config.GetEnvDefault("FRONT_LOGS_PATH", ""),
 		"https://__setry_id__@__setry_server__/1", config.GetEnvDefault("FRONT_SENTRY_DSN", "https://id@sentry/1"),
 	)
 }
