@@ -14,7 +14,8 @@ resources:
     memory: 200Mi
 
 jaeger:
-  agentOnHost: false 
+  agentOnHost: false
+
 sentry:
   enabled: false
   host: ""
@@ -42,7 +43,7 @@ config:
   #   - name: kubernetes-manager
   #     user:
   #       token: "<TOKEN>"
-  
+
   config.yaml: |
     kubernetesendpoints:
     - name: default
