@@ -120,30 +120,15 @@ func main() {
 	}
 	defer closer.Close()
 
-	if *config.Get().ExecuteBatch {
-		span := tracer.StartSpan("main")
-
-		defer span.Finish()
-
-		if err := batch.Execute(span); err != nil {
-			log.WithError(err).Error()
-		}
-
-		return
-	}
-
 	go RunLeaderElection()
 
 	web.StartServer()
 }
 
 func RunLeaderElection() {
-	podName := os.Getenv("POD_NAME")
-	podNamespace := os.Getenv("POD_NAMESPACE")
-
-	lock, err := api.GetLeaseLock(podNamespace, podName)
+	lock, err := api.GetLeaseLock(*config.Get().PodNamespace, *config.Get().PodName)
 	if err != nil {
-		log.WithError(err).Error()
+		log.WithError(err).Fatal()
 
 		return
 	}
