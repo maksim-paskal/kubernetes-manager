@@ -80,9 +80,12 @@ var config = Type{
 	Port:                     flag.Int("server.port", defaultPort, ""),
 	FrontDist:                flag.String("front.dist", "front/dist", ""),
 	RemoveBranchDaysInactive: flag.Int("batch.removeBranchDaysInactive", defaultRemoveBranchDaysInactive, ""),
-	ExecuteBatch:             flag.Bool("executeBatch", false, "execute Batch"),
-	BatchShedulePeriod:       flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
-	BatchSheduleTimezone:     flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
+
+	PodName:      flag.String("pod.name", os.Getenv("POD_NAME"), ""),
+	PodNamespace: flag.String("pod.namespace", os.Getenv("POD_NAMESPACE"), ""),
+
+	BatchShedulePeriod:   flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
+	BatchSheduleTimezone: flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
 	GitlabToken: flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
 	GitlabURL:   flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
@@ -120,7 +123,8 @@ type Type struct {
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
 	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
-	ExecuteBatch               *bool          `yaml:"executeBatch"`
+	PodName                    *string        `yaml:"podName"`
+	PodNamespace               *string        `yaml:"podNamespace"`
 }
 
 func Load() error {
@@ -177,6 +181,10 @@ func CheckConfig() error {
 	_, err := time.LoadLocation(*config.BatchSheduleTimezone)
 	if err != nil {
 		return errors.Wrap(err, "error in parsing timezone")
+	}
+
+	if len(*config.PodName) == 0 || len(*config.PodNamespace) == 0 {
+		return errors.New("pod name or namespace is empty")
 	}
 
 	return nil
