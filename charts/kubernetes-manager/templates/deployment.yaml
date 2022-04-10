@@ -42,14 +42,6 @@ spec:
         imagePullPolicy: {{ .Values.registry.imagePullPolicy }}
         env:
 {{ include "env" . | nindent 8 }}
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         args:
 {{ include "args" . | nindent 8 }}
         ports:
