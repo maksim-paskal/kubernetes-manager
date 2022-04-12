@@ -48,6 +48,7 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/api/disableMTLS", disableMTLS)
 	mux.HandleFunc("/api/getProjects", getProjects)
 	mux.HandleFunc("/api/getProjectBranches", getProjectBranches)
+	mux.HandleFunc("/api/getProjectInfo", getProjectInfo)
 	mux.HandleFunc("/api/deploySelectedServices", deploySelectedServices)
 	mux.HandleFunc("/api/getServices", getServices)
 	mux.HandleFunc("/api/getFrontConfig", getFrontConfig)

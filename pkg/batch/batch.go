@@ -170,12 +170,9 @@ func Execute(rootSpan opentracing.Span) error {
 		log.WithError(err).Error()
 	}
 
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Error()
+	git := api.GetGitlabClient()
+	if git == nil {
+		return errors.New("no gitlab client")
 	}
 
 	ingresss, err := api.GetIngress()

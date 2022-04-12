@@ -16,7 +16,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -29,9 +28,8 @@ type GetGitlabProjectBranchItem struct {
 }
 
 func GetGitlabProjectBranches(projectID string) ([]*GetGitlabProjectBranchItem, error) {
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		return nil, errors.Wrap(err, "can not connect to Gitlab")
+	if gitlabClient == nil {
+		return nil, errNoGitlabClient
 	}
 
 	result := make([]*GetGitlabProjectBranchItem, 0)
@@ -40,7 +38,7 @@ func GetGitlabProjectBranches(projectID string) ([]*GetGitlabProjectBranchItem, 
 	for {
 		currentPage++
 
-		gitBranches, _, err := git.Branches.ListBranches(projectID, &gitlab.ListBranchesOptions{
+		gitBranches, _, err := gitlabClient.Branches.ListBranches(projectID, &gitlab.ListBranchesOptions{
 			ListOptions: gitlab.ListOptions{
 				Page:    currentPage,
 				PerPage: gitlabListPerPage,

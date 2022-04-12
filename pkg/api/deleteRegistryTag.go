@@ -13,10 +13,8 @@ limitations under the License.
 package api
 
 import (
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
-	"github.com/xanzy/go-gitlab"
 )
 
 // DeleteRegistryTag deletes gitlab registry tag.
@@ -25,18 +23,17 @@ func DeleteGitlabRegistryTag(tag string, projectID string) error {
 		return errors.Wrap(errIsSystemBranch, tag)
 	}
 
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		return errors.Wrap(err, "can not connect to Gitlab API")
+	if gitlabClient != nil {
+		return errNoGitlabClient
 	}
 
-	gitRepos, _, err := git.ContainerRegistry.ListProjectRegistryRepositories(projectID, nil)
+	gitRepos, _, err := gitlabClient.ContainerRegistry.ListProjectRegistryRepositories(projectID, nil)
 	if err != nil {
 		return errors.Wrap(err, "can list registry by projectID")
 	}
 
 	for _, gitRepo := range gitRepos {
-		_, err := git.ContainerRegistry.DeleteRegistryRepositoryTag(projectID, gitRepo.ID, tag)
+		_, err := gitlabClient.ContainerRegistry.DeleteRegistryRepositoryTag(projectID, gitRepo.ID, tag)
 		if err != nil {
 			return errors.Wrap(err, "error in deleting tag")
 		}

@@ -12,21 +12,8 @@ limitations under the License.
 */
 package api
 
-import (
-	"context"
+import "github.com/xanzy/go-gitlab"
 
-	"github.com/xanzy/go-gitlab"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-)
-
-var (
-	Ctx = context.Background()
-
-	gitlabClient *gitlab.Client
-
-	clientsetCluster  map[string]*kubernetes.Clientset
-	restconfigCluster map[string]*rest.Config
-)
-
-const runningPodSelector = "status.phase=Running"
+func GetGitlabClient() *gitlab.Client {
+	return gitlabClient
+}

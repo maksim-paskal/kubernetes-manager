@@ -10,11 +10,11 @@
         >&nbsp;
         <b-dropdown variant="outline-secondary" text="Menu">
           <b-dropdown-item target="_blank" v-if="this.config && this.config.Links.SlackURL" :href="this.config.Links.SlackURL">
-            <el style="font-size:24px" class="bi bi-slack"/>&nbsp;Report
+            <em style="font-size:24px" class="bi bi-slack"/>&nbsp;Report
             Issue
           </b-dropdown-item> 
           <b-dropdown-divider></b-dropdown-divider>
-          <b-dropdown-item v-if="this.config" target="_blank" href="https://github.com/maksim-paskal/kubernetes-manager"><el style="font-size:24px" class="bi bi-github"/>&nbsp;{{ this.config.Version }}</b-dropdown-item>
+          <b-dropdown-item v-if="this.config" target="_blank" href="https://github.com/maksim-paskal/kubernetes-manager"><em style="font-size:24px" class="bi bi-github"/>&nbsp;{{ this.config.Version }}</b-dropdown-item>
           </b-dropdown
         >&nbsp;
         <b-form-input
@@ -424,11 +424,15 @@
                 placeholder="Type to Search"
               />
               <b-table striped hover :items="tab7Data" :fields="tab7DataFields" :filter="externalServiceFilter">
-                <template #cell(Name)="data">
-                  <b-link target="_blank" :href="data.item.WebURL">{{ data.item.Name }}</b-link>
+                <template #cell(Service)="data">
+                  <a target="_blank" :href=data.item.WebURL style="text-decoration: none;">{{ data.item.Description }}</a>
+                  <div v-if="data.item.TagsList.length > 0"><div style="margin-left:5px" class="badge btn-secondary" v-bind:key="index" v-for="(item, index) in data.item.TagsList">{{ item }}</div></div>
                 </template>
-                <template #cell(Running)="data">
-                  <em v-if="data.item.PodRunning.Found" :title=data.item.PodRunning.Tag class="bi bi-check-circle-fill" style="font-size:26px;color:green;"/>
+                <template #cell(Status)="data">
+                  <b-spinner v-if="!data.item.AdditionalInfo" variant="primary"/>
+                  <em v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.PodRunning.Found" :title=data.item.AdditionalInfo.PodRunning.Tag class="bi bi-check-circle-fill" style="font-size:26px;color:green;"/>
+                  <a target="_blank" :href=data.item.AdditionalInfo.Pipelines.LastRunningPipeline v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.Pipelines.LastRunningPipeline"><em class="bi bi-hourglass-split" style="font-size:26px;color:#1f75cb;"/></a>
+                  <a target="_blank" :href=data.item.AdditionalInfo.Pipelines.LastErrorPipeline v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.Pipelines.LastErrorPipeline"><em class="bi bi-exclamation-circle-fill" style="font-size:26px;color:#dc3545;"/></a>
                 </template>
                 <template #cell(Deploy)="data">
                   <b-button style="width:100px" @click="getProjectBranches(data)" :variant="deployButtonVariant(data)">
@@ -436,10 +440,6 @@
                     <div v-else-if="data.item.Deploy" :title=data.item.Deploy>{{ data.item.Deploy.substr(0, 3) }}...</div>
                     <em v-else class="bi bi-dash-lg"/>
                   </b-button>
-                </template>
-                <template #cell(Description)="data">
-                    {{ data.item.Description }}
-                    <div v-if="data.item.TagsList.length > 0"><div style="margin-left:5px" class="badge btn-secondary" v-bind:key="index" v-for="(item, index) in data.item.TagsList">{{ item }}</div></div>
                 </template>
               </b-table>
               <br />
@@ -567,10 +567,9 @@ export default {
       tab7Data: null,
       tab7DataSelected: false,
       tab7DataFields: [
-        { key: 'Running', label: 'Running', class: 'text-center'},
+        { key: 'Status', label: 'Status', class: 'text-center'},
         { key: 'Deploy', label: 'Deploy', class: 'text-center'},
-        { key: 'Name', label: 'Service'},
-        { key: 'Description', label: 'Description', tdClass: 'col-lg-6'},
+        { key: 'Service', label: 'Service', tdClass: 'col-lg-9'},
       ],
       debug_enabled: "unknown",
       debug_text: "",
@@ -909,6 +908,16 @@ export default {
             }
             this.tab7DataSelected = false
             this.tab7Data = tab7Result.result
+
+            this.tab7Data.forEach(async (el) => {
+              const data = await this.$axios.$get(
+                `/api/getProjectInfo?projectID=${el.ProjectID}&namespace=${this.infoModal.content.Namespace}`
+              );
+              if (data.result) {
+                el.AdditionalInfo = data.result
+              }
+            });
+
             break;
         }
       } catch (e) {

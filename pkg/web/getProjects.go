@@ -10,7 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// nolint:dupl
+
 package web
 
 import (
@@ -28,24 +28,11 @@ import (
 func getProjects(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getPods", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("getProjects", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
-	if err := checkParams(r, []string{"namespace"}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			WithFields(logrushooksentry.AddRequest(r)).
-			Error()
-
-		return
-	}
-
-	namespace := r.URL.Query()["namespace"]
-
-	projects, err := api.GetGitlabProjects(namespace[0])
+	projects, err := api.GetGitlabProjects()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.

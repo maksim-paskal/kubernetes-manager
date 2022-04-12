@@ -21,23 +21,22 @@ import (
 )
 
 type GetGitlabProjectsItem struct {
-	ProjectID     int
-	Name          string
-	Description   string
-	DefaultBranch string
-	WebURL        string
-	TagsList      []string
-	PodRunning    *GetPodByImageResult
-	Deploy        bool
+	ProjectID      int
+	Name           string
+	Description    string
+	DefaultBranch  string
+	WebURL         string
+	TagsList       []string
+	AdditionalInfo string // custom field for front end
+	Deploy         bool   // custom field for front end
 }
 
-func GetGitlabProjects(namespace string) ([]*GetGitlabProjectsItem, error) {
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		return nil, errors.Wrap(err, "can not connect to Gitlab")
+func GetGitlabProjects() ([]*GetGitlabProjectsItem, error) {
+	if gitlabClient == nil {
+		return nil, errNoGitlabClient
 	}
 
-	projects, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{
+	projects, _, err := gitlabClient.Projects.ListProjects(&gitlab.ListProjectsOptions{
 		Topic: config.Get().ExternalServicesTopic,
 	})
 	if err != nil {
@@ -55,13 +54,6 @@ func GetGitlabProjects(namespace string) ([]*GetGitlabProjectsItem, error) {
 			WebURL:        project.WebURL,
 			TagsList:      formatProjectTags(project.TagList),
 		}
-
-		podByImage, err := GetPodByImage(namespace, project.PathWithNamespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "can not get pod images")
-		}
-
-		item.PodRunning = podByImage
 
 		result = append(result, &item)
 	}

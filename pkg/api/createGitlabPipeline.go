@@ -15,15 +15,18 @@ package api
 import (
 	"strconv"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
 
+const (
+	gitlabBuildKey     = "BUILD"
+	gitlabNamespaceKey = "NAMESPACE"
+)
+
 func CreateGitlabPipeline(ns string, projectID string, branch string) (string, error) {
-	git, err := gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
-	if err != nil {
-		return "", errors.Wrap(err, "can not connect to Gitlab")
+	if gitlabClient == nil {
+		return "", errNoGitlabClient
 	}
 
 	projectIDInt, err := strconv.Atoi(projectID)
@@ -34,7 +37,7 @@ func CreateGitlabPipeline(ns string, projectID string, branch string) (string, e
 	variables := make([]*gitlab.PipelineVariable, 0)
 
 	variables = append(variables, &gitlab.PipelineVariable{
-		Key:          "BUILD",
+		Key:          gitlabBuildKey,
 		Value:        "true",
 		VariableType: "env_var",
 	})
@@ -42,12 +45,12 @@ func CreateGitlabPipeline(ns string, projectID string, branch string) (string, e
 	namespace := getNamespace(ns)
 
 	variables = append(variables, &gitlab.PipelineVariable{
-		Key:          "NAMESPACE",
+		Key:          gitlabNamespaceKey,
 		Value:        namespace,
 		VariableType: "env_var",
 	})
 
-	pipeline, _, err := git.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
+	pipeline, _, err := gitlabClient.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
 		Ref:       &branch,
 		Variables: &variables,
 	})
