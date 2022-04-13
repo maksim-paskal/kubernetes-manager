@@ -118,7 +118,7 @@
             </b-card>
 
           </b-tab>
-          <b-tab key="tab1" title="services">
+          <b-tab key="tab1" title="services" :disabled="this.infoModal.content.RunningPodsCount==0">
             <b-alert variant="warning" show>
               <b-button @click="makeAPICall('disableMTLS', 'none')"
                 >Disable mTLS verification</b-button
@@ -214,7 +214,7 @@
               >
             </b-card>
           </b-tab>
-          <b-tab key="tab4" title="debug" :disabled="!hasDefaultPod">
+          <b-tab key="tab4" title="debug" :disabled="!hasDefaultPod||this.infoModal.content.RunningPodsCount==0">
             <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
               <b-button @click="makeAPICall('disableHPA', 'none')"
                 >Disable autoscaling</b-button
@@ -279,7 +279,7 @@
               >
             </div>
           </b-tab>
-          <b-tab key="tab5" title="git-sync" :disabled="!hasDefaultPod">
+          <b-tab key="tab5" title="git-sync" :disabled="!hasDefaultPod||this.infoModal.content.RunningPodsCount==0">
             <b-alert variant="warning" show v-if="podsNamesSelectedTotal > 1">
               <b-button @click="makeAPICall('disableHPA', 'none')"
                 >Disable autoscaling</b-button
@@ -416,7 +416,7 @@
             </b-card>
           </b-tab>
 
-          <b-tab key="tab7" title="external services">
+          <b-tab key="tab7" title="external services" :disabled="this.infoModal.content.RunningPodsCount==0">
             <div>
               <b-form-input
                 v-model="externalServiceFilter"
