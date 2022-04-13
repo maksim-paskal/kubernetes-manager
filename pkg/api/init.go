@@ -16,6 +16,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/xanzy/go-gitlab"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,6 +28,13 @@ func Init() error {
 		err        error
 		restconfig *rest.Config
 	)
+
+	if len(*config.Get().GitlabToken) > 0 || len(*config.Get().GitlabURL) > 0 {
+		gitlabClient, err = gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
+		if err != nil {
+			return errors.Wrap(err, "can not connect to Gitlab")
+		}
+	}
 
 	k8sMetrics.Register(k8sMetrics.RegisterOpts{
 		RequestResult:  &requestResult{},
