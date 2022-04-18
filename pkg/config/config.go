@@ -87,8 +87,9 @@ var config = Type{
 	BatchShedulePeriod:   flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
 	BatchSheduleTimezone: flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
-	GitlabToken: flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
-	GitlabURL:   flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
+	GitlabToken:     flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
+	GitlabTokenUser: flag.String("gitlab.token.user", os.Getenv("GITLAB_TOKEN_USER"), "username of token user (need to filter pipelines)"), //nolint:lll
+	GitlabURL:       flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
 
 	IngressHostDefaultProtocol: flag.String("ingress.show-protocol", "https", ""),
 	IngressFilter:              flag.String("ingress.filter", "kubernetes-manager=true", ""),
@@ -113,6 +114,7 @@ type Type struct {
 	FrontDist                  *string        `yaml:"frontDist"`
 	RemoveBranchDaysInactive   *int           `yaml:"removeBranchDaysInactive"`
 	GitlabToken                *string        `yaml:"gitlabToken"`
+	GitlabTokenUser            *string        `yaml:"gitlabTokenUser"`
 	GitlabURL                  *string        `yaml:"gitlabUrl"`
 	IngressFilter              *string        `yaml:"ingressFilter"`
 	IngressNoFiltration        *bool          `yaml:"ingressNoFiltration"`

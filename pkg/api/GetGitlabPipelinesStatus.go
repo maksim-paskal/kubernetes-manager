@@ -15,6 +15,7 @@ package api
 import (
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -41,6 +42,7 @@ func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesS
 		UpdatedAfter: &lastHour,
 		OrderBy:      &pipelineOrderBy,
 		Sort:         &pipelineSort,
+		Username:     config.Get().GitlabTokenUser,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get project pipelines")
