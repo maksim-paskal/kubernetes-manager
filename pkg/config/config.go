@@ -45,12 +45,18 @@ const (
 )
 
 type Links struct {
-	SentryURL     string `yaml:"sentryUrl"`
-	SlackURL      string `yaml:"slackUrl"`
-	LogsURL       string `yaml:"logsUrl"`
-	PhpMyAdminURL string `yaml:"phpMyAdminUrl"`
-	MetricsURL    string `yaml:"metricsUrl"`
-	TracingURL    string `yaml:"tracingUrl"`
+	SentryURL     string      `yaml:"sentryUrl"`
+	SlackURL      string      `yaml:"slackUrl"`
+	LogsURL       string      `yaml:"logsUrl"`
+	PhpMyAdminURL string      `yaml:"phpMyAdminUrl"`
+	MetricsURL    string      `yaml:"metricsUrl"`
+	TracingURL    string      `yaml:"tracingUrl"`
+	Others        []OtherLink `yaml:"others"`
+}
+
+type OtherLink struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
 }
 
 type Template struct {
