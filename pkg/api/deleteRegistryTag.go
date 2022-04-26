@@ -23,7 +23,7 @@ func DeleteGitlabRegistryTag(tag string, projectID string) error {
 		return errors.Wrap(errIsSystemBranch, tag)
 	}
 
-	if gitlabClient != nil {
+	if gitlabClient == nil {
 		return errNoGitlabClient
 	}
 

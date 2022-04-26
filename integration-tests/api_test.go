@@ -22,7 +22,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 )
 
-const TotalTestCount = 4
+const TotalTestCount = 5
 
 var counters sync.Map
 
@@ -232,6 +232,17 @@ func TestDeleteNamespace(t *testing.T) {
 	}
 
 	if err := api.DeleteNamespace(NS); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteClusterRole(t *testing.T) {
+	defer counters.Store("TestDeleteClusterRole", "Done")
+
+	t.Parallel()
+
+	err := api.DeleteClusterRolesAndBindings(NS)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
