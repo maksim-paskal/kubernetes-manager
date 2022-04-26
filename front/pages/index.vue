@@ -9,6 +9,9 @@
           ><em class="bi bi-arrow-clockwise"/>&nbsp;Refresh</b-button
         >&nbsp;
         <b-dropdown variant="outline-secondary" text="Menu">
+          <b-dropdown-item v-for="(item, index) in this.config?this.config.Links.Others:[]" :key="index" target="_blank" :href=item.URL>
+            <em style="font-size:24px" class="bi bi-box-arrow-up-right"/>&nbsp;{{ item.Name}}
+          </b-dropdown-item>
           <b-dropdown-item target="_blank" v-if="this.config && this.config.Links.SlackURL" :href="this.config.Links.SlackURL">
             <em style="font-size:24px" class="bi bi-slack"/>&nbsp;Report
             Issue
