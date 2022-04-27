@@ -28,6 +28,8 @@ import (
 	"go.uber.org/atomic"
 )
 
+const namespaceCreatedDelay = 60 * time.Minute
+
 var isStoped = *atomic.NewBool(false)
 
 func Schedule() {
@@ -104,11 +106,27 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 		go func(ingress *api.GetIngressList) {
 			log := log.WithField("namespace", ingress.Namespace)
 
+			namespaceCreatedTime, err := utils.StringToTime(ingress.NamespaceCreated)
+			if err != nil {
+				log.WithError(err).Error("can not parse namespace created time")
+
+				return
+			}
+
+			scaledownDelay := namespaceCreatedTime.Add(namespaceCreatedDelay)
+
+			if time.Now().Before(scaledownDelay) {
+				log.Infof("namespace is created less than %s ago, skip", namespaceCreatedDelay.String())
+
+				return
+			}
+
 			scaleDelayText := ingress.NamespaceAnotations[config.LabelScaleDownDelay]
 			if len(scaleDelayText) > 0 {
-				scaleDelayTime, err := time.Parse(time.RFC3339, scaleDelayText)
+				scaleDelayTime, err := utils.StringToTime(scaleDelayText)
 				if err != nil {
-					log.WithError(err).Error(err)
+					// log error and process to scaledown
+					log.WithError(err).Error("error parsing scale delay time")
 				} else if time.Now().Before(scaleDelayTime) {
 					log.Info("scale down delay is active")
 					// do not scale down if delay is active
@@ -118,7 +136,7 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 
 			log.Info("scaledown")
 
-			err := api.ScaleNamespace(ingress.Namespace, 0)
+			err = api.ScaleNamespace(ingress.Namespace, 0)
 			if err != nil {
 				log.WithError(err).Error()
 			}
