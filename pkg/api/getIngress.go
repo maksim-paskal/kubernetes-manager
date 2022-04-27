@@ -14,7 +14,6 @@ package api
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
@@ -83,11 +82,11 @@ func getIngressFromCluster(cluster string) ([]*GetIngressList, error) {
 		item.GitBranch = ingress.Annotations[config.LabelGitBranch]
 
 		if len(namespace.GetAnnotations()[config.LabelLastScaleDate]) > 0 {
-			lastScaleDate, err := time.Parse(time.RFC3339, namespace.GetAnnotations()[config.LabelLastScaleDate])
+			lastScaleDate, err := utils.StringToTime(namespace.GetAnnotations()[config.LabelLastScaleDate])
 			if err != nil {
 				log.WithError(err).Warn("can not parse time")
 			} else {
-				item.NamespaceLastScaled = lastScaleDate.String()
+				item.NamespaceLastScaled = utils.TimeToString(lastScaleDate)
 				item.NamespaceLastScaledDays = utils.DiffToNow(lastScaleDate)
 			}
 		}
@@ -96,7 +95,7 @@ func getIngressFromCluster(cluster string) ([]*GetIngressList, error) {
 		item.Namespace = fmt.Sprintf("%s:%s", item.Cluster, namespace.Name)
 		item.NamespaceName = namespace.Name
 		item.NamespaceStatus = string(namespace.Status.Phase)
-		item.NamespaceCreated = namespace.CreationTimestamp.String()
+		item.NamespaceCreated = utils.TimeToString(namespace.CreationTimestamp.Time)
 		item.RunningPodsCount = -1
 		item.NamespaceCreatedDays = utils.DiffToNow(namespace.CreationTimestamp.Time)
 		item.NamespaceAnotations = namespace.Annotations

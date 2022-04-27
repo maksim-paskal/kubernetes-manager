@@ -20,6 +20,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -60,7 +61,7 @@ func scaleDownDelay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	annotation := map[string]string{config.LabelScaleDownDelay: time.Now().Add(durationTime).Format(time.RFC3339)}
+	annotation := map[string]string{config.LabelScaleDownDelay: utils.TimeToString(time.Now().Add(durationTime))}
 
 	err = api.SaveNamespaceAnnotation(namespace[0], annotation)
 	if err != nil {

@@ -25,6 +25,7 @@ import (
 const (
 	convertStringToInt64Base    = 10
 	convertStringToInt64BitSize = 32
+	timeFormat                  = time.RFC3339
 )
 
 func IsSystemBranch(gitBranch string) bool {
@@ -37,6 +38,14 @@ func IsSystemNamespace(namespace string) bool {
 	re := regexp.MustCompile(*config.Get().SystemNamespaces)
 
 	return re.MatchString(strings.ToLower(namespace))
+}
+
+func TimeToString(t time.Time) string {
+	return t.Format(timeFormat)
+}
+
+func StringToTime(value string) (time.Time, error) {
+	return time.Parse(timeFormat, value)
 }
 
 // returns hours between current time and input time.

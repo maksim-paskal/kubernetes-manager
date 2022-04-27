@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,7 +111,7 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	if replicas > 0 {
-		err = SaveNamespaceAnnotation(ns, map[string]string{config.LabelLastScaleDate: time.Now().Format(time.RFC3339)})
+		err = SaveNamespaceAnnotation(ns, map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())})
 		if err != nil {
 			return errors.Wrap(err, "error saving lastScaleDate")
 		}

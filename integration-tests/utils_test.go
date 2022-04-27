@@ -20,6 +20,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
 const (
@@ -37,7 +38,7 @@ func checkLastScaleDate(ingress *api.GetIngressList) error {
 		return fmt.Errorf("Namespace has no anotations")
 	}
 
-	_, err := time.Parse(time.RFC3339, lastScaleDate)
+	_, err := utils.StringToTime(lastScaleDate)
 	if err != nil {
 		return fmt.Errorf("LabelLastScaleDate format error")
 	}
