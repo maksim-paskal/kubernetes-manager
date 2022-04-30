@@ -18,13 +18,10 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	apierrorrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	scaleRetryMaxCount = 3
-	scaleRetryTimeout  = time.Second
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 // ScaleNamespace scale deployments and statefullsets.
@@ -42,11 +39,6 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	for _, d := range ds.Items {
-		log := log.WithFields(log.Fields{
-			"namespace":  ns,
-			"deployment": d.Name,
-		})
-
 		dps, err := clientset.AppsV1().Deployments(namespace).Get(Ctx, d.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting deployment")
@@ -54,22 +46,22 @@ func ScaleNamespace(ns string, replicas int32) error {
 
 		dps.Spec.Replicas = &replicas
 
-		try := 0
-
-		for {
+		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
 			_, err = clientset.AppsV1().Deployments(namespace).Update(Ctx, dps, metav1.UpdateOptions{})
-			if err == nil {
-				break
+			switch {
+			case err == nil:
+				return true, nil
+			case apierrorrs.IsConflict(err):
+				return false, nil
+			case err != nil:
+				return false, errors.Wrapf(err, "failed to update deployment %s/%s", namespace, dps.Name)
 			}
 
-			try++
+			return false, nil
+		})
 
-			if try >= scaleRetryMaxCount {
-				return errors.Wrap(err, "error scaling deployment")
-			}
-
-			log.WithError(err).Error()
-			time.Sleep(scaleRetryTimeout)
+		if err != nil {
+			return errors.Wrap(err, "error updating deployment")
 		}
 	}
 
@@ -79,11 +71,6 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	for _, s := range sf.Items {
-		log := log.WithFields(log.Fields{
-			"namespace":    ns,
-			"statefullset": s.Name,
-		})
-
 		ss, err := clientset.AppsV1().StatefulSets(namespace).Get(Ctx, s.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting statefullset")
@@ -91,22 +78,22 @@ func ScaleNamespace(ns string, replicas int32) error {
 
 		ss.Spec.Replicas = &replicas
 
-		try := 0
-
-		for {
+		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
 			_, err = clientset.AppsV1().StatefulSets(namespace).Update(Ctx, ss, metav1.UpdateOptions{})
-			if err == nil {
-				break
+			switch {
+			case err == nil:
+				return true, nil
+			case apierrorrs.IsConflict(err):
+				return false, nil
+			case err != nil:
+				return false, errors.Wrapf(err, "failed to update statefullset %s/%s", namespace, ss.Name)
 			}
 
-			try++
+			return false, nil
+		})
 
-			if try >= scaleRetryMaxCount {
-				return errors.Wrap(err, "error scaling statefullset")
-			}
-
-			log.WithError(err).Error()
-			time.Sleep(scaleRetryTimeout)
+		if err != nil {
+			return errors.Wrap(err, "error updating statefullset")
 		}
 	}
 
