@@ -69,7 +69,7 @@ func deploySelectedServices(w http.ResponseWriter, r *http.Request) {
 
 			_, err := api.CreateGitlabPipeline(namespace, projectID, branch)
 			if err != nil {
-				resultText = fmt.Sprintf(err.Error())
+				resultText = err.Error()
 
 				lock.Lock()
 				defer lock.Unlock()
