@@ -14,3 +14,5 @@ linters:
   - cyclop
   - wrapcheck
   - varnamelen
+  - execinquery
+  - exhaustruct

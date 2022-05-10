@@ -14,7 +14,6 @@ package metrics_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -61,6 +60,6 @@ func TestMetricsHandler(t *testing.T) {
 	defer resp.Body.Close()
 
 	if m := "kubernetes_manager_apiserver_request_duration"; !strings.Contains(string(body), m) {
-		t.Fatal(fmt.Sprintf("no metric %s found", m))
+		t.Fatalf("no metric %s found", m)
 	}
 }
