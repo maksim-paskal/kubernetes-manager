@@ -8,9 +8,6 @@ RUN yarn install && yarn generate
 
 FROM alpine:latest
 
-COPY --from=front /app/dist /app/dist
-COPY ./kubernetes-manager /app/kubernetes-manager
-
 # app env
 ENV KUBERNETES_ENDPOINT=https://api:6443
 ENV GITLAB_URL=https://git/api/v4
@@ -20,7 +17,14 @@ ENV SYSTEM_NAMESPACES=^kube-system$
 ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
 RUN apk upgrade \
-&& apk add --no-cache ca-certificates tzdata
+&& apk add --no-cache ca-certificates tzdata \
+&& addgroup -g 30001 -S app \
+&& adduser -u 30001 -D -S -G app app
+
+COPY --from=front /app/dist /app/dist
+COPY ./kubernetes-manager /app/kubernetes-manager
+
+USER app
 
 ENTRYPOINT [ "/app/kubernetes-manager" ]
 

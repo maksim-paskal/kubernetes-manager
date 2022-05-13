@@ -16,8 +16,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
 func TestIsScaleDownActive(t *testing.T) {
@@ -51,6 +53,93 @@ func TestIsScaleDownActive(t *testing.T) {
 	for k, v := range tests {
 		if actual := batch.IsScaleDownActive(k); actual != v {
 			t.Fatalf("%s must be %t, actual=%t", k, v, actual)
+		}
+	}
+}
+
+func TestIsScaledownDelay(t *testing.T) {
+	t.Parallel()
+
+	nowDate, err := utils.StringToTime("2022-05-13T09:00:00Z")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := make(map[*api.GetIngressList]bool)
+
+	tests[&api.GetIngressList{
+		Namespace:        "test-001",
+		NamespaceCreated: "2022-05-13T08:10:00Z",
+	}] = true // namespace will not scaledown
+
+	tests[&api.GetIngressList{
+		Namespace:        "test-002",
+		NamespaceCreated: "2022-05-13T07:10:00Z",
+	}] = false // namespace will be scaledown
+
+	tests[&api.GetIngressList{
+		Namespace:           "test-003",
+		NamespaceCreated:    "2022-05-13T07:10:00Z",
+		NamespaceLastScaled: "2022-05-13T08:10:00Z",
+	}] = true
+
+	tests[&api.GetIngressList{
+		Namespace:           "test-004",
+		NamespaceCreated:    "2022-05-13T07:10:00Z",
+		NamespaceLastScaled: "2022-05-13T07:10:00Z",
+	}] = false
+
+	tests[&api.GetIngressList{
+		Namespace:           "test-005",
+		NamespaceCreated:    "2022-05-13T07:10:00Z",
+		NamespaceLastScaled: "2022-05-13T07:10:00Z",
+		NamespaceAnotations: map[string]string{
+			config.LabelScaleDownDelay: "2022-05-13T10:00:00Z",
+		},
+	}] = true
+
+	tests[&api.GetIngressList{
+		Namespace:           "test-005",
+		NamespaceCreated:    "2022-05-13T07:10:00Z",
+		NamespaceLastScaled: "2022-05-13T07:10:00Z",
+		NamespaceAnotations: map[string]string{
+			config.LabelScaleDownDelay: "2022-05-13T7:00:00Z",
+		},
+	}] = false
+
+	for k, v := range tests {
+		actual, err := batch.IsScaledownDelay(nowDate, k)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if actual != v {
+			t.Fatalf("%s must be %t, actual=%t", k, v, actual)
+		}
+	}
+
+	// test with errors
+
+	errorsTests := []*api.GetIngressList{
+		{
+			Namespace:        "test-001",
+			NamespaceCreated: "fake-date",
+		},
+		{
+			Namespace:           "test-002",
+			NamespaceLastScaled: "fake-date",
+		},
+		{
+			NamespaceAnotations: map[string]string{
+				config.LabelScaleDownDelay: "fake-date",
+			},
+		},
+	}
+
+	for _, v := range errorsTests {
+		_, err := batch.IsScaledownDelay(nowDate, v)
+		if err == nil {
+			t.Fatalf("must be error %s", v.String())
 		}
 	}
 }

@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -32,12 +33,22 @@ type GetIngressList struct {
 	NamespaceLastScaled     string
 	NamespaceLastScaledDays int
 	NamespaceAnotations     map[string]string
+	NamespaceLabels         map[string]string
 	IngressName             string
 	IngressAnotations       map[string]string
 	IngressLabels           map[string]string
 	Hosts                   []string
 	GitBranch               string
 	RunningPodsCount        int
+}
+
+func (i *GetIngressList) String() string {
+	out, err := json.Marshal(i)
+	if err != nil {
+		return err.Error()
+	}
+
+	return string(out)
 }
 
 // GetIngress list all kubernetes-manager ingresses.
@@ -99,6 +110,7 @@ func getIngressFromCluster(cluster string) ([]*GetIngressList, error) {
 		item.RunningPodsCount = -1
 		item.NamespaceCreatedDays = utils.DiffToNow(namespace.CreationTimestamp.Time)
 		item.NamespaceAnotations = namespace.Annotations
+		item.NamespaceLabels = namespace.Labels
 
 		item.IngressName = ingress.Name
 		item.IngressAnotations = ingress.Annotations
