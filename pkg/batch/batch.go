@@ -28,7 +28,10 @@ import (
 	"go.uber.org/atomic"
 )
 
-const namespaceCreatedDelay = 60 * time.Minute
+const (
+	namespaceCreatedDelay    = 60 * time.Minute
+	namespaceLastScaledDelay = 60 * time.Minute
+)
 
 var isStoped = *atomic.NewBool(false)
 
@@ -106,32 +109,11 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 		go func(ingress *api.GetIngressList) {
 			log := log.WithField("namespace", ingress.Namespace)
 
-			namespaceCreatedTime, err := utils.StringToTime(ingress.NamespaceCreated)
+			isScaledownDelay, err := IsScaledownDelay(time.Now(), ingress)
 			if err != nil {
-				log.WithError(err).Error("can not parse namespace created time")
-
+				log.WithError(err).Error()
+			} else if isScaledownDelay {
 				return
-			}
-
-			scaledownDelay := namespaceCreatedTime.Add(namespaceCreatedDelay)
-
-			if time.Now().Before(scaledownDelay) {
-				log.Infof("namespace is created less than %s ago, skip", namespaceCreatedDelay.String())
-
-				return
-			}
-
-			scaleDelayText := ingress.NamespaceAnotations[config.LabelScaleDownDelay]
-			if len(scaleDelayText) > 0 {
-				scaleDelayTime, err := utils.StringToTime(scaleDelayText)
-				if err != nil {
-					// log error and process to scaledown
-					log.WithError(err).Error("error parsing scale delay time")
-				} else if time.Now().Before(scaleDelayTime) {
-					log.Info("scale down delay is active")
-					// do not scale down if delay is active
-					return
-				}
 			}
 
 			log.Info("scaledown")
@@ -253,4 +235,53 @@ func Execute(rootSpan opentracing.Span) error {
 	}
 
 	return nil
+}
+
+// check if scale down is active, namespace will be scaled if false, there is no scaledown if
+// if namespace created less than 60m
+// if last scale date less than 60m
+// if user ask to nodelay.
+func IsScaledownDelay(nowTime time.Time, ingress *api.GetIngressList) (bool, error) {
+	log := log.WithField("namespace", ingress.Namespace)
+
+	if len(ingress.NamespaceCreated) > 0 {
+		namespaceCreatedTime, err := utils.StringToTime(ingress.NamespaceCreated)
+		if err != nil {
+			return false, errors.Wrap(err, "can not parse namespace created time")
+		}
+
+		if scaledownDelay := namespaceCreatedTime.Add(namespaceCreatedDelay); nowTime.Before(scaledownDelay) {
+			log.Infof("namespace is created less than %s ago, skip", namespaceCreatedDelay.String())
+
+			return true, nil
+		}
+	}
+
+	if len(ingress.NamespaceLastScaled) > 0 {
+		namespaceLastScaledTime, err := utils.StringToTime(ingress.NamespaceLastScaled)
+		if err != nil {
+			return false, errors.Wrap(err, "can not parse namespace last scaled time")
+		}
+
+		if scaledownDelay := namespaceLastScaledTime.Add(namespaceLastScaledDelay); nowTime.Before(scaledownDelay) {
+			log.Infof("namespace is scaled less than %s ago, skip", namespaceLastScaledDelay.String())
+
+			return true, nil
+		}
+	}
+
+	if scaleDelayText, ok := ingress.NamespaceAnotations[config.LabelScaleDownDelay]; ok {
+		scaleDelayTime, err := utils.StringToTime(scaleDelayText)
+		if err != nil {
+			return false, errors.Wrap(err, "error parsing scale delay time")
+		}
+
+		if nowTime.Before(scaleDelayTime) {
+			log.Info("scale down delay is active")
+
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
