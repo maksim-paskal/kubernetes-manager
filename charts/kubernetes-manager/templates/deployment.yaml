@@ -20,6 +20,10 @@ spec:
         prometheus.io/port: '9000'
     spec:
       serviceAccountName: {{ .Release.Name }}
+{{ if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 6 }}
+{{ end }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -36,6 +40,16 @@ spec:
           name: {{ .Release.Name }}-config
       containers:
       - name: {{ .Release.Name }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 30001
+          runAsGroup: 30001
+          privileged: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
         resources:
 {{ toYaml .Values.resources | indent 9 }}
         image: {{ .Values.registry.image }}
