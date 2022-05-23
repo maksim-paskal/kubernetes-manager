@@ -6,11 +6,14 @@ createDeployment: true
 
 replicas: 2
 
+tolerations: []
+
 resources:
   limits:
+    cpu: 100m
     memory: 200Mi
   requests:
-    cpu: 10m
+    cpu: 100m
     memory: 200Mi
 
 jaeger:

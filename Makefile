@@ -87,3 +87,5 @@ scan:
 	@trivy image \
 	-ignore-unfixed --no-progress --severity HIGH,CRITICAL \
 	$(image)
+	@helm template ./charts/kubernetes-manager > /tmp/kubernetes-manager.yaml
+	@trivy config /tmp/kubernetes-manager.yaml
