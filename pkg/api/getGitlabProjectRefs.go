@@ -27,7 +27,7 @@ type GetGitlabProjectBranchItem struct {
 	updated *time.Time
 }
 
-func GetGitlabProjectBranches(projectID string) ([]*GetGitlabProjectBranchItem, error) {
+func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, error) {
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
@@ -63,6 +63,47 @@ func GetGitlabProjectBranches(projectID string) ([]*GetGitlabProjectBranchItem, 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].updated.After(*result[j].updated)
 	})
+
+	currentPage = 0
+	allTags := 0
+	orderBy := "updated"
+
+	const maxTags = 10
+
+	for {
+		currentPage++
+
+		gitTags, _, err := gitlabClient.Tags.ListTags(projectID, &gitlab.ListTagsOptions{
+			ListOptions: gitlab.ListOptions{
+				Page:    currentPage,
+				PerPage: gitlabListPerPage,
+			},
+			OrderBy: &orderBy,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "can not list tags")
+		}
+
+		if len(gitTags) == 0 {
+			break
+		}
+
+		for _, gitTag := range gitTags {
+			allTags++
+			if allTags > maxTags {
+				break
+			}
+
+			result = append(result, &GetGitlabProjectBranchItem{
+				Name:    gitTag.Name,
+				updated: gitTag.Commit.CommittedDate,
+			})
+		}
+
+		if allTags > maxTags {
+			break
+		}
+	}
 
 	return result, nil
 }
