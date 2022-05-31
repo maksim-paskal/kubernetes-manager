@@ -440,7 +440,7 @@
                   </div>
                 </template>
                 <template #cell(Deploy)="data">
-                  <b-button style="width:100px" @click="getProjectBranches(data)" :variant="deployButtonVariant(data)">
+                  <b-button style="width:100px" @click="getProjectRefs(data)" :variant="deployButtonVariant(data)">
                     <div v-if="data.item.Deploy && data.item.Deploy.length <= 6">{{ data.item.Deploy }}</div>
                     <div v-else-if="data.item.Deploy" :title=data.item.Deploy>{{ data.item.Deploy.substr(0, 3) }}...</div>
                     <em v-else class="bi bi-dash-lg"/>
@@ -990,11 +990,11 @@ export default {
         centered: true
       });
     },
-    getProjectBranches(data) {
+    getProjectRefs(data) {
       const h = this.$createElement
       const messageVNode = h('div', { domProps: { innerHTML: "Select branch: <select id='gitlabProjectBranchId' disabled><option value=false>Loading...</option></select>" } })
       
-      this.$axios.$get(`/api/getProjectBranches?projectID=${data.item.ProjectID}`).then(httpData=>{
+      this.$axios.$get(`/api/getProjectRefs?projectID=${data.item.ProjectID}`).then(httpData=>{
          const select = document.getElementById("gitlabProjectBranchId")
          select.innerHTML = ""
          for (let row of httpData.result) {

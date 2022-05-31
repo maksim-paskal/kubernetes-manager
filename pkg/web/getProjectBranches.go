@@ -25,10 +25,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getProjectBranches(w http.ResponseWriter, r *http.Request) {
+func getProjectRefs(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("getProjectBranches", ext.RPCServerOption(spanCtx))
+	span := tracer.StartSpan("getProjectRefs", ext.RPCServerOption(spanCtx))
 
 	defer span.Finish()
 
@@ -45,7 +45,7 @@ func getProjectBranches(w http.ResponseWriter, r *http.Request) {
 
 	projectID := r.URL.Query()["projectID"]
 
-	branches, err := api.GetGitlabProjectBranches(projectID[0])
+	refs, err := api.GetGitlabProjectRefs(projectID[0])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -62,7 +62,7 @@ func getProjectBranches(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := ResultType{
-		Result: branches,
+		Result: refs,
 	}
 
 	js, err := json.Marshal(result)
