@@ -27,8 +27,8 @@ type GetGitlabProjectsItem struct {
 	DefaultBranch  string
 	WebURL         string
 	TagsList       []string
-	AdditionalInfo string // custom field for front end
-	Deploy         bool   // custom field for front end
+	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
+	Deploy         bool                       // custom field for front end
 }
 
 func GetGitlabProjects() ([]*GetGitlabProjectsItem, error) {

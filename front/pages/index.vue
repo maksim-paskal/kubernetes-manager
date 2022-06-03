@@ -428,13 +428,13 @@
               />
               <b-table striped hover :items="tab7Data" :fields="tab7DataFields" :filter="externalServiceFilter">
                 <template #cell(Service)="data">
-                  <a target="_blank" :href=data.item.WebURL style="text-decoration: none;">{{ data.item.Description }}</a>
+                  <a target="_blank" :href=data.item.WebURL style="text-decoration: none;">{{ data.item.Description }}</a>&nbsp;<span v-if="data.item.AdditionalInfo" title="docker tag" class="badge rounded-pill bg-primary">{{ data.item.AdditionalInfo.PodRunning.Tag }}</span>&nbsp;<a v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.PodRunning.GitHash" target="_blank" :href="getGitlabCommitURL(data.item)"><span title="git short commit hash" class="badge rounded-pill bg-success">{{ data.item.AdditionalInfo.PodRunning.GitHash }}</span></a>
                   <div v-if="data.item.TagsList.length > 0"><div style="margin-left:5px" class="badge btn-secondary" v-bind:key="index" v-for="(item, index) in data.item.TagsList">{{ item }}</div></div>
                 </template>
                 <template #cell(Status)="data">
                   <div style="height:25px">
                   <b-spinner v-if="!data.item.AdditionalInfo" variant="primary"/>
-                  <em v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.PodRunning.Found" :title=data.item.AdditionalInfo.PodRunning.Tag class="bi bi-check-circle-fill" style="font-size:26px;color:green;"/>
+                  <em v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.PodRunning.Found" class="bi bi-check-circle-fill" style="font-size:26px;color:green;"/>
                   <a target="_blank" :href=data.item.AdditionalInfo.Pipelines.LastErrorPipeline v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.Pipelines.LastErrorPipeline"><em class="bi bi-exclamation-circle-fill" style="font-size:26px;color:#dc3545;"/></a>
                   <a target="_blank" :href=data.item.AdditionalInfo.Pipelines.LastRunningPipeline v-if="data.item.AdditionalInfo&&data.item.AdditionalInfo.Pipelines.LastRunningPipeline"><em class="bi bi-hourglass-split" style="font-size:26px;color:#1f75cb;"/></a>
                   </div>
@@ -937,7 +937,7 @@ export default {
       }
       return true;
     },
-    info(item, index, button) {
+    info(item) {
       if (this.infoModal.content != item) {
         this.tab1Data = null;
         this.tab2Data = null;
@@ -1070,6 +1070,12 @@ export default {
       }
 
       this.makeAPICall('deploySelectedServices', 'none', `&services=${encodeURIComponent(selectedServices.join(';'))}`)
+    },
+    getGitlabCommitURL(obj) {
+      console.log(obj)
+      if (obj && obj.AdditionalInfo && obj.AdditionalInfo.PodRunning.GitHash) {
+        return `${obj.WebURL}/-/tree/${obj.AdditionalInfo.PodRunning.GitHash}`
+      }
     }
   },
 };

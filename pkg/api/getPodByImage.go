@@ -20,8 +20,9 @@ import (
 )
 
 type GetPodByImageResult struct {
-	Tag   string
-	Found bool
+	Tag     string
+	GitHash string
+	Found   bool
 }
 
 func GetPodByImage(ns string, imagePrefix string) (*GetPodByImageResult, error) {
@@ -43,8 +44,9 @@ func GetPodByImage(ns string, imagePrefix string) (*GetPodByImageResult, error) 
 		for _, initContainer := range pod.Spec.InitContainers {
 			if strings.Contains(initContainer.Image, imagePrefix) {
 				return &GetPodByImageResult{
-					Tag:   getImageTagName(initContainer.Image),
-					Found: true,
+					Tag:     getImageTagName(initContainer.Image),
+					GitHash: pod.Labels["githash"],
+					Found:   true,
 				}, nil
 			}
 		}
@@ -52,8 +54,9 @@ func GetPodByImage(ns string, imagePrefix string) (*GetPodByImageResult, error) 
 		for _, container := range pod.Spec.Containers {
 			if strings.Contains(container.Image, imagePrefix) {
 				return &GetPodByImageResult{
-					Tag:   getImageTagName(container.Image),
-					Found: true,
+					Tag:     getImageTagName(container.Image),
+					GitHash: pod.Labels["githash"],
+					Found:   true,
 				}, nil
 			}
 		}
