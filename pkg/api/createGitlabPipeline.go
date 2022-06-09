@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	gitlabClusterKey   = "CLUSTER"
 	gitlabBuildKey     = "BUILD"
 	gitlabNamespaceKey = "NAMESPACE"
 )
@@ -47,6 +48,14 @@ func CreateGitlabPipeline(ns string, projectID string, branch string) (string, e
 	variables = append(variables, &gitlab.PipelineVariable{
 		Key:          gitlabNamespaceKey,
 		Value:        namespace,
+		VariableType: "env_var",
+	})
+
+	cluster := getCluster(ns)
+
+	variables = append(variables, &gitlab.PipelineVariable{
+		Key:          gitlabClusterKey,
+		Value:        cluster,
 		VariableType: "env_var",
 	})
 
