@@ -50,6 +50,7 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/api/getProjectRefs", getProjectRefs)
 	mux.HandleFunc("/api/getProjectInfo", getProjectInfo)
 	mux.HandleFunc("/api/deploySelectedServices", deploySelectedServices)
+	mux.HandleFunc("/api/createNewBranch", createNewBranch)
 	mux.HandleFunc("/api/getServices", getServices)
 	mux.HandleFunc("/api/getFrontConfig", getFrontConfig)
 	mux.HandleFunc("/api/ready", handlerReady)

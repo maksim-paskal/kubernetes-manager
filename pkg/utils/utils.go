@@ -13,6 +13,9 @@ limitations under the License.
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -57,6 +60,14 @@ func DiffToNow(t time.Time) int {
 
 func ConvertStringToInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, convertStringToInt64Base, convertStringToInt64BitSize)
+}
+
+func RandomString(l int) string {
+	buff := make([]byte, int(math.Ceil(float64(l)/config.KeyValueLength)))
+	_, _ = rand.Read(buff)
+	str := hex.EncodeToString(buff)
+
+	return str[:l]
 }
 
 type JaegerLogs struct{}

@@ -16,8 +16,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
-	"sync"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
@@ -48,39 +46,6 @@ func deploySelectedServices(w http.ResponseWriter, r *http.Request) {
 	namespace := r.URL.Query()["namespace"][0]
 	services := r.URL.Query()["services"][0]
 
-	projectPipelineDatas := strings.Split(services, ";")
-
-	var (
-		wg   sync.WaitGroup
-		lock sync.Mutex
-	)
-
-	pipelineErrors := make([]string, 0)
-
-	wg.Add(len(projectPipelineDatas))
-
-	for _, projectPipelineData := range projectPipelineDatas {
-		data := strings.Split(projectPipelineData, ":")
-
-		go func(namespace string, projectID string, branch string) {
-			defer wg.Done()
-
-			var resultText string
-
-			_, err := api.CreateGitlabPipeline(namespace, projectID, branch)
-			if err != nil {
-				resultText = err.Error()
-
-				lock.Lock()
-				defer lock.Unlock()
-
-				pipelineErrors = append(pipelineErrors, resultText)
-			}
-		}(namespace, data[0], data[1])
-	}
-
-	wg.Wait()
-
 	type ResultData struct {
 		Stdout string
 		Stderr string
@@ -94,8 +59,8 @@ func deploySelectedServices(w http.ResponseWriter, r *http.Request) {
 		Result: ResultData{},
 	}
 
-	if len(pipelineErrors) > 0 {
-		result.Result.Stderr = fmt.Sprintf("Pipeline(s) not created:\n%s", strings.Join(pipelineErrors, "\n"))
+	if err := api.CreateGitlabPipelinesByServices(namespace, services); err != nil {
+		result.Result.Stderr = fmt.Sprintf("Pipeline(s) not created:\n%s", err.Error())
 	} else {
 		result.Result.Stdout = "Pipeline(s) successfully created. Click Refresh button to see status."
 	}

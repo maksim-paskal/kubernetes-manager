@@ -88,7 +88,7 @@ func main() {
 
 	log.AddHook(hookTracing)
 
-	log.Infof("Starting kubernetes-manager %s...", config.GetVersion())
+	log.Infof("Starting %s %s...", config.Namespace, config.GetVersion())
 
 	err = api.Init()
 	if err != nil {
@@ -100,7 +100,7 @@ func main() {
 		log.WithError(err).Fatal("Could not parse Jaeger env vars")
 	}
 
-	cfg.ServiceName = "kubernetes-manager"
+	cfg.ServiceName = config.Namespace
 	cfg.Sampler.Type = jaeger.SamplerTypeConst
 	cfg.Sampler.Param = 1
 	cfg.Reporter.LogSpans = true

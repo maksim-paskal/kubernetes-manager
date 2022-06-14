@@ -20,8 +20,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
-const lockName = "kubernetes-manager"
-
 var (
 	errNoPodNamespaceOrPodName = errors.New("no pod namespace or pod name")
 	errNoKubernetesEndpoints   = errors.New("no kubernetes endpoints")
@@ -40,7 +38,7 @@ func GetLeaseLock(podNamespace string, podName string) (*resourcelock.LeaseLock,
 
 	return &resourcelock.LeaseLock{
 		LeaseMeta: metav1.ObjectMeta{
-			Name:      lockName,
+			Name:      config.Namespace,
 			Namespace: podNamespace,
 		},
 		Client: clientsetCluster[clusterForLeaderElection].CoordinationV1(),

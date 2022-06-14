@@ -34,14 +34,16 @@ const (
 	ScaleDownHourMinPeriod = 19
 	ScaleDownHourMaxPeriod = 5
 
-	HoursInDay            = 24
-	KeyValueLength        = 2
-	LabelScaleDownDelay   = "kubernetes-manager/scaleDownDelay"
-	LabelLastScaleDate    = "kubernetes-manager/lastScaleDate"
-	LabelGitBranch        = "kubernetes-manager/git-branch"
-	LabelGitProjectID     = "kubernetes-manager/git-project-id"
-	LabelGitProjectOrigin = "kubernetes-manager/git-project-origin"
-	LabelRegistryTag      = "kubernetes-manager/registry-tag"
+	HoursInDay     = 24
+	KeyValueLength = 2
+
+	Namespace             = "kubernetes-manager"
+	LabelScaleDownDelay   = Namespace + "/scaleDownDelay"
+	LabelLastScaleDate    = Namespace + "/lastScaleDate"
+	LabelGitBranch        = Namespace + "/git-branch"
+	LabelGitProjectID     = Namespace + "/git-project-id"
+	LabelGitProjectOrigin = Namespace + "/git-project-origin"
+	LabelRegistryTag      = Namespace + "/registry-tag"
 )
 
 type Links struct {
@@ -72,6 +74,14 @@ type KubernetesEndpoint struct {
 	Links            Links
 }
 
+type ProjectTemplate struct {
+	ProjectID       string
+	NamespacePrefix string
+	RequiredMessage string
+	Required        bool
+	Sluglify        bool // use namespace of selected project in slug
+}
+
 //nolint:gochecknoglobals
 var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
@@ -98,7 +108,7 @@ var config = Type{
 	GitlabURL:       flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
 
 	IngressHostDefaultProtocol: flag.String("ingress.show-protocol", "https", ""),
-	IngressFilter:              flag.String("ingress.filter", "kubernetes-manager=true", ""),
+	IngressFilter:              flag.String("ingress.filter", Namespace+"=true", ""),
 	IngressNoFiltration:        flag.Bool("ingress.no-filtration", false, ""),
 
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
@@ -115,6 +125,7 @@ type Type struct {
 	Links                      Links   `yaml:"links"`
 	DebugTemplates             []Template
 	ExternalServicesTemplates  []Template
+	ProjectTemplates           []ProjectTemplate
 	KubernetesEndpoints        []KubernetesEndpoint
 	Port                       *int           `yaml:"port"`
 	FrontDist                  *string        `yaml:"frontDist"`
@@ -133,6 +144,16 @@ type Type struct {
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
 	PodName                    *string        `yaml:"podName"`
 	PodNamespace               *string        `yaml:"podNamespace"`
+}
+
+func (t *Type) GetProjectTemplateByProjectID(projectID string) *ProjectTemplate {
+	for _, projectTemplate := range t.ProjectTemplates {
+		if projectID == projectTemplate.ProjectID {
+			return &projectTemplate
+		}
+	}
+
+	return nil
 }
 
 func Load() error {
