@@ -36,7 +36,7 @@ func GetClusterKubeconfig(cluster string) (*GetClusterKubeconfigResult, error) {
 
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	sa, err := clientset.CoreV1().ServiceAccounts(namespace).Get(Ctx, "kubernetes-manager", metav1.GetOptions{})
+	sa, err := clientset.CoreV1().ServiceAccounts(namespace).Get(Ctx, config.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return &GetClusterKubeconfigResult{}, errors.Wrap(err, "error getting service account")
 	}

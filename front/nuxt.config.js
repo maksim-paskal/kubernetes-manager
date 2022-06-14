@@ -9,7 +9,7 @@ module.exports = {
     title: 'Kubernetes manager',
     meta: [
       { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
       { hid: 'description', name: 'description', content: 'Kubernetes manager' }
     ]
   },
@@ -40,18 +40,18 @@ module.exports = {
   /*
   ** Customize the progress bar color
   */
-  loading: { color: '#3B8070' },
+  loading: { color: '#6c757d', height: '7px', continuous: true },
   /*
   ** Build configuration
   */
   build: {
-    publicPath: "/_nuxt/"+process.env.APPVERSION+"/",
+    publicPath: "/_nuxt/" + process.env.APPVERSION + "/",
     /*
     ** Run ESLint on save
     */
     extend(config, { isDev, isClient }) {
       config.devtool = 'source-map'
-      
+
       if (isDev && isClient) {
         config.module.rules.push({
           enforce: 'pre',

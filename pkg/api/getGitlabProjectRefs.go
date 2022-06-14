@@ -20,8 +20,6 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-const gitlabListPerPage = 100
-
 type GetGitlabProjectBranchItem struct {
 	Name    string
 	updated *time.Time
@@ -32,9 +30,16 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 		return nil, errNoGitlabClient
 	}
 
+	const (
+		gitlabListPerPage = 100
+		maxBranches       = 30
+		maxTags           = 10
+	)
+
 	result := make([]*GetGitlabProjectBranchItem, 0)
 	currentPage := 0
 
+	// add all project branches
 	for {
 		currentPage++
 
@@ -60,49 +65,35 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 		}
 	}
 
+	// sort branches by updated date
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].updated.After(*result[j].updated)
 	})
 
-	currentPage = 0
-	allTags := 0
+	// return only specified number of branches
+	if len(result) > maxBranches {
+		result = result[:maxBranches]
+	}
+
+	// add project tags
 	orderBy := "updated"
 
-	const maxTags = 10
+	gitTags, _, err := gitlabClient.Tags.ListTags(projectID, &gitlab.ListTagsOptions{
+		ListOptions: gitlab.ListOptions{
+			Page:    0,
+			PerPage: maxTags,
+		},
+		OrderBy: &orderBy,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "can not list tags")
+	}
 
-	for {
-		currentPage++
-
-		gitTags, _, err := gitlabClient.Tags.ListTags(projectID, &gitlab.ListTagsOptions{
-			ListOptions: gitlab.ListOptions{
-				Page:    currentPage,
-				PerPage: gitlabListPerPage,
-			},
-			OrderBy: &orderBy,
+	for _, gitTag := range gitTags {
+		result = append(result, &GetGitlabProjectBranchItem{
+			Name:    gitTag.Name,
+			updated: gitTag.Commit.CommittedDate,
 		})
-		if err != nil {
-			return nil, errors.Wrap(err, "can not list tags")
-		}
-
-		if len(gitTags) == 0 {
-			break
-		}
-
-		for _, gitTag := range gitTags {
-			allTags++
-			if allTags > maxTags {
-				break
-			}
-
-			result = append(result, &GetGitlabProjectBranchItem{
-				Name:    gitTag.Name,
-				updated: gitTag.Commit.CommittedDate,
-			})
-		}
-
-		if allTags > maxTags {
-			break
-		}
 	}
 
 	return result, nil

@@ -36,6 +36,7 @@ type GetFrontConfigResult struct {
 	Clusters                  []GetFrontConfigItem
 	ExternalServicesTemplates []config.Template
 	DebugTemplates            []config.Template
+	ProjectTemplates          []config.ProjectTemplate
 }
 
 // Get config for front pages.
@@ -54,6 +55,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 
 	result.DebugTemplates = config.Get().DebugTemplates
 	result.ExternalServicesTemplates = config.Get().ExternalServicesTemplates
+	result.ProjectTemplates = config.Get().ProjectTemplates
 
 	result.Clusters = make([]GetFrontConfigItem, 0)
 

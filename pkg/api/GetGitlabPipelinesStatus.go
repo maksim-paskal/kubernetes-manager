@@ -23,6 +23,7 @@ import (
 type GetGitlabPipelinesStatusResults struct {
 	LastErrorPipeline   string
 	LastRunningPipeline string
+	LastSuccessPipeline string
 }
 
 func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesStatusResults, error) {
@@ -62,7 +63,11 @@ func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesS
 					continue
 				}
 
-				if projectPipeline.Status != "success" {
+				if projectPipeline.Status == "success" {
+					result.LastSuccessPipeline = projectPipeline.WebURL
+				}
+
+				if projectPipeline.Status == "failed" {
 					result.LastErrorPipeline = projectPipeline.WebURL
 				}
 			}

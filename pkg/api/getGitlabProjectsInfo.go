@@ -22,7 +22,7 @@ type GetGitlabProjectsInfoItem struct {
 	Pipelines  *GetGitlabPipelinesStatusResults
 }
 
-func GetGitlabProjectsInfo(projectID string, ns string) (*GetGitlabProjectsInfoItem, error) {
+func GetGitlabProjectsInfo(projectID string, ns string, podInfo bool) (*GetGitlabProjectsInfoItem, error) {
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
@@ -39,9 +39,11 @@ func GetGitlabProjectsInfo(projectID string, ns string) (*GetGitlabProjectsInfoI
 		return nil, errors.Wrap(err, "can not get pipelines")
 	}
 
-	result.PodRunning, err = GetPodByImage(ns, project.PathWithNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "can not get pod images")
+	if podInfo {
+		result.PodRunning, err = GetPodByImage(ns, project.PathWithNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "can not get pod images")
+		}
 	}
 
 	return &result, nil

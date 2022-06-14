@@ -46,7 +46,12 @@ func getProjectInfo(w http.ResponseWriter, r *http.Request) {
 	projectID := r.URL.Query()["projectID"]
 	namespace := r.URL.Query()["namespace"]
 
-	projectsInfo, err := api.GetGitlabProjectsInfo(projectID[0], namespace[0])
+	podInfo := true
+	if len(r.URL.Query()["podInfo"]) > 0 && r.URL.Query()["podInfo"][0] == "false" {
+		podInfo = false
+	}
+
+	projectsInfo, err := api.GetGitlabProjectsInfo(projectID[0], namespace[0], podInfo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
