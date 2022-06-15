@@ -675,7 +675,7 @@ export default {
         `&text=${btoa(this.debug_text)}`
       );
     },
-    async showTab(row, force, podsForce) {//NOSONAR
+    async showTab(row, force, podsForce) {
       if (this.infoModal.loading) return true;
       try {
         this.infoModal.loading = true;
@@ -946,14 +946,26 @@ export default {
         .then((httpData) => {
           const select = document.getElementById("gitlabProjectBranchId");
           select.innerHTML = "";
+          let defaultValue = data.item.DefaultBranch;
+          let selectedTag = null;
+          if (
+            data.item.AdditionalInfo &&
+            data.item.AdditionalInfo.PodRunning.Tag
+          ) {
+            selectedTag = data.item.AdditionalInfo.PodRunning.Tag;
+          }
+
           for (let row of httpData.result) {
             var opt = document.createElement("option");
             opt.value = row.Name;
             opt.innerHTML = row.Name;
             select.appendChild(opt);
+            if (selectedTag && selectedTag == row.Slug) {
+              defaultValue = row.Name;
+            }
           }
           select.disabled = false;
-          select.value = data.item.DefaultBranch;
+          select.value = defaultValue;
         });
 
       this.$bvModal
@@ -1033,7 +1045,6 @@ export default {
       );
     },
     getGitlabCommitURL(obj) {
-      console.log(obj);
       if (obj && obj.AdditionalInfo && obj.AdditionalInfo.PodRunning.GitHash) {
         return `${obj.WebURL}/-/tree/${obj.AdditionalInfo.PodRunning.GitHash}`;
       }
