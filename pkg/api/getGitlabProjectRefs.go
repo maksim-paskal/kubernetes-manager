@@ -13,7 +13,9 @@ limitations under the License.
 package api
 
 import (
+	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -22,6 +24,7 @@ import (
 
 type GetGitlabProjectBranchItem struct {
 	Name    string
+	Slug    string
 	updated *time.Time
 }
 
@@ -29,6 +32,10 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
+
+	// to slug ref name - use simple logic
+	// replace all unknown symbols to '-'
+	slugRegexp := regexp.MustCompile(`[^a-zA-Z0-9]`)
 
 	const (
 		gitlabListPerPage = 100
@@ -60,6 +67,7 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 		for _, gitBranch := range gitBranches {
 			result = append(result, &GetGitlabProjectBranchItem{
 				Name:    gitBranch.Name,
+				Slug:    strings.ToLower(slugRegexp.ReplaceAllString(gitBranch.Name, "-")),
 				updated: gitBranch.Commit.CommittedDate,
 			})
 		}
@@ -92,6 +100,7 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 	for _, gitTag := range gitTags {
 		result = append(result, &GetGitlabProjectBranchItem{
 			Name:    gitTag.Name,
+			Slug:    strings.ToLower(slugRegexp.ReplaceAllString(gitTag.Name, "-")),
 			updated: gitTag.Commit.CommittedDate,
 		})
 	}
