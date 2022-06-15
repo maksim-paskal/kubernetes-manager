@@ -27,12 +27,17 @@ func CreateNamespace(ns string) (string, error) {
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getNamespace(ns),
-			Labels: map[string]string{
-				config.Namespace: "true",
-			},
+			Name:        getNamespace(ns),
+			Labels:      config.Get().NamespaceMeta.Labels,
+			Annotations: config.Get().NamespaceMeta.Annotations,
 		},
 	}
+
+	if namespace.ObjectMeta.Labels == nil {
+		namespace.ObjectMeta.Labels = make(map[string]string)
+	}
+
+	namespace.ObjectMeta.Labels[config.Namespace] = "true"
 
 	result, err := clientset.CoreV1().Namespaces().Create(Ctx, &namespace, metav1.CreateOptions{})
 	if err != nil {

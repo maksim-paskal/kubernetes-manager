@@ -82,6 +82,11 @@ type ProjectTemplate struct {
 	Sluglify        bool // use namespace of selected project in slug
 }
 
+type NamespaceMeta struct {
+	Labels      map[string]string
+	Annotations map[string]string
+}
+
 //nolint:gochecknoglobals
 var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
@@ -123,6 +128,7 @@ type Type struct {
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
 	Links                      Links   `yaml:"links"`
+	NamespaceMeta              NamespaceMeta
 	DebugTemplates             []Template
 	ExternalServicesTemplates  []Template
 	ProjectTemplates           []ProjectTemplate
