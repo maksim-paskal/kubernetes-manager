@@ -16,9 +16,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -30,18 +28,6 @@ const (
 	convertStringToInt64BitSize = 32
 	timeFormat                  = time.RFC3339
 )
-
-func IsSystemBranch(gitBranch string) bool {
-	re := regexp.MustCompile(*config.Get().SystemGitTags)
-
-	return re.MatchString(strings.ToLower(gitBranch))
-}
-
-func IsSystemNamespace(namespace string) bool {
-	re := regexp.MustCompile(*config.Get().SystemNamespaces)
-
-	return re.MatchString(strings.ToLower(namespace))
-}
 
 func TimeToString(t time.Time) string {
 	return t.Format(timeFormat)

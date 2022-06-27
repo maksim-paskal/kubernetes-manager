@@ -13,7 +13,6 @@ limitations under the License.
 package api
 
 import (
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,7 +25,12 @@ func DisableHPA(ns string) error {
 
 	namespace := getNamespace(ns)
 
-	if utils.IsSystemNamespace(namespace) {
+	isSystemNamespace, err := IsSystemNamespace(ns)
+	if err != nil {
+		return errors.Wrap(err, "error getting system namespace")
+	}
+
+	if isSystemNamespace {
 		return errors.Wrap(errIsSystemNamespace, namespace)
 	}
 

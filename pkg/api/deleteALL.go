@@ -23,7 +23,6 @@ type DeleteALLResultOperation struct {
 
 type DeleteALLResult struct {
 	DeleteNamespaceResult         DeleteALLResultOperation
-	DeleteGitlabRegistryTagResult DeleteALLResultOperation
 	DeleteClusterRolesAndBindings DeleteALLResultOperation
 }
 
@@ -38,7 +37,6 @@ func (t *DeleteALLResult) JSON() string {
 
 func DeleteALL(ns string, tag string, projectID string) *DeleteALLResult {
 	deleteNamespace := make(chan error)
-	deleteGitlabRegistryTag := make(chan error)
 	deleteClusterRolesAndBindings := make(chan error)
 
 	go func() {
@@ -49,16 +47,9 @@ func DeleteALL(ns string, tag string, projectID string) *DeleteALLResult {
 		deleteClusterRolesAndBindings <- DeleteClusterRolesAndBindings(ns)
 	}()
 
-	go func() {
-		deleteGitlabRegistryTag <- DeleteGitlabRegistryTag(tag, projectID)
-	}()
-
 	result := DeleteALLResult{
 		DeleteNamespaceResult: DeleteALLResultOperation{
 			Result: fmt.Sprintf("Namespace %s deleted", ns),
-		},
-		DeleteGitlabRegistryTagResult: DeleteALLResultOperation{
-			Result: fmt.Sprintf("Registry tag %s deleted", tag),
 		},
 		DeleteClusterRolesAndBindings: DeleteALLResultOperation{
 			Result: fmt.Sprintf("Cluster role and binding in namespace %s deleted", ns),
@@ -73,12 +64,6 @@ func DeleteALL(ns string, tag string, projectID string) *DeleteALLResult {
 
 	if err := <-deleteClusterRolesAndBindings; err != nil {
 		result.DeleteClusterRolesAndBindings = DeleteALLResultOperation{
-			Result: err.Error(),
-		}
-	}
-
-	if err := <-deleteGitlabRegistryTag; err != nil {
-		result.DeleteGitlabRegistryTagResult = DeleteALLResultOperation{
 			Result: err.Error(),
 		}
 	}

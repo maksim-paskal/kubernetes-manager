@@ -32,7 +32,6 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/_nuxt/", serveFiles)
 	mux.HandleFunc("/api/getIngress", getIngress)
 	mux.HandleFunc("/api/deleteNamespace", deleteNamespace)
-	mux.HandleFunc("/api/deleteRegistryTag", deleteRegistryTag)
 	mux.HandleFunc("/api/deletePod", deletePod)
 	mux.HandleFunc("/api/exec", execCommands)
 	mux.HandleFunc("/api/deleteALL", deleteALL)

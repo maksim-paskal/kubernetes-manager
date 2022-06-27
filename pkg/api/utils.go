@@ -15,6 +15,9 @@ package api
 import (
 	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -53,4 +56,24 @@ func stringInSlice(str string, list []string) bool {
 	}
 
 	return false
+}
+
+func IsSystemNamespace(ns string) (bool, error) {
+	clientset, err := getClientset(ns)
+	if err != nil {
+		return false, errors.Wrap(err, "can not get clientset")
+	}
+
+	namespace := getNamespace(ns)
+
+	namespaceInfo, err := clientset.CoreV1().Namespaces().Get(Ctx, namespace, metav1.GetOptions{})
+	if err != nil {
+		return false, errors.Wrap(err, "can not get namespace")
+	}
+
+	if _, ok := namespaceInfo.Annotations[config.LabelSystemNamespace]; ok {
+		return true, nil
+	}
+
+	return false, nil
 }
