@@ -190,16 +190,13 @@ func Execute(rootSpan opentracing.Span) error {
 			"gitBranch":    gitBranch,
 		})
 
-		if utils.IsSystemNamespace(ingress.NamespaceName) {
-			log.Debugf("%s is system namespace", ingress.NamespaceName)
-
-			continue
+		isSystemNamespace, err := api.IsSystemNamespace(ingress.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "error getting system namespace")
 		}
 
-		if utils.IsSystemBranch(gitBranch) {
-			log.Debugf("%s is system branch", gitBranch)
-
-			continue
+		if isSystemNamespace {
+			log.Debugf("%s is system namespace", ingress.NamespaceName)
 		}
 
 		isDeleteBranch := false

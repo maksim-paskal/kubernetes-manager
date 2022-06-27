@@ -44,6 +44,7 @@ const (
 	LabelGitProjectID     = Namespace + "/git-project-id"
 	LabelGitProjectOrigin = Namespace + "/git-project-origin"
 	LabelRegistryTag      = Namespace + "/registry-tag"
+	LabelSystemNamespace  = Namespace + "/system-namespace"
 )
 
 type Links struct {
@@ -118,9 +119,6 @@ var config = Type{
 
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
 
-	SystemNamespaces: flag.String("system.namespaces", GetEnvDefault("SYSTEM_NAMESPACES", "^kube-system$"), ""),
-	SystemGitTags:    flag.String("system.gitTags", GetEnvDefault("SYSTEM_GIT_TAGS", "^master$|^release-.*"), ""),
-
 	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 }
 
@@ -143,8 +141,6 @@ type Type struct {
 	IngressNoFiltration        *bool          `yaml:"ingressNoFiltration"`
 	IngressHostDefaultProtocol *string        `yaml:"ingressHostDefaultProtocol"`
 	RemoveBranchLastScaleDate  *int           `yaml:"removeBranchLastScaleDate"`
-	SystemNamespaces           *string        `yaml:"systemNamespaces"`
-	SystemGitTags              *string        `yaml:"systemGitTags"`
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
 	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`

@@ -12,8 +12,6 @@ FROM alpine:latest
 ENV KUBERNETES_ENDPOINT=https://api:6443
 ENV GITLAB_URL=https://git/api/v4
 ENV GITLAB_TOKEN=some-token
-ENV SYSTEM_GIT_TAGS=^master$|^release-.*
-ENV SYSTEM_NAMESPACES=^kube-system$
 ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
 RUN apk upgrade \

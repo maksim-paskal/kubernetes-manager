@@ -9,14 +9,12 @@ build:
 	git tag -d `git tag -l "kubernetes-manager-*"`
 	go run github.com/goreleaser/goreleaser@latest build --rm-dist --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager ./kubernetes-manager
-	docker build --pull --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
+	docker buildx build --pull --push --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
 security-scan:
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest fs --ignore-unfixed .
 security-check:
 	# https://github.com/aquasecurity/trivy
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest --ignore-unfixed $(image)
-push:
-	docker push $(image)
 test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/... ./pkg/...
