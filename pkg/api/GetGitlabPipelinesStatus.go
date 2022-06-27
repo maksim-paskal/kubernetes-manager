@@ -57,19 +57,16 @@ func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesS
 
 		for _, pipelineVar := range pipelineVars {
 			if pipelineVar.Key == gitlabNamespaceKey && pipelineVar.Value == namespace {
-				if projectPipeline.Status == "running" {
+				switch projectPipeline.Status {
+				case "running":
 					result.LastRunningPipeline = projectPipeline.WebURL
-
-					continue
-				}
-
-				if projectPipeline.Status == "success" {
+				case "success":
 					result.LastSuccessPipeline = projectPipeline.WebURL
-				}
-
-				if projectPipeline.Status == "failed" {
+				case "failed":
 					result.LastErrorPipeline = projectPipeline.WebURL
 				}
+				// use only first pipeline
+				break
 			}
 		}
 	}
