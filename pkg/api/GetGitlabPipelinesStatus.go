@@ -66,7 +66,7 @@ func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesS
 					result.LastErrorPipeline = projectPipeline.WebURL
 				}
 				// use only first pipeline
-				break
+				return &result, nil
 			}
 		}
 	}
