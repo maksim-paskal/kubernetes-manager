@@ -35,28 +35,28 @@ func CreateGitlabPipeline(ns string, projectID string, branch string) (string, e
 		return "", errors.Wrap(err, "can not convert to number")
 	}
 
-	variables := make([]*gitlab.PipelineVariable, 0)
+	variables := make([]*gitlab.PipelineVariableOptions, 0)
 
-	variables = append(variables, &gitlab.PipelineVariable{
-		Key:          gitlabBuildKey,
-		Value:        "true",
-		VariableType: "env_var",
+	variables = append(variables, &gitlab.PipelineVariableOptions{
+		Key:          gitlab.String(gitlabBuildKey),
+		Value:        gitlab.String("true"),
+		VariableType: gitlab.String("env_var"),
 	})
 
 	namespace := getNamespace(ns)
 
-	variables = append(variables, &gitlab.PipelineVariable{
-		Key:          gitlabNamespaceKey,
-		Value:        namespace,
-		VariableType: "env_var",
+	variables = append(variables, &gitlab.PipelineVariableOptions{
+		Key:          gitlab.String(gitlabNamespaceKey),
+		Value:        gitlab.String(namespace),
+		VariableType: gitlab.String("env_var"),
 	})
 
 	cluster := getCluster(ns)
 
-	variables = append(variables, &gitlab.PipelineVariable{
-		Key:          gitlabClusterKey,
-		Value:        cluster,
-		VariableType: "env_var",
+	variables = append(variables, &gitlab.PipelineVariableOptions{
+		Key:          gitlab.String(gitlabClusterKey),
+		Value:        gitlab.String(cluster),
+		VariableType: gitlab.String("env_var"),
 	})
 
 	pipeline, _, err := gitlabClient.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
