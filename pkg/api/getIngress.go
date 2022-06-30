@@ -58,7 +58,7 @@ func GetIngress() ([]*GetIngressList, error) {
 	for cluster := range clientsetCluster {
 		items, err := getIngressFromCluster(cluster)
 		if err != nil {
-			return nil, errors.Wrap(err, "error getting ingresses")
+			return nil, errors.Wrap(err, "error getting ingresses in "+cluster)
 		}
 
 		result = append(result, items...)
@@ -75,7 +75,7 @@ func getIngressFromCluster(cluster string) ([]*GetIngressList, error) {
 		opt = metav1.ListOptions{}
 	}
 
-	ingresss, err := clientsetCluster[cluster].ExtensionsV1beta1().Ingresses("").List(Ctx, opt)
+	ingresss, err := clientsetCluster[cluster].NetworkingV1().Ingresses("").List(Ctx, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get ingresses")
 	}
