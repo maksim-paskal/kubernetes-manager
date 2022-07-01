@@ -25,6 +25,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -57,10 +58,6 @@ func main() {
 		log.WithError(err).Fatal()
 	}
 
-	if err = config.CheckConfig(); err != nil {
-		log.WithError(err).Fatal()
-	}
-
 	logLevel, err := log.ParseLevel(*config.Get().LogLevel)
 	if err != nil {
 		log.WithError(err).Fatal()
@@ -68,6 +65,14 @@ func main() {
 
 	log.SetLevel(logLevel)
 	log.SetReportCaller(true)
+
+	if err = config.CheckConfig(); err != nil {
+		log.WithError(err).Fatal()
+	}
+
+	if err = webhook.CheckConfig(); err != nil {
+		log.WithError(err).Fatal()
+	}
 
 	log.Debugf("Using config:\n%s", config.String())
 

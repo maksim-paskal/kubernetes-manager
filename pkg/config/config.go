@@ -45,6 +45,8 @@ const (
 	LabelGitProjectOrigin = Namespace + "/git-project-origin"
 	LabelRegistryTag      = Namespace + "/registry-tag"
 	LabelSystemNamespace  = Namespace + "/system-namespace"
+	TagNamespace          = Namespace + "/namespace"
+	TagCluster            = Namespace + "/cluster"
 )
 
 type Links struct {
@@ -86,6 +88,13 @@ type ProjectTemplate struct {
 type NamespaceMeta struct {
 	Labels      map[string]string
 	Annotations map[string]string
+}
+
+type WebHook struct {
+	Provider  string
+	Config    interface{}
+	Cluster   string
+	Namespace string
 }
 
 //nolint:gochecknoglobals
@@ -146,6 +155,7 @@ type Type struct {
 	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
 	PodName                    *string        `yaml:"podName"`
 	PodNamespace               *string        `yaml:"podNamespace"`
+	WebHooks                   []WebHook      `yaml:"webhooks"`
 }
 
 func (t *Type) GetProjectTemplateByProjectID(projectID string) *ProjectTemplate {
