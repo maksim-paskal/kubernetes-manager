@@ -118,7 +118,7 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 
 			log.Info("scaledown")
 
-			err = api.ScaleNamespace(ingress.Namespace, 0)
+			err = api.ScaleALL(ingress.Namespace, 0)
 			if err != nil {
 				log.WithError(err).Error()
 			}

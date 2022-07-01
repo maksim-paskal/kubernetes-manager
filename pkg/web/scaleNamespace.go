@@ -59,7 +59,7 @@ func scaleNamespace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.ScaleNamespace(namespace[0], int32(replicasInt))
+	err = api.ScaleALL(namespace[0], int32(replicasInt))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
