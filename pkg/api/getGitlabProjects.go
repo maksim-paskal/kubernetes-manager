@@ -15,6 +15,7 @@ package api
 import (
 	"sort"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
@@ -28,10 +29,12 @@ type GetGitlabProjectsItem struct {
 	WebURL         string
 	TagsList       []string
 	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
-	Deploy         bool                       // custom field for front end
+	Deploy         string                     // custom field for front end
 }
 
 func GetGitlabProjects() ([]*GetGitlabProjectsItem, error) {
+	gitlabClient := client.GetGitlabClient()
+
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}

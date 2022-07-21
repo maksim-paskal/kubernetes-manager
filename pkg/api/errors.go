@@ -15,11 +15,6 @@ package api
 import "errors"
 
 var (
-	errNamespaceIncorrect   = errors.New("namespace have incorrect format")
-	errNoCluster            = errors.New("no cluster")
-	errNoPodSelected        = errors.New("no pod selected")
-	errNoLabelSelector      = errors.New("LabelSelector not set")
-	errNoPodInStatusRunning = errors.New("pod in status Running not found")
-	errIsSystemNamespace    = errors.New("this namespace is system")
-	errNoGitlabClient       = errors.New("no gitlab client")
+	errIsSystemNamespace = errors.New("this namespace is system")
+	errNoGitlabClient    = errors.New("no gitlab client")
 )

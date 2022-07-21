@@ -23,24 +23,12 @@ const (
 	envoyControlPlaneArg  = "-ssl.no-validation=true"
 )
 
-func DisableMTLS(ns string) error {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return errors.Wrap(err, "can not get clientset")
+func (e *Environment) DisableMTLS() error {
+	if e.IsSystemNamespace() {
+		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	namespace := getNamespace(ns)
-
-	isSystemNamespace, err := IsSystemNamespace(ns)
-	if err != nil {
-		return errors.Wrap(err, "error getting system namespace")
-	}
-
-	if isSystemNamespace {
-		return errors.Wrap(errIsSystemNamespace, namespace)
-	}
-
-	controlPlane, err := clientset.AppsV1().Deployments(namespace).Get(Ctx, envoyControlPlaneName, metav1.GetOptions{})
+	controlPlane, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(Ctx, envoyControlPlaneName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error getting deployments")
 	}
@@ -61,7 +49,7 @@ func DisableMTLS(ns string) error {
 	if needUpdate {
 		controlPlane.Spec.Template.Spec.Containers[0].Args = append(controlPlane.Spec.Template.Spec.Containers[0].Args, envoyControlPlaneArg) //nolint:lll
 
-		_, err = clientset.AppsV1().Deployments(namespace).Update(Ctx, controlPlane, metav1.UpdateOptions{})
+		_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(Ctx, controlPlane, metav1.UpdateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error update deployment")
 		}

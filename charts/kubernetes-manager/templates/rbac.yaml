@@ -3,59 +3,17 @@ kind: ServiceAccount
 metadata:
   name: {{ .Release.Name }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: {{ .Release.Name }}-role
-rules:
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses"]
-  verbs: ["get", "watch", "list"]
-- apiGroups: [""]
-  resources: ["namespaces"]
-  verbs: ["get", "watch", "list","create"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["clusterrolebindings"]
-  verbs: ["list"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["clusterroles","clusterrolebindings"]
-  verbs: ["delete"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Release.Name }}-role
-rules:
-- apiGroups: [""]
-  resources: ["configmaps"]
-  verbs: ["list"]
-- apiGroups: [""]
-  resources: ["serviceaccounts","secrets","configmaps"]
-  verbs: ["get"]
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["*"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{ .Release.Name }}
-roleRef:
-  kind: Role
-  name: {{ .Release.Name }}-role
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-- kind: ServiceAccount
-  name: {{ .Release.Name }}
-  namespace: {{ .Release.Namespace }}
----
+# need role with permissions to create namespace and serviceaccount with role in namespace
+# kubernetes not allow to create serviceaccount in namespace without cluster-admin role
+# error creating role: roles.rbac.authorization.k8s.io "kubernetes-manager-f7ee3" is forbidden: user "system:serviceaccount:kubernetes-manager:kubernetes-manager" (groups=["system:serviceaccounts" "system:serviceaccounts:kubernetes-manager" "system:authenticated"]) is attempting to grant RBAC permissions not currently held:
+# {APIGroups:["*"], Resources:["*"], Verbs:["*"]}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-cluster-admin
 roleRef:
   kind: ClusterRole
-  name: {{ .Release.Name }}-role
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: ServiceAccount

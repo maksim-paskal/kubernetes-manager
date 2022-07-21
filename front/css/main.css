@@ -2,3 +2,32 @@
 [tabindex="-1"]:focus:not(.focus-visible) {
   outline: 0!important;
 }
+
+.dropdown-toggle-no-caret::after {
+  display:none;
+}
+
+.detail-tab {
+  padding: 10px
+}
+
+.btn-white {
+  background-color: #fff;
+}
+
+.btn-custom {
+  background-color: #e1ecea;
+  color: #343a40 !important;
+}
+
+.col-valign {
+  vertical-align: middle;
+}
+
+.col-deploy-service-status {
+  min-width: 100px;
+}
+
+.col-deploy-service-text {
+  min-width: 400px;
+}

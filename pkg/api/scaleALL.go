@@ -22,7 +22,7 @@ import (
 )
 
 // ScaleALL scale namespace and process webhooks.
-func ScaleALL(ns string, replicas int32) error {
+func (e *Environment) ScaleALL(replicas int32) error {
 	processWebhook := make(chan error)
 	processScale := make(chan error)
 
@@ -34,13 +34,13 @@ func ScaleALL(ns string, replicas int32) error {
 
 		processWebhook <- webhook.NewEvent(types.WebhookMessage{
 			Event:     eventType,
-			Namespace: getNamespace(ns),
-			Cluster:   getCluster(ns),
+			Namespace: e.Namespace,
+			Cluster:   e.Cluster,
 		})
 	}()
 
 	go func() {
-		processScale <- ScaleNamespace(ns, replicas)
+		processScale <- e.ScaleNamespace(replicas)
 	}()
 
 	type Result struct {

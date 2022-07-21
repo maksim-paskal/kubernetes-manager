@@ -12,6 +12,18 @@ limitations under the License.
 */
 package types
 
+import (
+	"errors"
+	"strings"
+)
+
+var errIDNotCorrect = errors.New("ID not correct")
+
+const (
+	namespaceArrayItemCount = 2
+	namespaceArraySplitter  = ":"
+)
+
 type Event string
 
 const (
@@ -23,4 +35,19 @@ type WebhookMessage struct {
 	Event     Event
 	Cluster   string
 	Namespace string
+}
+
+type IDInfo struct {
+	Cluster   string
+	Namespace string
+}
+
+func NewIDInfo(id string) (*IDInfo, error) {
+	data := strings.Split(id, namespaceArraySplitter)
+
+	if len(data) != namespaceArrayItemCount {
+		return nil, errIDNotCorrect
+	}
+
+	return &IDInfo{Cluster: data[0], Namespace: data[1]}, nil
 }

@@ -7,6 +7,11 @@ links:
   phpMyAdminUrl: "4"
   metricsUrl: "5"
   tracingUrl: "6"
+  logsPodUrl: "7"
 
 kubernetesendpoints:
 - name: default
+
+namespacemeta:
+  labels:
+    environment: dev

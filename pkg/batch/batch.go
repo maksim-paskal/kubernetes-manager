@@ -13,18 +13,13 @@ limitations under the License.
 package batch
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
-	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/xanzy/go-gitlab"
 	"go.uber.org/atomic"
 )
 
@@ -68,26 +63,6 @@ func Stop() {
 	isStoped.Store(true)
 }
 
-func IsScaleDownActive(now time.Time) bool {
-	batchSheduleTimezone, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-
-	timeMin := time.Date(now.Year(), now.Month(), now.Day(), config.ScaleDownHourMinPeriod, 0, 0, 0, batchSheduleTimezone)
-	timeMax := time.Date(now.Year(), now.Month(), now.Day(), config.ScaleDownHourMaxPeriod, 0, 0, 0, batchSheduleTimezone)
-
-	if now.After(timeMin) || now.Equal(timeMin) {
-		return true
-	}
-
-	if now.Before(timeMax) || now.Equal(timeMax) {
-		return true
-	}
-
-	return false
-}
-
 func scaleDownALL(rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
@@ -100,16 +75,16 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 		return nil
 	}
 
-	ingresses, err := api.GetIngress()
+	environments, err := api.GetEnvironments("")
 	if err != nil {
-		return errors.Wrap(err, "error listing ingresses")
+		return errors.Wrap(err, "error listing environments")
 	}
 
-	for _, ingress := range ingresses {
-		go func(ingress *api.GetIngressList) {
-			log := log.WithField("namespace", ingress.Namespace)
+	for _, environment := range environments {
+		go func(environment *api.Environment) {
+			log := log.WithField("namespace", environment.Namespace)
 
-			isScaledownDelay, err := IsScaledownDelay(time.Now(), ingress)
+			isScaledownDelay, err := IsScaledownDelay(time.Now(), environment)
 			if err != nil {
 				log.WithError(err).Error()
 			} else if isScaledownDelay {
@@ -118,46 +93,14 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 
 			log.Info("scaledown")
 
-			err = api.ScaleALL(ingress.Namespace, 0)
+			err = environment.ScaleALL(0)
 			if err != nil {
 				log.WithError(err).Error()
 			}
-		}(ingress)
+		}(environment)
 	}
 
 	return nil
-}
-
-func getLastCommitBranch(rootSpan opentracing.Span, git *gitlab.Client, gitProjectID string, gitBranch string) bool {
-	tracer := opentracing.GlobalTracer()
-	span := tracer.StartSpan("getLastCommitBranch", opentracing.ChildOf(rootSpan.Context()))
-
-	defer span.Finish()
-
-	lastCommitDateForRemove := time.Now().AddDate(0, 0, -*config.Get().RemoveBranchDaysInactive)
-
-	gitCommitOptions := gitlab.ListCommitsOptions{
-		RefName: &gitBranch,
-		Since:   &lastCommitDateForRemove,
-	}
-
-	gitCommits, _, err := git.Commits.ListCommits(gitProjectID, &gitCommitOptions)
-	if err != nil {
-		log.
-			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
-			Error()
-	}
-
-	gitCommitsLen := len(gitCommits)
-
-	if gitCommitsLen == 0 {
-		log.Debugf("deleteOnLastCommit=gitBranch=%s,gitProjectID=%s", gitBranch, gitProjectID)
-
-		return true
-	}
-
-	return false
 }
 
 func Execute(rootSpan opentracing.Span) error {
@@ -170,115 +113,37 @@ func Execute(rootSpan opentracing.Span) error {
 		log.WithError(err).Error()
 	}
 
-	git := api.GetGitlabClient()
-	if git == nil {
-		return errors.New("no gitlab client")
-	}
-
-	ingresss, err := api.GetIngress()
+	environments, err := api.GetEnvironments("")
 	if err != nil {
 		return errors.Wrap(err, "error list ingress")
 	}
 
-	for _, ingress := range ingresss {
-		gitBranch := ingress.IngressAnotations[config.LabelGitBranch]
-		gitProjectID := ingress.IngressAnotations[config.LabelGitProjectID]
-
+	for _, environment := range environments {
 		log := log.WithFields(log.Fields{
-			"namespace":    ingress.Namespace,
-			"gitProjectID": gitProjectID,
-			"gitBranch":    gitBranch,
+			"namespace": environment.Namespace,
 		})
 
-		isSystemNamespace, err := api.IsSystemNamespace(ingress.Namespace)
-		if err != nil {
-			return errors.Wrap(err, "error getting system namespace")
+		if environment.IsSystemNamespace() {
+			log.Debugf("%s is system namespace", environment.Namespace)
+
+			continue
 		}
 
-		if isSystemNamespace {
-			log.Debugf("%s is system namespace", ingress.NamespaceName)
+		// delete temporary tokens in namespace
+		if err := environment.DeleteTemporaryTokens(); err != nil {
+			log.WithError(err).Error()
 		}
 
-		isDeleteBranch := false
-		deleteReason := "branch will not deleted"
+		reason, description := environment.IsStaled()
 
-		_, _, err = git.Branches.GetBranch(gitProjectID, gitBranch)
+		log.WithField("reason", reason).Debug(description)
 
-		//nolint:gocritic
-		if err != nil {
-			if strings.Contains(err.Error(), "404 Branch Not Found") {
-				isDeleteBranch = true
-				deleteReason = "git branch not found"
-			}
-		} else if ingress.NamespaceLastScaledDays > *config.Get().RemoveBranchLastScaleDate {
-			isDeleteBranch = true
-			deleteReason = fmt.Sprintf("ingress.NamespaceLastScaledDays > %d", *config.Get().RemoveBranchLastScaleDate)
-		} else if ingress.NamespaceCreatedDays > 1 {
-			isDeleteBranch = getLastCommitBranch(span, git, gitProjectID, gitBranch)
-			deleteReason = "namespace.NamespaceCreatedDays > 1"
-		}
-
-		log.WithField("isDeleteBranch", isDeleteBranch).Debug(deleteReason)
-
-		if isDeleteBranch {
-			deleteALLResult := api.DeleteALL(
-				ingress.Namespace,
-				ingress.IngressAnotations[config.LabelRegistryTag],
-				ingress.IngressAnotations[config.LabelGitProjectID],
-			)
+		if reason != api.StaledReasonNone {
+			deleteALLResult := environment.DeleteALL()
 
 			log.Info(deleteALLResult.JSON())
 		}
 	}
 
 	return nil
-}
-
-// check if scale down is active, namespace will be scaled if false, there is no scaledown if
-// if namespace created less than 60m
-// if last scale date less than 60m
-// if user ask to nodelay.
-func IsScaledownDelay(nowTime time.Time, ingress *api.GetIngressList) (bool, error) {
-	log := log.WithField("namespace", ingress.Namespace)
-
-	if len(ingress.NamespaceCreated) > 0 {
-		namespaceCreatedTime, err := utils.StringToTime(ingress.NamespaceCreated)
-		if err != nil {
-			return false, errors.Wrap(err, "can not parse namespace created time")
-		}
-
-		if scaledownDelay := namespaceCreatedTime.Add(namespaceCreatedDelay); nowTime.Before(scaledownDelay) {
-			log.Infof("namespace is created less than %s ago, skip", namespaceCreatedDelay.String())
-
-			return true, nil
-		}
-	}
-
-	if len(ingress.NamespaceLastScaled) > 0 {
-		namespaceLastScaledTime, err := utils.StringToTime(ingress.NamespaceLastScaled)
-		if err != nil {
-			return false, errors.Wrap(err, "can not parse namespace last scaled time")
-		}
-
-		if scaledownDelay := namespaceLastScaledTime.Add(namespaceLastScaledDelay); nowTime.Before(scaledownDelay) {
-			log.Infof("namespace is scaled less than %s ago, skip", namespaceLastScaledDelay.String())
-
-			return true, nil
-		}
-	}
-
-	if scaleDelayText, ok := ingress.NamespaceAnotations[config.LabelScaleDownDelay]; ok {
-		scaleDelayTime, err := utils.StringToTime(scaleDelayText)
-		if err != nil {
-			return false, errors.Wrap(err, "error parsing scale delay time")
-		}
-
-		if nowTime.Before(scaleDelayTime) {
-			log.Info("scale down delay is active")
-
-			return true, nil
-		}
-	}
-
-	return false, nil
 }

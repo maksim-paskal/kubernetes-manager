@@ -13,16 +13,40 @@ limitations under the License.
 package api
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 )
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func CreateGitlabPipelinesByServices(ns, services string) error {
+func (e *Environment) CreateGitlabPipelinesByServices(services string) error {
+	if len(services) == 0 {
+		return errors.New("no services was selected")
+	}
+
 	projectPipelineDatas := strings.Split(services, ";")
+
+	annotations := e.NamespaceAnotations
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	for _, projectPipelineData := range projectPipelineDatas {
+		data := strings.Split(projectPipelineData, ":")
+
+		label := fmt.Sprintf("%s-%s", config.LabelInstalledProject, data[0])
+
+		annotations[label] = data[1]
+	}
+
+	err := e.SaveNamespaceMeta(annotations, e.NamespaceLabels)
+	if err != nil {
+		return errors.Wrap(err, "error saving namespace annotations")
+	}
 
 	var (
 		wg   sync.WaitGroup
@@ -36,12 +60,12 @@ func CreateGitlabPipelinesByServices(ns, services string) error {
 	for _, projectPipelineData := range projectPipelineDatas {
 		data := strings.Split(projectPipelineData, ":")
 
-		go func(ns string, projectID string, branch string) {
+		go func(e *Environment, projectID string, branch string) {
 			defer wg.Done()
 
 			var resultText string
 
-			_, err := CreateGitlabPipeline(ns, projectID, branch)
+			_, err := e.CreateGitlabPipeline(projectID, branch)
 			if err != nil {
 				resultText = err.Error()
 
@@ -50,7 +74,7 @@ func CreateGitlabPipelinesByServices(ns, services string) error {
 
 				pipelineErrors = append(pipelineErrors, resultText)
 			}
-		}(ns, data[0], data[1])
+		}(e, data[0], data[1])
 	}
 
 	wg.Wait()

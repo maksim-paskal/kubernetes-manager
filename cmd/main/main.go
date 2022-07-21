@@ -22,6 +22,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
@@ -95,7 +96,7 @@ func main() {
 
 	log.Infof("Starting %s %s...", config.Namespace, config.GetVersion())
 
-	err = api.Init()
+	err = client.Init()
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
@@ -125,7 +126,9 @@ func main() {
 	}
 	defer closer.Close()
 
-	go RunLeaderElection()
+	if *config.Get().BatchEnabled {
+		go RunLeaderElection()
+	}
 
 	web.StartServer()
 }
@@ -145,7 +148,7 @@ func RunLeaderElection() {
 		RenewDeadline:   defaultRenewDeadline,
 		RetryPeriod:     defaultRetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(c context.Context) {
+			OnStartedLeading: func(context.Context) {
 				batch.Schedule()
 			},
 			OnStoppedLeading: func() {

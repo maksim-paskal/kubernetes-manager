@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
 )
 
@@ -36,7 +37,7 @@ func TestVersion(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	url := fmt.Sprintf("%s/api/version", ts.URL)
+	url := fmt.Sprintf("%s/api/front-config", ts.URL)
 	t.Log(url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -56,14 +57,14 @@ func TestVersion(t *testing.T) {
 	defer resp.Body.Close()
 	t.Log(string(body))
 
-	version := web.APIVersion{}
+	frontConfig := api.GetFrontConfigResult{}
 
-	err = json.Unmarshal(body, &version)
+	err = json.Unmarshal(body, &frontConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if version.Version != "dev" {
+	if frontConfig.Version != "dev" {
 		t.Fatal("no version")
 	}
 }
@@ -71,7 +72,9 @@ func TestVersion(t *testing.T) {
 func TestReplacer(t *testing.T) {
 	t.Parallel()
 
-	replacer := web.GetContentReplacer()
+	cachedHandler := web.NewHandlerSPACached("", "")
+
+	replacer := cachedHandler.GetContentReplacer()
 
 	tests := make(map[string]string)
 

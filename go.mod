@@ -3,22 +3,23 @@ module github.com/maksim-paskal/kubernetes-manager
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go v1.44.45
+	github.com/aws/aws-sdk-go v1.44.58
+	github.com/gorilla/mux v1.8.0
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
 	github.com/maksim-paskal/logrus-hook-sentry v0.0.9
 	github.com/maksim-paskal/sluglify v0.0.8
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
-	github.com/xanzy/go-gitlab v0.68.2
+	github.com/xanzy/go-gitlab v0.69.0
 	go.uber.org/atomic v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.23.8
-	k8s.io/apimachinery v0.23.8
-	k8s.io/client-go v0.23.8
+	k8s.io/api v0.23.9
+	k8s.io/apimachinery v0.23.9
+	k8s.io/client-go v0.23.9
 )
 
 require (
@@ -50,7 +51,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
