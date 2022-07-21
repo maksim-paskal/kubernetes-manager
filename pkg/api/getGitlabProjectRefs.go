@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -29,6 +30,8 @@ type GetGitlabProjectBranchItem struct {
 }
 
 func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, error) {
+	gitlabClient := client.GetGitlabClient()
+
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}

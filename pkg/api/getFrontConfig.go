@@ -20,7 +20,7 @@ import (
 
 type GetFrontConfigItem struct {
 	ClusterName string
-	Links       config.Links
+	Links       *config.Links
 }
 
 type GetFrontConfigBatch struct {
@@ -31,12 +31,12 @@ type GetFrontConfigBatch struct {
 
 type GetFrontConfigResult struct {
 	Version                   string
-	Links                     config.Links
-	Batch                     GetFrontConfigBatch
-	Clusters                  []GetFrontConfigItem
-	ExternalServicesTemplates []config.Template
-	DebugTemplates            []config.Template
-	ProjectTemplates          []config.ProjectTemplate
+	Links                     *config.Links
+	Batch                     *GetFrontConfigBatch
+	Clusters                  []*GetFrontConfigItem
+	ExternalServicesTemplates []*config.Template
+	DebugTemplates            []*config.Template
+	ProjectTemplates          []*config.ProjectTemplate
 }
 
 // Get config for front pages.
@@ -45,7 +45,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 
 	result := GetFrontConfigResult{
 		Version: config.GetVersion(),
-		Batch: GetFrontConfigBatch{
+		Batch: &GetFrontConfigBatch{
 			ScaleDownHourMinPeriod: fmt.Sprintf("%02d", config.ScaleDownHourMinPeriod),
 			ScaleDownHourMaxPeriod: fmt.Sprintf("%02d", config.ScaleDownHourMaxPeriod),
 			BatchSheduleTimezone:   *config.Get().BatchSheduleTimezone,
@@ -57,10 +57,10 @@ func GetFrontConfig() *GetFrontConfigResult {
 	result.ExternalServicesTemplates = config.Get().ExternalServicesTemplates
 	result.ProjectTemplates = config.Get().ProjectTemplates
 
-	result.Clusters = make([]GetFrontConfigItem, 0)
+	result.Clusters = make([]*GetFrontConfigItem, 0)
 
 	for _, cluster := range appConfig.KubernetesEndpoints {
-		result.Clusters = append(result.Clusters, GetFrontConfigItem{
+		result.Clusters = append(result.Clusters, &GetFrontConfigItem{
 			ClusterName: cluster.Name,
 			Links:       cluster.Links,
 		})

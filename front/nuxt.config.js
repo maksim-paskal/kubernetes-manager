@@ -13,6 +13,9 @@ module.exports = {
       { hid: 'description', name: 'description', content: 'Kubernetes manager' }
     ]
   },
+  components: [
+    '~/components'
+  ],
   plugins: [
     '~plugins/app.js'
   ],
@@ -28,7 +31,8 @@ module.exports = {
     config: {}, // Additional config
   },
   proxy: {
-    '/api/': `${process.env.BACKEND_URL}`
+    '/api/': `${process.env.BACKEND_URL}`,
+    '/oauth2/userinfo': `${process.env.BACKEND_URL}`
   },
   ssr: false,
   target: 'static',

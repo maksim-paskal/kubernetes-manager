@@ -25,15 +25,8 @@ type GetPodByImageResult struct {
 	Found   bool
 }
 
-func GetPodByImage(ns string, imagePrefix string) (*GetPodByImageResult, error) {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return &GetPodByImageResult{}, errors.Wrap(err, "can not get clientset")
-	}
-
-	namespace := getNamespace(ns)
-
-	pods, err := clientset.CoreV1().Pods(namespace).List(Ctx, metav1.ListOptions{
+func (e *Environment) GetPodByImage(imagePrefix string) (*GetPodByImageResult, error) {
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	})
 	if err != nil {

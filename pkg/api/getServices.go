@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,7 +26,15 @@ var allowedServiceLabels = []string{
 	"app",
 }
 
+type GetServicesItemType string
+
+const (
+	GetServicesItemTypePod     = "pod"
+	GetServicesItemTypeService = "service"
+)
+
 type GetServicesItem struct {
+	Type         GetServicesItemType
 	Name         string
 	ServiceHost  string
 	ExternalName string
@@ -34,15 +43,8 @@ type GetServicesItem struct {
 }
 
 // Return services and pods with port.
-func GetServices(ns string) ([]*GetServicesItem, error) {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return nil, errors.Wrap(err, "can not get clientset")
-	}
-
-	namespace := getNamespace(ns)
-
-	list, err := clientset.CoreV1().Services(namespace).List(Ctx, metav1.ListOptions{})
+func (e *Environment) GetServices() ([]*GetServicesItem, error) {
+	list, err := e.clientset.CoreV1().Services(e.Namespace).List(Ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error listing services")
 	}
@@ -50,7 +52,9 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 	result := make([]*GetServicesItem, 0)
 
 	for _, service := range list.Items {
-		item := GetServicesItem{}
+		item := GetServicesItem{
+			Type: GetServicesItemTypeService,
+		}
 
 		item.Name = service.Name
 		item.ServiceHost = fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace)
@@ -74,7 +78,7 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 		result = append(result, &item)
 	}
 
-	podList, err := clientset.CoreV1().Pods(namespace).List(Ctx, metav1.ListOptions{
+	podList, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	})
 	if err != nil {
@@ -92,6 +96,7 @@ func GetServices(ns string) ([]*GetServicesItem, error) {
 
 		if len(ports) > 0 {
 			item := GetServicesItem{
+				Type:        GetServicesItemTypePod,
 				Name:        pod.Name,
 				ServiceHost: pod.Name,
 				Ports:       strings.Join(ports, ","),
@@ -109,7 +114,7 @@ func getFilteredLabels(labels map[string]string) string {
 	result := make([]string, 0)
 
 	for key, value := range labels {
-		if stringInSlice(key, allowedServiceLabels) {
+		if utils.StringInSlice(key, allowedServiceLabels) {
 			result = append(result, fmt.Sprintf("%s=%s", key, value))
 		}
 	}

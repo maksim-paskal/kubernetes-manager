@@ -13,6 +13,8 @@ limitations under the License.
 package config
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -27,15 +29,21 @@ import (
 const (
 	defaultPort                      = 9000
 	defaultRemoveBranchLastScaleDate = 10
-	defaultRemoveBranchDaysInactive  = 20
 	defaultBatchShedulePeriod        = 30 * time.Minute
 	defaultBatchTimezone             = "UTC"
 
 	ScaleDownHourMinPeriod = 19
 	ScaleDownHourMaxPeriod = 5
 
+	TemporaryTokenRandLength    = 5
+	TemporaryTokenDurationHours = 10
+
+	StaledNewNamespaceDurationDays = 3
+
 	HoursInDay     = 24
 	KeyValueLength = 2
+
+	TrueValue = "true"
 
 	Namespace             = "kubernetes-manager"
 	LabelScaleDownDelay   = Namespace + "/scaleDownDelay"
@@ -47,16 +55,40 @@ const (
 	LabelSystemNamespace  = Namespace + "/system-namespace"
 	TagNamespace          = Namespace + "/namespace"
 	TagCluster            = Namespace + "/cluster"
+	LabelNamespaceCreator = Namespace + "/user-creator"
+	LabelInstalledProject = Namespace + "/project"
+	LabelEnvironmentName  = Namespace + "/environment-name"
+	LabelUserLiked        = Namespace + "/user-liked"
 )
 
 type Links struct {
 	SentryURL     string      `yaml:"sentryUrl"`
 	SlackURL      string      `yaml:"slackUrl"`
 	LogsURL       string      `yaml:"logsUrl"`
+	LogsPodURL    string      `yaml:"logsPodUrl"`
 	PhpMyAdminURL string      `yaml:"phpMyAdminUrl"`
 	MetricsURL    string      `yaml:"metricsUrl"`
 	TracingURL    string      `yaml:"tracingUrl"`
 	Others        []OtherLink `yaml:"others"`
+}
+
+func (l *Links) FormatedLinks(namespace string) (*Links, error) {
+	linksJSON, err := json.Marshal(l)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while json.Marshal")
+	}
+
+	linksJSONFormatted := linksJSON
+	linksJSONFormatted = bytes.ReplaceAll(linksJSONFormatted, []byte("__Namespace__"), []byte(namespace))
+
+	link := Links{}
+
+	err = json.Unmarshal(linksJSONFormatted, &link)
+	if err != nil {
+		return nil, errors.Wrap(err, "error while json.Unmarshal")
+	}
+
+	return &link, nil
 }
 
 type OtherLink struct {
@@ -74,7 +106,7 @@ type KubernetesEndpoint struct {
 	Name             string
 	KubeConfigPath   string
 	KubeConfigServer string
-	Links            Links
+	Links            *Links
 }
 
 type ProjectTemplate struct {
@@ -102,15 +134,14 @@ var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
 	LogLevel:   flag.String("log.level", "INFO", "logging level"),
 
-	KubernetesEndpoints: []KubernetesEndpoint{{
+	KubernetesEndpoints: []*KubernetesEndpoint{{
 		Name:             "default",
 		KubeConfigServer: GetEnvDefault("DEFAULT_CONFIG_SERVER", "https://cluster-public"),
 		KubeConfigPath:   "",
 	}},
 
-	Port:                     flag.Int("server.port", defaultPort, ""),
-	FrontDist:                flag.String("front.dist", "front/dist", ""),
-	RemoveBranchDaysInactive: flag.Int("batch.removeBranchDaysInactive", defaultRemoveBranchDaysInactive, ""),
+	Port:      flag.Int("server.port", defaultPort, ""),
+	FrontDist: flag.String("front.dist", "front/dist", ""),
 
 	PodName:      flag.String("pod.name", os.Getenv("POD_NAME"), ""),
 	PodNamespace: flag.String("pod.namespace", os.Getenv("POD_NAMESPACE"), ""),
@@ -129,17 +160,18 @@ var config = Type{
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
 
 	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
+	BatchEnabled:          flag.Bool("batch.enabled", true, "enable batch operations"),
 }
 
 type Type struct {
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
-	Links                      Links   `yaml:"links"`
-	NamespaceMeta              NamespaceMeta
-	DebugTemplates             []Template
-	ExternalServicesTemplates  []Template
-	ProjectTemplates           []ProjectTemplate
-	KubernetesEndpoints        []KubernetesEndpoint
+	Links                      *Links  `yaml:"links"`
+	NamespaceMeta              *NamespaceMeta
+	DebugTemplates             []*Template
+	ExternalServicesTemplates  []*Template
+	ProjectTemplates           []*ProjectTemplate
+	KubernetesEndpoints        []*KubernetesEndpoint
 	Port                       *int           `yaml:"port"`
 	FrontDist                  *string        `yaml:"frontDist"`
 	RemoveBranchDaysInactive   *int           `yaml:"removeBranchDaysInactive"`
@@ -156,16 +188,33 @@ type Type struct {
 	PodName                    *string        `yaml:"podName"`
 	PodNamespace               *string        `yaml:"podNamespace"`
 	WebHooks                   []WebHook      `yaml:"webhooks"`
+	BatchEnabled               *bool
 }
 
 func (t *Type) GetProjectTemplateByProjectID(projectID string) *ProjectTemplate {
 	for _, projectTemplate := range t.ProjectTemplates {
 		if projectID == projectTemplate.ProjectID {
-			return &projectTemplate
+			return projectTemplate
 		}
 	}
 
 	return nil
+}
+
+func (t *Type) DeepCopy() *Type {
+	copyOfType := Type{}
+
+	typeJSON, err := json.Marshal(t)
+	if err != nil {
+		log.WithError(err).Fatal("error while json.Marshal")
+	}
+
+	err = json.Unmarshal(typeJSON, &copyOfType)
+	if err != nil {
+		log.WithError(err).Fatal("error while json.Unmarshal")
+	}
+
+	return &copyOfType
 }
 
 func Load() error {
@@ -191,7 +240,15 @@ func Load() error {
 }
 
 func loadDefaults(config Type) {
+	if config.Links == nil {
+		return
+	}
+
 	for id := range config.KubernetesEndpoints {
+		if config.KubernetesEndpoints[id].Links == nil {
+			config.KubernetesEndpoints[id].Links = &Links{}
+		}
+
 		if len(config.KubernetesEndpoints[id].Links.SentryURL) == 0 {
 			config.KubernetesEndpoints[id].Links.SentryURL = config.Links.SentryURL
 		}
@@ -214,6 +271,10 @@ func loadDefaults(config Type) {
 
 		if len(config.KubernetesEndpoints[id].Links.TracingURL) == 0 {
 			config.KubernetesEndpoints[id].Links.TracingURL = config.Links.TracingURL
+		}
+
+		if len(config.KubernetesEndpoints[id].Links.LogsPodURL) == 0 {
+			config.KubernetesEndpoints[id].Links.LogsPodURL = config.Links.LogsPodURL
 		}
 	}
 }

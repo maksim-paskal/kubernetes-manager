@@ -22,36 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// remove orphaned cluster role that not linked to namespace.
-func RemoveOrphanedClusterRoles() error {
-	ctx := context.Background()
-
-	for _, clientset := range clientsetCluster {
-		roleBindings, err := clientset.RbacV1().ClusterRoleBindings().List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return errors.Wrap(err, "error getting cluster role bindings")
-		}
-
-		for _, roleBinding := range roleBindings.Items {
-			if len(roleBinding.Subjects) == 1 && roleBinding.RoleRef.Kind == "ClusterRole" {
-				subject := roleBinding.Subjects[0]
-
-				if len(subject.Namespace) > 0 {
-					_, err := clientset.CoreV1().Namespaces().Get(ctx, subject.Namespace, metav1.GetOptions{})
-					if err != nil && strings.Contains(err.Error(), "not found") {
-						err = deleteClusterRoleAndBinding(clientset, roleBinding.RoleRef.Name, roleBinding.Name)
-						if err != nil {
-							return errors.Wrap(err, "error deleting cluster role and binding")
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func deleteClusterRoleAndBinding(clientset *kubernetes.Clientset, roleName string, roleBindingName string) error {
 	if strings.HasPrefix(roleName, "system:") || strings.HasPrefix(roleBindingName, "system:") {
 		log.Warnf("role %s or binding %s can not be deleted", roleName, roleBindingName)
@@ -77,26 +47,14 @@ func deleteClusterRoleAndBinding(clientset *kubernetes.Clientset, roleName strin
 }
 
 // delete all cluster role and bindings linken to namespace.
-func DeleteClusterRolesAndBindings(ns string) error {
+func (e *Environment) DeleteClusterRolesAndBindings() error {
 	ctx := context.Background()
 
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return errors.Wrap(err, "can not get clientset")
+	if e.IsSystemNamespace() {
+		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	namespace := getNamespace(ns)
-
-	isSystemNamespace, err := IsSystemNamespace(ns)
-	if err != nil {
-		return errors.Wrap(err, "error getting system namespace")
-	}
-
-	if isSystemNamespace {
-		return errors.Wrap(errIsSystemNamespace, namespace)
-	}
-
-	roleBindings, err := clientset.RbacV1().ClusterRoleBindings().List(ctx, metav1.ListOptions{})
+	roleBindings, err := e.clientset.RbacV1().ClusterRoleBindings().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error getting cluster role bindings")
 	}
@@ -105,8 +63,8 @@ func DeleteClusterRolesAndBindings(ns string) error {
 		if len(roleBinding.Subjects) == 1 && roleBinding.RoleRef.Kind == "ClusterRole" {
 			subject := roleBinding.Subjects[0]
 
-			if subject.Namespace == namespace {
-				err = deleteClusterRoleAndBinding(clientset, roleBinding.RoleRef.Name, roleBinding.Name)
+			if subject.Namespace == e.Namespace {
+				err = deleteClusterRoleAndBinding(e.clientset, roleBinding.RoleRef.Name, roleBinding.Name)
 				if err != nil {
 					return errors.Wrap(err, "error deleting cluster role and binding")
 				}

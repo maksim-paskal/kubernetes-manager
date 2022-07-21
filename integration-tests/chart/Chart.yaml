@@ -1,8 +1,0 @@
-apiVersion: v2
-icon: https://helm.sh/img/helm.svg
-name: kubernetes-manager-test
-version: 0.0.1
-dependencies:
-- name: kubernetes-manager-rbac
-  version: 0.0.1
-  repository: file://../../charts/kubernetes-manager-rbac/

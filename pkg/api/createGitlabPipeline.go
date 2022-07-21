@@ -25,8 +25,8 @@ const (
 	gitlabNamespaceKey = "NAMESPACE"
 )
 
-func CreateGitlabPipeline(ns string, projectID string, branch string) (string, error) {
-	if gitlabClient == nil {
+func (e *Environment) CreateGitlabPipeline(projectID string, ref string) (string, error) {
+	if e.gitlabClient == nil {
 		return "", errNoGitlabClient
 	}
 
@@ -43,24 +43,20 @@ func CreateGitlabPipeline(ns string, projectID string, branch string) (string, e
 		VariableType: gitlab.String("env_var"),
 	})
 
-	namespace := getNamespace(ns)
-
 	variables = append(variables, &gitlab.PipelineVariableOptions{
 		Key:          gitlab.String(gitlabNamespaceKey),
-		Value:        gitlab.String(namespace),
+		Value:        gitlab.String(e.Namespace),
 		VariableType: gitlab.String("env_var"),
 	})
-
-	cluster := getCluster(ns)
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
 		Key:          gitlab.String(gitlabClusterKey),
-		Value:        gitlab.String(cluster),
+		Value:        gitlab.String(e.Cluster),
 		VariableType: gitlab.String("env_var"),
 	})
 
-	pipeline, _, err := gitlabClient.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
-		Ref:       &branch,
+	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
+		Ref:       &ref,
 		Variables: &variables,
 	})
 	if err != nil {

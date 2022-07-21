@@ -23,22 +23,23 @@ test:
 	go mod tidy
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
 	cd front && yarn lint
-testIntegration:
-	cp ${KUBECONFIG} ./integration-tests/testdata/kubeconfig
+
+.PHONY: e2e
+e2e:
+	cp ${KUBECONFIG} ./e2e/testdata/kubeconfig
 	kubectl delete ns ${test-namespace} || true
 	kubectl create ns ${test-namespace}
-	kubectl -n ${test-namespace} apply -f ./integration-tests/kubernetes
+	kubectl label namespace ${test-namespace} test-kubernetes-manager=true
+	kubectl -n ${test-namespace} apply -f ./e2e/kubernetes
 	kubectl -n ${test-namespace} wait --for=condition=available deployment --all --timeout=600s
 
-	GOFLAGS="-count=1" POD_NAMESPACE=${test-namespace} CONFIG=testdata/config_test.yaml go test -race ./integration-tests
+	GOFLAGS="-count=1" POD_NAMESPACE=${test-namespace} CONFIG=testdata/config_test.yaml go test -race ./e2e
 coverage:
 	go tool cover -html=coverage.out
 testChart:
 	helm lint --strict ./charts/kubernetes-manager
-	helm lint --strict ./charts/kubernetes-manager-rbac
 	helm lint --strict ./integration-tests/chart
 	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./charts/kubernetes-manager-rbac | kubectl apply --dry-run=client --validate=true -f -
 	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
 	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=$(image) --set service.type=LoadBalancer
@@ -50,14 +51,14 @@ clean:
 	kubectl delete namespace kubernetes-manager-test || true
 	kubectl delete ns ${test-namespace} || true
 upgrade:
-	go get -v -u k8s.io/api@v0.21.10 || true
-	go get -v -u k8s.io/apimachinery@v0.21.10
-	go get -v -u k8s.io/client-go@v0.21.10
+	go get -v -u k8s.io/api@v0.23.9 || true
+	go get -v -u k8s.io/apimachinery@v0.23.9
+	go get -v -u k8s.io/client-go@v0.23.9
 	go mod tidy
 	cd front && yarn update-latest
 run:
 	cp ${KUBECONFIG} ./kubeconfig
-	POD_NAME=kubernetes-manager POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main --config=$(config) --log.level=DEBUG $(args)
+	POD_NAME=kubernetes-manager POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main -batch.enabled=false --config=$(config) --log.level=DEBUG $(args)
 heap:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
 allocs:
@@ -87,3 +88,5 @@ scan:
 	$(image)
 	@helm template ./charts/kubernetes-manager > /tmp/kubernetes-manager.yaml
 	@trivy config /tmp/kubernetes-manager.yaml
+	@trivy fs -ignore-unfixed --no-progress --severity HIGH,CRITICAL front/yarn.lock
+	@trivy fs -ignore-unfixed --no-progress --severity HIGH,CRITICAL go.sum

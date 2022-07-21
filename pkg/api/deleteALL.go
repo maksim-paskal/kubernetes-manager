@@ -22,6 +22,7 @@ type DeleteALLResultOperation struct {
 }
 
 type DeleteALLResult struct {
+	HasErrors                     bool
 	DeleteNamespaceResult         DeleteALLResultOperation
 	DeleteClusterRolesAndBindings DeleteALLResultOperation
 }
@@ -35,34 +36,36 @@ func (t *DeleteALLResult) JSON() string {
 	return string(result)
 }
 
-func DeleteALL(ns string, tag string, projectID string) *DeleteALLResult {
+func (e *Environment) DeleteALL() *DeleteALLResult {
 	deleteNamespace := make(chan error)
 	deleteClusterRolesAndBindings := make(chan error)
 
 	go func() {
-		deleteNamespace <- DeleteNamespace(ns)
+		deleteNamespace <- e.DeleteNamespace()
 	}()
 
 	go func() {
-		deleteClusterRolesAndBindings <- DeleteClusterRolesAndBindings(ns)
+		deleteClusterRolesAndBindings <- e.DeleteClusterRolesAndBindings()
 	}()
 
 	result := DeleteALLResult{
 		DeleteNamespaceResult: DeleteALLResultOperation{
-			Result: fmt.Sprintf("Namespace %s deleted", ns),
+			Result: fmt.Sprintf("Namespace %s deleted", e.Namespace),
 		},
 		DeleteClusterRolesAndBindings: DeleteALLResultOperation{
-			Result: fmt.Sprintf("Cluster role and binding in namespace %s deleted", ns),
+			Result: fmt.Sprintf("Cluster role and binding in namespace %s deleted", e.Namespace),
 		},
 	}
 
 	if err := <-deleteNamespace; err != nil {
+		result.HasErrors = true
 		result.DeleteNamespaceResult = DeleteALLResultOperation{
 			Result: err.Error(),
 		}
 	}
 
 	if err := <-deleteClusterRolesAndBindings; err != nil {
+		result.HasErrors = true
 		result.DeleteClusterRolesAndBindings = DeleteALLResultOperation{
 			Result: err.Error(),
 		}

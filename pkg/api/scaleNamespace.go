@@ -18,6 +18,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	apierrorrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -25,21 +26,14 @@ import (
 )
 
 // ScaleNamespace scale deployments and statefullsets.
-func ScaleNamespace(ns string, replicas int32) error {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return errors.Wrap(err, "can not get clientset")
-	}
-
-	namespace := getNamespace(ns)
-
-	ds, err := clientset.AppsV1().Deployments(namespace).List(Ctx, metav1.ListOptions{})
+func (e *Environment) ScaleNamespace(replicas int32) error {
+	ds, err := e.clientset.AppsV1().Deployments(e.Namespace).List(Ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing deployments")
 	}
 
 	for _, d := range ds.Items {
-		dps, err := clientset.AppsV1().Deployments(namespace).Get(Ctx, d.Name, metav1.GetOptions{})
+		dps, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(Ctx, d.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting deployment")
 		}
@@ -47,14 +41,14 @@ func ScaleNamespace(ns string, replicas int32) error {
 		dps.Spec.Replicas = &replicas
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
-			_, err = clientset.AppsV1().Deployments(namespace).Update(Ctx, dps, metav1.UpdateOptions{})
+			_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(Ctx, dps, metav1.UpdateOptions{})
 			switch {
 			case err == nil:
 				return true, nil
 			case apierrorrs.IsConflict(err):
 				return false, nil
 			case err != nil:
-				return false, errors.Wrapf(err, "failed to update deployment %s/%s", namespace, dps.Name)
+				return false, errors.Wrapf(err, "failed to update deployment %s/%s", e.Namespace, dps.Name)
 			}
 
 			return false, nil
@@ -65,13 +59,13 @@ func ScaleNamespace(ns string, replicas int32) error {
 		}
 	}
 
-	sf, err := clientset.AppsV1().StatefulSets(namespace).List(Ctx, metav1.ListOptions{})
+	sf, err := e.clientset.AppsV1().StatefulSets(e.Namespace).List(Ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing statefullsets")
 	}
 
 	for _, s := range sf.Items {
-		ss, err := clientset.AppsV1().StatefulSets(namespace).Get(Ctx, s.Name, metav1.GetOptions{})
+		ss, err := e.clientset.AppsV1().StatefulSets(e.Namespace).Get(Ctx, s.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting statefullset")
 		}
@@ -79,14 +73,14 @@ func ScaleNamespace(ns string, replicas int32) error {
 		ss.Spec.Replicas = &replicas
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
-			_, err = clientset.AppsV1().StatefulSets(namespace).Update(Ctx, ss, metav1.UpdateOptions{})
+			_, err = e.clientset.AppsV1().StatefulSets(e.Namespace).Update(Ctx, ss, metav1.UpdateOptions{})
 			switch {
 			case err == nil:
 				return true, nil
 			case apierrorrs.IsConflict(err):
 				return false, nil
 			case err != nil:
-				return false, errors.Wrapf(err, "failed to update statefullset %s/%s", namespace, ss.Name)
+				return false, errors.Wrapf(err, "failed to update statefullset %s/%s", e.Namespace, ss.Name)
 			}
 
 			return false, nil
@@ -98,9 +92,42 @@ func ScaleNamespace(ns string, replicas int32) error {
 	}
 
 	if replicas > 0 {
-		err = SaveNamespaceAnnotation(ns, map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())})
+		annotation := map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())}
+
+		err = e.SaveNamespaceMeta(annotation, e.NamespaceLabels)
 		if err != nil {
 			return errors.Wrap(err, "error saving lastScaleDate")
+		}
+	}
+
+	if replicas == 0 {
+		if err := e.deletePodsNow(); err != nil {
+			return errors.Wrap(err, "error deleting pods")
+		}
+	}
+
+	return nil
+}
+
+// deletes pods with grace-period=0.
+func (e *Environment) deletePodsNow() error {
+	opt := metav1.ListOptions{
+		FieldSelector: runningPodSelector,
+	}
+
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, opt)
+	if err != nil {
+		return errors.Wrap(err, "error listing pods")
+	}
+
+	zero := int64(0)
+
+	for _, pod := range pods.Items {
+		err = e.clientset.CoreV1().Pods(e.Namespace).Delete(Ctx, pod.Name, metav1.DeleteOptions{
+			GracePeriodSeconds: &zero,
+		})
+		if err != nil {
+			log.WithError(err).Warn("error deleting pod")
 		}
 	}
 

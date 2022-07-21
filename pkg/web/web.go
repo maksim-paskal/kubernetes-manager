@@ -17,46 +17,54 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
-	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-func GetHandler() *http.ServeMux {
-	fs := http.FileServer(http.Dir(*config.Get().FrontDist))
+var (
+	errBadFormat     = errors.New("bad format")
+	errNoComandFound = errors.New("no command found")
+	errMustBePOST    = errors.New("must be POST method")
+)
 
-	mux := http.NewServeMux()
-	mux.Handle("/", fs)
-	mux.HandleFunc("/_nuxt/", serveFiles)
-	mux.HandleFunc("/api/getIngress", getIngress)
-	mux.HandleFunc("/api/deleteNamespace", deleteNamespace)
-	mux.HandleFunc("/api/deletePod", deletePod)
-	mux.HandleFunc("/api/exec", execCommands)
-	mux.HandleFunc("/api/deleteALL", deleteALL)
-	mux.HandleFunc("/api/executeBatch", executeBatch)
-	mux.HandleFunc("/getKubeConfig", getKubeConfig)
-	mux.HandleFunc("/api/scaleNamespace", scaleNamespace)
-	mux.HandleFunc("/api/scaleDownDelay", scaleDownDelay)
-	mux.HandleFunc("/api/getRunningPodsCount", getRunningPodsCount)
-	mux.HandleFunc("/api/version", getAPIversion)
-	mux.HandleFunc("/api/getPods", getPods)
-	mux.HandleFunc("/api/debug", getDebug)
-	mux.HandleFunc("/api/disableHPA", disableHPA)
-	mux.HandleFunc("/api/disableMTLS", disableMTLS)
-	mux.HandleFunc("/api/getProjects", getProjects)
-	mux.HandleFunc("/api/getProjectRefs", getProjectRefs)
-	mux.HandleFunc("/api/getProjectInfo", getProjectInfo)
-	mux.HandleFunc("/api/deploySelectedServices", deploySelectedServices)
-	mux.HandleFunc("/api/createNewBranch", createNewBranch)
-	mux.HandleFunc("/api/getServices", getServices)
-	mux.HandleFunc("/api/getFrontConfig", getFrontConfig)
+type HandlerResultOutput string
+
+const (
+	HandlerResultOutputJSON HandlerResultOutput = "json"
+	HandlerResultOutputRAW  HandlerResultOutput = "raw"
+)
+
+type HandlerResult struct {
+	Version string
+	headers map[string]string
+	output  HandlerResultOutput
+	cached  bool
+	Result  interface{}
+}
+
+func NewHandlerResult() *HandlerResult {
+	return &HandlerResult{
+		Version: config.GetVersion(),
+		output:  HandlerResultOutputJSON,
+		headers: make(map[string]string),
+	}
+}
+
+func GetHandler() *mux.Router {
+	mux := mux.NewRouter()
+
 	mux.HandleFunc("/api/ready", handlerReady)
 	mux.HandleFunc("/api/healthz", handlerHealthz)
+	mux.HandleFunc("/oauth2/userinfo", handlerUser)
+	mux.HandleFunc("/api/{operation}", handlerAPI)
+	mux.HandleFunc("/api/{environmentID}/{operation}", handlerEnvironment)
 
 	// pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
@@ -64,6 +72,9 @@ func GetHandler() *http.ServeMux {
 
 	// metrics
 	mux.Handle("/metrics", metrics.GetHandler())
+
+	mux.PathPrefix("/_nuxt").Handler(NewHandlerSPACached(*config.Get().FrontDist, "index.html"))
+	mux.PathPrefix("/").Handler(NewHandlerSPA(*config.Get().FrontDist, "index.html"))
 
 	return mux
 }
@@ -74,39 +85,5 @@ func StartServer() {
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *config.Get().Port), GetHandler())
 	if err != nil {
 		log.WithError(err).Fatal()
-	}
-}
-
-func checkParams(r *http.Request, params []string) error {
-	for _, param := range params {
-		if len(r.URL.Query()[param]) != 1 {
-			return errors.Wrap(errNoQueryParam, param)
-		}
-	}
-
-	return nil
-}
-
-func handlerReady(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte("ready"))
-	if err != nil {
-		if err != nil {
-			log.
-				WithError(err).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-		}
-	}
-}
-
-func handlerHealthz(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte("live"))
-	if err != nil {
-		if err != nil {
-			log.
-				WithError(err).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-		}
 	}
 }

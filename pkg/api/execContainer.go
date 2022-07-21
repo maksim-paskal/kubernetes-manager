@@ -14,11 +14,12 @@ package api
 
 import (
 	"bytes"
+	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 )
@@ -29,37 +30,22 @@ type ExecContainerResults struct {
 	ExecCode string
 }
 
-func ExecContainer(ns string, pod string, labelSelector string, container string, command string) (*ExecContainerResults, error) { //nolint:lll
-	log.Debugf("container=%s,command=%s", container, command)
-
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return &ExecContainerResults{}, errors.Wrap(err, "can not get clientset")
+// exec command in container
+// container must contains <pod>:<container.
+func (e *Environment) ExecContainer(container string, command string) (*ExecContainerResults, error) {
+	containerData := strings.Split(container, ":")
+	if len(containerData) != config.KeyValueLength {
+		return nil, errors.New("container must contains <pod>:<container>")
 	}
 
-	namespace := getNamespace(ns)
-	podName := pod
-
-	if len(pod) == 0 {
-		pods, err := clientset.CoreV1().Pods(namespace).List(Ctx, metav1.ListOptions{
-			LabelSelector: labelSelector,
-			FieldSelector: runningPodSelector,
-		})
-		if err != nil {
-			return &ExecContainerResults{}, errors.Wrap(err, "can not list pods")
-		}
-
-		podName = pods.Items[0].Name
-	}
-
-	req := clientset.CoreV1().RESTClient().
+	req := e.clientset.CoreV1().RESTClient().
 		Post().
-		Namespace(namespace).
+		Namespace(e.Namespace).
 		Resource("pods").
-		Name(podName).
+		Name(containerData[0]).
 		SubResource("exec").
 		VersionedParams(&corev1.PodExecOptions{
-			Container: container,
+			Container: containerData[1],
 			Command:   []string{"/bin/sh", "-c", command},
 			Stdin:     false,
 			Stdout:    true,
@@ -67,7 +53,10 @@ func ExecContainer(ns string, pod string, labelSelector string, container string
 			TTY:       false,
 		}, scheme.ParameterCodec)
 
-	restconfig := restconfigCluster[getCluster(ns)]
+	restconfig, err := client.GetRestConfig(e.Cluster)
+	if err != nil {
+		return nil, errors.New("can not get client config for cluster")
+	}
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {

@@ -13,8 +13,6 @@ limitations under the License.
 package api
 
 import (
-	"time"
-
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
@@ -26,37 +24,38 @@ type GetGitlabPipelinesStatusResults struct {
 	LastSuccessPipeline string
 }
 
-func GetGitlabPipelinesStatus(projectID string, ns string) (*GetGitlabPipelinesStatusResults, error) {
-	if gitlabClient == nil {
+const GetGitlabPipelinesStatusMaxLimit = 20
+
+func (e *Environment) GetGitlabPipelinesStatus(projectID string) (*GetGitlabPipelinesStatusResults, error) {
+	if e.gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
 
-	namespace := getNamespace(ns)
-
 	result := GetGitlabPipelinesStatusResults{}
 
-	lastHour := time.Now().UTC().Add(-time.Hour)
-	pipelineOrderBy := "id"
-	pipelineSort := "desc"
-
-	projectPipelines, _, err := gitlabClient.Pipelines.ListProjectPipelines(projectID, &gitlab.ListProjectPipelinesOptions{
-		UpdatedAfter: &lastHour,
-		OrderBy:      &pipelineOrderBy,
-		Sort:         &pipelineSort,
-		Username:     config.Get().GitlabTokenUser,
+	// return last 20 project pipelines, that was created by API
+	projectPipelines, _, err := e.gitlabClient.Pipelines.ListProjectPipelines(projectID, &gitlab.ListProjectPipelinesOptions{ //nolint:lll
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: GetGitlabPipelinesStatusMaxLimit,
+		},
+		Source:   gitlab.String("api"),
+		OrderBy:  gitlab.String("id"),
+		Sort:     gitlab.String("desc"),
+		Username: config.Get().GitlabTokenUser,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get project pipelines")
 	}
 
 	for _, projectPipeline := range projectPipelines {
-		pipelineVars, _, err := gitlabClient.Pipelines.GetPipelineVariables(projectID, projectPipeline.ID)
+		pipelineVars, _, err := e.gitlabClient.Pipelines.GetPipelineVariables(projectID, projectPipeline.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get project pipeline variables")
 		}
 
 		for _, pipelineVar := range pipelineVars {
-			if pipelineVar.Key == gitlabNamespaceKey && pipelineVar.Value == namespace {
+			if pipelineVar.Key == gitlabNamespaceKey && pipelineVar.Value == e.Namespace {
 				switch projectPipeline.Status {
 				case "running":
 					result.LastRunningPipeline = projectPipeline.WebURL

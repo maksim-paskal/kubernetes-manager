@@ -42,4 +42,35 @@ func TestConfig(t *testing.T) {
 		t.Log(config.String())
 		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksYaml))
 	}
+
+	test1 := config.Get().DeepCopy().NamespaceMeta.Labels
+
+	test1["test1"] = "test1"
+	if test1["environment"] != "dev" {
+		t.Fatal("test1 must have environment variable")
+	}
+
+	test2 := config.Get().NamespaceMeta.Labels
+
+	test2["test2"] = "test2"
+	if test2["test1"] == "test1" {
+		t.Fatal("test2 should not have values of test1")
+	}
+}
+
+func TestFormatedLinks(t *testing.T) {
+	t.Parallel()
+
+	testLink := config.Links{
+		LogsURL: "[__Namespace__]",
+	}
+
+	formatedLinks, err := testLink.FormatedLinks("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "[test]"; formatedLinks.LogsURL != want {
+		t.Fatalf("want=%s,got=%s", want, formatedLinks.LogsURL)
+	}
 }

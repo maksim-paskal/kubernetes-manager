@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,6 +26,8 @@ const (
 	convertStringToInt64Base    = 10
 	convertStringToInt64BitSize = 32
 	timeFormat                  = time.RFC3339
+	hoursInDay                  = 24
+	keyValueLength              = 2
 )
 
 func TimeToString(t time.Time) string {
@@ -38,10 +39,15 @@ func StringToTime(value string) (time.Time, error) {
 }
 
 // returns hours between current time and input time.
-func DiffToNow(t time.Time) int {
-	t1 := time.Now()
+func DiffToNowHours(t time.Time) int {
+	now := time.Now()
 
-	return int(t1.Sub(t).Hours() / config.HoursInDay)
+	return int(now.Sub(t).Hours())
+}
+
+// returns days between current time and input time.
+func DiffToNowDays(t time.Time) int {
+	return DiffToNowHours(t) / hoursInDay
 }
 
 func ConvertStringToInt64(value string) (int64, error) {
@@ -49,11 +55,21 @@ func ConvertStringToInt64(value string) (int64, error) {
 }
 
 func RandomString(l int) string {
-	buff := make([]byte, int(math.Ceil(float64(l)/config.KeyValueLength)))
+	buff := make([]byte, int(math.Ceil(float64(l)/keyValueLength)))
 	_, _ = rand.Read(buff)
 	str := hex.EncodeToString(buff)
 
 	return str[:l]
+}
+
+func StringInSlice(str string, list []string) bool {
+	for _, v := range list {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
 
 type JaegerLogs struct{}

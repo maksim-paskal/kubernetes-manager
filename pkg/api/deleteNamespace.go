@@ -18,24 +18,12 @@ import (
 )
 
 // DeleteNamespace delete kubernetes namespace.
-func DeleteNamespace(ns string) error {
-	clientset, err := getClientset(ns)
-	if err != nil {
-		return errors.Wrap(err, "can not get clientset")
+func (e *Environment) DeleteNamespace() error {
+	if e.IsSystemNamespace() {
+		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	namespace := getNamespace(ns)
-
-	isSystemNamespace, err := IsSystemNamespace(ns)
-	if err != nil {
-		return errors.Wrap(err, "error getting system namespace")
-	}
-
-	if isSystemNamespace {
-		return errors.Wrap(errIsSystemNamespace, namespace)
-	}
-
-	err = clientset.CoreV1().Namespaces().Delete(Ctx, namespace, metav1.DeleteOptions{})
+	err := e.clientset.CoreV1().Namespaces().Delete(Ctx, e.Namespace, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error deleting namespace")
 	}
