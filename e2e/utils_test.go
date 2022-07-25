@@ -70,7 +70,7 @@ func waitForPodCount(environment *api.Environment, count int) (*api.GetContainer
 		}
 
 		if podCount == count {
-			pods, err := environment.GetContainers()
+			pods, err := environment.GetContainers("", "")
 			if err != nil {
 				return nil, err
 			}

@@ -14,10 +14,9 @@ package api
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -33,19 +32,19 @@ type ExecContainerResults struct {
 // exec command in container
 // container must contains <pod>:<container.
 func (e *Environment) ExecContainer(container string, command string) (*ExecContainerResults, error) {
-	containerData := strings.Split(container, ":")
-	if len(containerData) != config.KeyValueLength {
-		return nil, errors.New("container must contains <pod>:<container>")
+	containerInfo, err := types.NewContainerInfo(container)
+	if err != nil {
+		return nil, err
 	}
 
 	req := e.clientset.CoreV1().RESTClient().
 		Post().
 		Namespace(e.Namespace).
 		Resource("pods").
-		Name(containerData[0]).
+		Name(containerInfo.PodName).
 		SubResource("exec").
 		VersionedParams(&corev1.PodExecOptions{
-			Container: containerData[1],
+			Container: containerInfo.ContainerName,
 			Command:   []string{"/bin/sh", "-c", command},
 			Stdin:     false,
 			Stdout:    true,

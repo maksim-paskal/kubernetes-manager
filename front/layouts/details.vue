@@ -20,6 +20,7 @@
 export default {
   mounted() {
     this.$store.commit("setEnvironment", {});
+    this.$store.commit("clearDropDowns");
   },
   async fetch() {
     this.loadConfig();

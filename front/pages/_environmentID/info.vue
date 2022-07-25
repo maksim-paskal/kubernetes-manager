@@ -14,10 +14,11 @@
     <b-card class="mt-3" header="Links">
       <ul v-if="environment.Hosts && environment.Hosts.length > 0">
         <li v-bind:key="index" v-for="(item, index) in environment.Hosts">
-          <a :href="item" rel="noopener" target="_blank">{{ item }}</a>
+          <a class="text-decoration-none" :href="item" rel="noopener" target="_blank">{{ item }}</a>
         </li>
       </ul>
-      <div v-else>Wait when <b-link to="external-services">external-services</b-link> deployed...</div>
+      <div v-else>Wait when <b-link class="text-decoration-none" to="external-services">external-services</b-link>
+        deployed...</div>
     </b-card>
 
     <b-card class="mt-3" header="Namespace information">

@@ -1,8 +1,8 @@
 <template>
   <b-dropdown :id="this.id" :text="this.buttonText" :variant="buttonVariant"
     toggle-class="text-muted text-start form-select dropdown-toggle-no-caret"
-    style="width:100%;border: 1px solid #ced4da;">
-    <div style="padding:10px">
+    style="width:100%;border: 1px solid #ced4da;" menu-class="dropdown-menu-top">
+    <div style="padding:10px; ">
       <b-dropdown-form>
         <b-form-input :disabled="!this.isLoaded" style="width:100%;margin-bottom:10px" autocomplete="off"
           v-model="search" placeholder="Search">
@@ -16,19 +16,26 @@
             v-for="(item, index) in this.filterResults()" :key="index">{{ item }}</b-dropdown-item>
         </div>
       </div>
+      <b-button :disabled="!this.isLoaded" @click="reload()" variant="link" class="text-decoration-none text-black"><em
+          class="bi bi bi-arrow-repeat" /></b-button>
     </div>
   </b-dropdown>
 </template>
 
 <script>
 export default {
-  props: ['id', 'text', 'default', 'endpoint'],
+  props: ['id', 'text', 'default', 'endpoint', 'value'],
   mounted() {
     this.$root.$on('bv::dropdown::show', bvEvent => {
       if (bvEvent.componentId === this.id && !this.isLoaded) {
         this.load();
       }
     })
+
+    // use custom value
+    if (this.value) {
+      this.selected = this.value;
+    }
 
     // load default search value
     if (this.default) {
@@ -61,6 +68,10 @@ export default {
     }
   },
   methods: {
+    reload() {
+      this.isLoaded = false;
+      this.load();
+    },
     filterResults() {
       if (!this.isLoaded) return [];
 

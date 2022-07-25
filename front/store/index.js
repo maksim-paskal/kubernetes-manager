@@ -21,6 +21,9 @@ const store = () => new Vuex.Store({
     setUser(state, user) {
       state.user = user
     },
+    clearDropDowns(state) {
+      state.selectedDropdowns = Object.create(null)
+    },
     setDropDown(state,data) {
       Vue.set(state.selectedDropdowns, data.id, data.selected);
     },

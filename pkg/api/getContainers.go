@@ -14,6 +14,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +24,18 @@ type GetContainersItem struct {
 	Contaners []string
 }
 
-func (e *Environment) GetContainers() (*GetContainersItem, error) {
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
+// returns list of containers
+// containerInLabels is pod label to store returned containers.
+func (e *Environment) GetContainers(filter string, containerInLabels string) (*GetContainersItem, error) {
+	opt := metav1.ListOptions{
 		FieldSelector: runningPodSelector,
-	})
+	}
+
+	if len(filter) > 0 {
+		opt.LabelSelector = filter
+	}
+
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not list pods")
 	}
@@ -36,10 +45,23 @@ func (e *Environment) GetContainers() (*GetContainersItem, error) {
 	}
 
 	for _, pod := range pods.Items {
+		containerLabelValue := pod.Labels[containerInLabels]
+		searchContainers := strings.Split(containerLabelValue, ",")
+
 		for _, podContainer := range pod.Spec.Containers {
 			containerText := fmt.Sprintf("%s:%s", pod.Name, podContainer.Name)
 
-			result.Contaners = append(result.Contaners, containerText)
+			if len(containerLabelValue) == 0 {
+				result.Contaners = append(result.Contaners, containerText)
+			} else {
+				for _, searchContainer := range searchContainers {
+					if podContainer.Name == searchContainer {
+						result.Contaners = append(result.Contaners, containerText)
+
+						break
+					}
+				}
+			}
 		}
 	}
 
