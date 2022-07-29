@@ -59,6 +59,8 @@ const (
 	LabelInstalledProject = Namespace + "/project"
 	LabelEnvironmentName  = Namespace + "/environment-name"
 	LabelUserLiked        = Namespace + "/user-liked"
+	LabelGitSyncOrigin    = Namespace + "/git-sync-origin"
+	LabelGitSyncBranch    = Namespace + "/git-sync-branch"
 )
 
 type Links struct {

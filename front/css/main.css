@@ -1,10 +1,14 @@
 /* fix dropdown menu border */
 [tabindex="-1"]:focus:not(.focus-visible) {
-  outline: 0!important;
+  outline: 0 !important;
 }
 
 .dropdown-toggle-no-caret::after {
-  display:none;
+  display: none;
+}
+
+.dropdown-menu-top {
+  z-index: 2000;
 }
 
 .detail-tab {

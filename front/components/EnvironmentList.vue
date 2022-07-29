@@ -19,12 +19,12 @@
       <template v-slot:cell(Hosts)="data">
         <ul>
           <li v-bind:key="index" v-for="(item, index) in data.item.Hosts">
-            <a :href="item" rel="noopener" target="_blank">{{ item }}</a>
+            <a class="text-decoration-none" :href="item" rel="noopener" target="_blank">{{ item }}</a>
           </li>
         </ul>
       </template>
       <template v-slot:cell(Name)="row">
-        <b-link :to="`/${row.item.ID}/info`">{{ getEnvironmentName(row.item) }}</b-link>
+        <b-link class="text-decoration-none" :to="`/${row.item.ID}/info`">{{ getEnvironmentName(row.item) }}</b-link>
       </template>
     </b-table>
   </div>

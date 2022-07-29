@@ -17,11 +17,16 @@ import (
 	"strings"
 )
 
-var errIDNotCorrect = errors.New("ID not correct")
+var (
+	errIDNotCorrect           = errors.New("ID not correct")
+	errContainerInvalidFormat = errors.New("container must contains <pod>:<container>")
+)
 
 const (
 	namespaceArrayItemCount = 2
 	namespaceArraySplitter  = ":"
+	containerArrayItemCount = 2
+	containerArraySplitter  = ":"
 )
 
 type Event string
@@ -50,4 +55,21 @@ func NewIDInfo(id string) (*IDInfo, error) {
 	}
 
 	return &IDInfo{Cluster: data[0], Namespace: data[1]}, nil
+}
+
+type ContainerInfo struct {
+	PodName       string
+	ContainerName string
+}
+
+func NewContainerInfo(container string) (*ContainerInfo, error) {
+	containerData := strings.Split(container, containerArraySplitter)
+	if len(containerData) != containerArrayItemCount {
+		return nil, errContainerInvalidFormat
+	}
+
+	return &ContainerInfo{
+		PodName:       containerData[0],
+		ContainerName: containerData[1],
+	}, nil
 }

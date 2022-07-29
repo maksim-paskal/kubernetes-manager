@@ -13,6 +13,7 @@ limitations under the License.
 package web
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,6 +25,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -133,16 +135,19 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 	case "info":
 		result.Result = environment
 	case "containers":
-		containers, err := environment.GetContainers()
+		filter := r.Form.Get("filter")
+		containerInAnnotation := r.Form.Get("annotation")
+
+		containers, err := environment.GetContainers(filter, containerInAnnotation)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = containers.Contaners
-	case "container-info":
+	case "debug-info":
 		container := r.Form.Get("container")
 		if len(container) == 0 {
-			return result, errors.Wrap(errNoComandFound, "no container specified")
+			return result, errors.Wrap(errBadFormat, "no container specified")
 		}
 
 		type ContainerInfo struct {
@@ -174,7 +179,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 	case "project-info":
 		projectID := r.Form.Get("projectID")
 		if len(projectID) == 0 {
-			return result, errors.Wrap(errNoComandFound, "no projectID specified")
+			return result, errors.Wrap(errBadFormat, "no projectID specified")
 		}
 
 		projectInfo, err := environment.GetGitlabProjectsInfo(projectID)
@@ -343,6 +348,195 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		}
 
 		result.Result = fmt.Sprintf("Disabled mTLS in namespace %s", environment.Namespace)
+	case "git-sync":
+		container := r.Form.Get("container")
+		if len(container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		type ContainerInfoResult struct {
+			GitSyncEnabled bool
+			PublicKey      string
+			GitOrigin      string
+			GitBranch      string
+		}
+
+		containerInfoResult := ContainerInfoResult{}
+
+		containerInfo, err := environment.GetContainerInfo(container)
+		if err != nil {
+			return result, err
+		}
+
+		if containerInfo.PodAnnotations == nil {
+			containerInfo.PodAnnotations = make(map[string]string)
+		}
+
+		containerInfoResult.GitOrigin = containerInfo.PodAnnotations[config.LabelGitSyncOrigin]
+		containerInfoResult.GitBranch = containerInfo.PodAnnotations[config.LabelGitSyncBranch]
+
+		gitSyncResult, err := environment.ExecContainer(container, "/kubernetes-manager/getGitBranch")
+		if err != nil {
+			return result, err
+		}
+
+		if len(gitSyncResult.Stderr) > 0 {
+			return result, errors.New(gitSyncResult.Stderr)
+		}
+
+		getGitPubKey, err := environment.ExecContainer(container, "/kubernetes-manager/getGitPubKey")
+		if err != nil {
+			return result, err
+		}
+
+		if len(getGitPubKey.Stderr) > 0 {
+			return result, errors.New(getGitPubKey.Stderr)
+		}
+
+		containerInfoResult.PublicKey = getGitPubKey.Stdout
+
+		if len(containerInfoResult.PublicKey) > 0 {
+			containerInfoResult.GitSyncEnabled = true
+		}
+
+		result.Result = containerInfoResult
+	case "make-git-sync-init":
+		type GitSyncInit struct {
+			Container string
+			GitOrigin string
+			GitBranch string
+		}
+
+		gitSyncInit := GitSyncInit{}
+
+		err = json.Unmarshal(body, &gitSyncInit)
+		if err != nil {
+			return result, err
+		}
+
+		if len(gitSyncInit.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		if len(gitSyncInit.GitOrigin) == 0 {
+			return result, errors.Wrap(errBadFormat, "no git origin specified")
+		}
+
+		if len(gitSyncInit.GitBranch) == 0 {
+			return result, errors.Wrap(errBadFormat, "no git branch specified")
+		}
+
+		enableGitCommand := fmt.Sprintf("/kubernetes-manager/enableGit %s %s", gitSyncInit.GitOrigin, gitSyncInit.GitBranch)
+
+		enableGit, err := environment.ExecContainer(gitSyncInit.Container, enableGitCommand)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = enableGit.Stdout + enableGit.Stderr
+	case "make-delete-pod":
+		type DeletePod struct {
+			Container string
+		}
+
+		deletePod := DeletePod{}
+
+		err = json.Unmarshal(body, &deletePod)
+		if err != nil {
+			return result, err
+		}
+
+		if len(deletePod.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		containerInfo, err := types.NewContainerInfo(deletePod.Container)
+		if err != nil {
+			return result, err
+		}
+
+		err = environment.DeletePod(containerInfo.PodName)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = fmt.Sprintf("Pod %s deleted", containerInfo.PodName)
+	case "make-git-sync-fetch":
+		type GitSyncFetch struct {
+			Container string
+		}
+
+		gitSyncFetch := GitSyncFetch{}
+
+		err = json.Unmarshal(body, &gitSyncFetch)
+		if err != nil {
+			return result, err
+		}
+
+		if len(gitSyncFetch.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		gitFetch, err := environment.ExecContainer(gitSyncFetch.Container, "/kubernetes-manager/gitFetch")
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = gitFetch.Stdout + " " + gitFetch.Stderr
+	case "make-debug-xdebug-init":
+		type DebugXdebugInit struct {
+			Container string
+		}
+
+		debugXdebugInit := DebugXdebugInit{}
+
+		err = json.Unmarshal(body, &debugXdebugInit)
+		if err != nil {
+			return result, err
+		}
+
+		if len(debugXdebugInit.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		debugXdebug, err := environment.ExecContainer(debugXdebugInit.Container, "/kubernetes-manager/enableXdebug")
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = debugXdebug.Stdout + " " + debugXdebug.Stderr
+	case "make-debug-save-config":
+		type DebugSaveConfig struct {
+			Container      string
+			PhpFpmSettings string
+		}
+
+		debugSaveConfig := DebugSaveConfig{}
+
+		err = json.Unmarshal(body, &debugSaveConfig)
+		if err != nil {
+			return result, err
+		}
+
+		if len(debugSaveConfig.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		if len(debugSaveConfig.PhpFpmSettings) == 0 {
+			return result, errors.Wrap(errBadFormat, "no config specified")
+		}
+
+		base64Config := b64.StdEncoding.EncodeToString([]byte(debugSaveConfig.PhpFpmSettings))
+
+		cmd := fmt.Sprintf("/kubernetes-manager/setPhpSettings %s", base64Config)
+
+		debugSaveConfigExec, err := environment.ExecContainer(debugSaveConfig.Container, cmd)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = debugSaveConfigExec.Stdout + " " + debugSaveConfigExec.Stderr
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}
