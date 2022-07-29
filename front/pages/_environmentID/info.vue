@@ -25,18 +25,10 @@
       <b-spinner v-if="!environment.ID" variant="primary" />
       <pre v-else class="m-0">{{ environment }}</pre>
     </b-card>
-    <div class="mt-3">
-      <b-button @click="refresh()">Refresh</b-button>
-    </div>
   </div>
 </template>
 <script>
 export default {
   layout: "details",
-  methods: {
-    refresh() {
-      this.loadEnvironment(this.$route.params.environmentID)
-    }
-  }
 }
 </script>
