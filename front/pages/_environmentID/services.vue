@@ -4,12 +4,8 @@
         $fetchState.error.message
     }}</b-alert>
     <b-spinner v-if="$fetchState.pending" variant="primary" />
-    <b-spinner v-else-if="callIsLoading" variant="primary" />
     <div v-else>
-      <b-alert variant="warning" show>
-        <b-button @click="call('make-disable-mtls')">Disable mTLS verification</b-button>&nbsp;For proper
-        usage you must disable mutual TLS verification
-      </b-alert>
+      <WarningDisableMTLS />
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
       <b-table striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(ServiceHost)="row">

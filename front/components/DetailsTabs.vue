@@ -1,9 +1,10 @@
 <template>
   <div>
-    <div style="padding:10px">
+    <div style="padding:10px;display: flex;align-items: center;">
       <EnvironmentName />
+      <EnvironmentResources />
     </div>
-    <ul style="margin-top:10px" class="nav nav-tabs">
+    <ul class="nav nav-tabs">
       <li class="nav-item" style="margin-left:20px">
         <b-link class="nav-link" active-class="active" to="info">info</b-link>
       </li>

@@ -141,13 +141,13 @@ Vue.mixin({
         this.errorText = e.message
       }
     },
-    async call(op, data) {
+    async call(op, data, onTop = true) {
       if (op == "make-delete") {
         const realy = await this.$bvModal.msgBoxConfirm("Realy?");
         if (!realy) return;
       }
 
-      return this.callEndpoint(`/api/${this.$route.params.environmentID}/${op}`, data, true)
+      return this.callEndpoint(`/api/${this.$route.params.environmentID}/${op}`, data, onTop)
     },
     async callEndpoint(endpoint, data, onTop) {
       this.infoText = null

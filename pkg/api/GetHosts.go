@@ -21,26 +21,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *Environment) GetHosts() ([]string, error) {
+const (
+	HostTypeInternal = "internal"
+)
+
+func (e *Environment) GetHosts() ([]string, []string, error) {
 	opt := metav1.ListOptions{
-		LabelSelector: *config.Get().IngressFilter,
+		LabelSelector: config.FilterLabels,
 	}
 
 	ingresss, err := e.clientset.NetworkingV1().Ingresses(e.Namespace).List(Ctx, opt)
 	if err != nil {
-		return nil, errors.Wrap(err, "can not get ingresses")
+		return nil, nil, errors.Wrap(err, "can not get ingresses")
 	}
 
-	hosts := make([]string, 0)
+	hostsDefaults := make([]string, 0)
+	hostsInternal := make([]string, 0)
 
 	for _, ingress := range ingresss.Items {
 		for _, rule := range ingress.Spec.Rules {
 			host := fmt.Sprintf("%s://%s", *config.Get().IngressHostDefaultProtocol, rule.Host)
-			if !utils.StringInSlice(host, hosts) {
-				hosts = append(hosts, host)
+			if ingress.Annotations != nil && ingress.Annotations[config.LabelType] == HostTypeInternal {
+				if !utils.StringInSlice(host, hostsInternal) {
+					hostsInternal = append(hostsInternal, host)
+				}
+			} else {
+				if !utils.StringInSlice(host, hostsDefaults) {
+					hostsDefaults = append(hostsDefaults, host)
+				}
 			}
 		}
 	}
 
-	return hosts, nil
+	return hostsDefaults, hostsInternal, nil
 }

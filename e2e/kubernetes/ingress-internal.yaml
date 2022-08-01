@@ -1,16 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kubernetes-manager-test
+  name: kubernetes-manager-test-internal
+  annotations:
+    kubernetes-manager/type: "internal"
   labels:
     app: kubernetes-manager-test
     kubernetes-manager: "true"
 spec:
   tls:
   - hosts:
-    - backend-some-feature-branch.yourdomain.com
+    - backend-some-feature-branch-internal.yourdomain.com
   rules:
-  - host: backend-some-feature-branch.yourdomain.com
+  - host: backend-some-feature-branch-internal.yourdomain.com
     http:
       paths:
       - path: /

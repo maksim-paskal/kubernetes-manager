@@ -118,7 +118,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 	switch strings.ToLower(operation) {
 	case "pods":
-		pods, err := environment.GetRunningPodsCount()
+		pods, err := environment.GetPodsInfo()
 		if err != nil {
 			return result, err
 		}
