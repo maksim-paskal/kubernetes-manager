@@ -4,10 +4,7 @@
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
     <b-spinner v-if="callIsLoading" variant="primary" />
     <div v-else>
-      <b-alert variant="warning" show>
-        <b-button @click="call('make-disable-hpa')">Disable autoscaling</b-button>&nbsp;For proper usage
-        you must disable autoscaler
-      </b-alert>
+      <WarningDisableHPA />
       <DropDown id="gitSyncDropdownContainers" :value="selectedContainer" style="margin-bottom:10px"
         ref="gitSyncDropdownContainers" text="Select POD"
         :endpoint="`/api/${this.$route.params.environmentID}/containers?filter=kubernetes-manager/debug-containers&annotation=kubernetes-manager/debug-containers`" />

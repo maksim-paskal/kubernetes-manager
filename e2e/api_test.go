@@ -22,7 +22,10 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 )
 
-const TotalTestCount = 5
+const (
+	TotalTestCount      = 5
+	TestNamespaceFilter = "test-kubernetes-manager=true"
+)
 
 var counters sync.Map
 
@@ -43,16 +46,21 @@ func TestEnvironment(t *testing.T) {
 
 	t.Parallel()
 
-	envieronments, err := api.GetEnvironments("")
+	envieronments, err := api.GetEnvironments(TestNamespaceFilter)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if len(envieronments) != 1 {
-		t.Fatal("no ingress found")
+		t.Fatal("envieronment not found")
 	}
 
 	err = checkEnvironment(envieronments[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = checkHosts(envieronments[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +93,7 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	envieronments, err := api.GetEnvironments("")
+	envieronments, err := api.GetEnvironments(TestNamespaceFilter)
 	if err != nil {
 		t.Fatal(err)
 	}

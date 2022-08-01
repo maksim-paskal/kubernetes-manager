@@ -9,9 +9,15 @@
           src="~assets/jaeger.png" />&nbsp;Traces</b-button>
       <b-button target="_blank" :href="environment.Links.SentryURL"><img height="16" alt="sentry"
           src="~assets/sentry.png" />&nbsp;Sentry</b-button>
+      <b-button @click="showJSON = !showJSON">{{ showJSON ? "Hide" : "Show" }} info</b-button>
     </div>
 
-    <b-card class="mt-3" header="Links">
+    <b-card v-if="showJSON" class="mt-3" header="Namespace information">
+      <b-spinner v-if="!environment.ID" variant="primary" />
+      <pre v-else class="m-0">{{ environment }}</pre>
+    </b-card>
+
+    <b-card class="mt-3" header="Hosts">
       <ul v-if="environment.Hosts && environment.Hosts.length > 0">
         <li v-bind:key="index" v-for="(item, index) in environment.Hosts">
           <a class="text-decoration-none" :href="item" rel="noopener" target="_blank">{{ item }}</a>
@@ -21,14 +27,24 @@
         deployed...</div>
     </b-card>
 
-    <b-card class="mt-3" header="Namespace information">
-      <b-spinner v-if="!environment.ID" variant="primary" />
-      <pre v-else class="m-0">{{ environment }}</pre>
+    <b-card class="mt-3" header="Internal Hosts"
+      v-if="environment.HostsInternal && environment.HostsInternal.length > 0">
+      <WarningDisableMTLS />
+      <ul>
+        <li v-bind:key="index" v-for="(item, index) in environment.HostsInternal">
+          <a class="text-decoration-none" :href="item" rel="noopener" target="_blank">{{ item }}</a>
+        </li>
+      </ul>
     </b-card>
   </div>
 </template>
 <script>
 export default {
   layout: "details",
+  data() {
+    return {
+      showJSON: false,
+    };
+  },
 }
 </script>

@@ -58,18 +58,39 @@ func checkEnvironment(environment *api.Environment) error {
 	return nil
 }
 
-func waitForPodCount(environment *api.Environment, count int) (*api.GetContainersItem, error) {
+//nolint: goerr113
+func checkHosts(environment *api.Environment) error {
+	if len(environment.Hosts) != 1 {
+		return errors.New("hosts not found")
+	}
+
+	if want := "https://backend-some-feature-branch.yourdomain.com"; environment.Hosts[0] != want {
+		return fmt.Errorf("want=%s;got=%s", want, environment.Hosts[0])
+	}
+
+	if len(environment.HostsInternal) != 1 {
+		return errors.New("internal hosts not found")
+	}
+
+	if want := "https://backend-some-feature-branch-internal.yourdomain.com"; environment.HostsInternal[0] != want {
+		return fmt.Errorf("want=%s;got=%s", want, environment.HostsInternal[0])
+	}
+
+	return nil
+}
+
+func waitForPodCount(environment *api.Environment, count int64) (*api.GetContainersItem, error) {
 	total := 0
 
 	for {
 		total++
 
-		podCount, err := environment.GetRunningPodsCount()
+		podInfo, err := environment.GetPodsInfo()
 		if err != nil {
 			return nil, err
 		}
 
-		if podCount == count {
+		if podInfo.PodsTotal == count {
 			pods, err := environment.GetContainers("", "")
 			if err != nil {
 				return nil, err

@@ -40,9 +40,9 @@ type Environment struct {
 	NamespaceAnotations     map[string]string
 	NamespaceLabels         map[string]string
 	Links                   *config.Links
-	Hosts                   []string // use getIngressHosts to get all
-	// external
-	RunningPodsCount *int // use getRunningPodsCount
+	Hosts                   []string
+	HostsInternal           []string
+	PodsInfo                *PodsInfo
 }
 
 // GetEnvironments list all kubernetes-manager environments.
@@ -69,7 +69,7 @@ func getEnvironmentsFromCluster(cluster string, filter string) ([]*Environment, 
 
 	opt := metav1.ListOptions{
 		FieldSelector: "status.phase=Active",
-		LabelSelector: *config.Get().IngressFilter,
+		LabelSelector: config.FilterLabels,
 	}
 
 	if len(filter) > 0 {
@@ -134,12 +134,13 @@ func (e *Environment) loadFromNamespace(namespace corev1.Namespace) error {
 	}
 
 	// get ingress hosts
-	hosts, err := e.GetHosts()
+	hosts, hostsInternal, err := e.GetHosts()
 	if err != nil {
 		return errors.Wrap(err, "can not get environment hosts")
 	}
 
 	e.Hosts = hosts
+	e.HostsInternal = hostsInternal
 
 	// load front config
 	for _, frontConfig := range GetFrontConfig().Clusters {

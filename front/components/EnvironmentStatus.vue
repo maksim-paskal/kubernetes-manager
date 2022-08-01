@@ -30,7 +30,7 @@ export default {
     const result = await fetch(`/api/${this.item.ID}/pods`);
     if (result.ok) {
       const data = await result.json();
-      this.RunningPodsCount = data.Result
+      this.RunningPodsCount = data.Result.PodsTotal
     } else {
       const text = await result.text();
       throw Error(text);

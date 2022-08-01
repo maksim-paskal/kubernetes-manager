@@ -46,6 +46,8 @@ const (
 	TrueValue = "true"
 
 	Namespace             = "kubernetes-manager"
+	FilterLabels          = Namespace + "=true"
+	LabelType             = Namespace + "/type"
 	LabelScaleDownDelay   = Namespace + "/scaleDownDelay"
 	LabelLastScaleDate    = Namespace + "/lastScaleDate"
 	LabelGitBranch        = Namespace + "/git-branch"
@@ -156,8 +158,6 @@ var config = Type{
 	GitlabURL:       flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
 
 	IngressHostDefaultProtocol: flag.String("ingress.show-protocol", "https", ""),
-	IngressFilter:              flag.String("ingress.filter", Namespace+"=true", ""),
-	IngressNoFiltration:        flag.Bool("ingress.no-filtration", false, ""),
 
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
 
@@ -180,8 +180,6 @@ type Type struct {
 	GitlabToken                *string        `yaml:"gitlabToken"`
 	GitlabTokenUser            *string        `yaml:"gitlabTokenUser"`
 	GitlabURL                  *string        `yaml:"gitlabUrl"`
-	IngressFilter              *string        `yaml:"ingressFilter"`
-	IngressNoFiltration        *bool          `yaml:"ingressNoFiltration"`
 	IngressHostDefaultProtocol *string        `yaml:"ingressHostDefaultProtocol"`
 	RemoveBranchLastScaleDate  *int           `yaml:"removeBranchLastScaleDate"`
 	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
