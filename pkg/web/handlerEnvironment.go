@@ -577,6 +577,28 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		}
 
 		result.Result = clickRefreshButton
+	case "make-git-sync-clear-cache":
+		type GitSyncClearCache struct {
+			Container string
+		}
+
+		gitSyncClearCache := GitSyncClearCache{}
+
+		err = json.Unmarshal(body, &gitSyncClearCache)
+		if err != nil {
+			return result, err
+		}
+
+		if len(gitSyncClearCache.Container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no container specified")
+		}
+
+		clearCache, err := environment.ExecContainer(gitSyncClearCache.Container, "/kubernetes-manager/clearCache")
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = clearCache.Stdout + " " + clearCache.Stderr
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}
