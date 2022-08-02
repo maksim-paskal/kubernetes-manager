@@ -47,6 +47,7 @@
           <b-button @click="showPublicKey()">{{ isShowPublicKey ? "Hide" : "Show" }} public key</b-button>
           <b-button variant="danger" @click="deletePod()">Delete pod</b-button>
           <b-button @click="fetchGit()">Fetch</b-button>
+          <b-button @click="clearCache()">Clear Cache</b-button>
         </div>
       </div>
     </div>
@@ -112,6 +113,9 @@ export default {
         this.$fetch()
       }
     },
+    async clearCache() {
+      await this.call('make-git-sync-clear-cache', { Container: this.selectedContainer })
+    }
   },
   computed: {
     gitSync_enabled() {
