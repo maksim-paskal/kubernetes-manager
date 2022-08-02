@@ -13,6 +13,10 @@
     <h2 style="margin-top:30px">Test</h2>
     <b-form-textarea readonly v-model="commandTest"
       style="background-color:#eeeeee;border:0px;padding:10px;outline:none;width:100%" />
+
+    <h2 style="margin-top:30px">kubectl Cheat Sheet</h2>
+    <a href="https://kubernetes.io/docs/reference/kubectl/cheatsheet/"
+      target="_blank">https://kubernetes.io/docs/reference/kubectl/cheatsheet/</a>
   </div>
 </template>
 <script>
