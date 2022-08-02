@@ -93,7 +93,7 @@ func TestIsScaledownDelay(t *testing.T) {
 		Namespace:           "test-005",
 		NamespaceCreated:    "2022-05-13T07:10:00Z",
 		NamespaceLastScaled: "2022-05-13T07:10:00Z",
-		NamespaceAnotations: map[string]string{
+		NamespaceAnnotations: map[string]string{
 			config.LabelScaleDownDelay: "2022-05-13T10:00:00Z",
 		},
 	}] = true
@@ -102,7 +102,7 @@ func TestIsScaledownDelay(t *testing.T) {
 		Namespace:           "test-005",
 		NamespaceCreated:    "2022-05-13T07:10:00Z",
 		NamespaceLastScaled: "2022-05-13T07:10:00Z",
-		NamespaceAnotations: map[string]string{
+		NamespaceAnnotations: map[string]string{
 			config.LabelScaleDownDelay: "2022-05-13T7:00:00Z",
 		},
 	}] = false
@@ -130,7 +130,7 @@ func TestIsScaledownDelay(t *testing.T) {
 			NamespaceLastScaled: "fake-date",
 		},
 		{
-			NamespaceAnotations: map[string]string{
+			NamespaceAnnotations: map[string]string{
 				config.LabelScaleDownDelay: "fake-date",
 			},
 		},

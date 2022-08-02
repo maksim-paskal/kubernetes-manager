@@ -15,7 +15,7 @@ package api
 import "github.com/maksim-paskal/kubernetes-manager/pkg/config"
 
 func (e *Environment) IsSystemNamespace() bool {
-	if _, ok := e.NamespaceAnotations[config.LabelSystemNamespace]; ok {
+	if _, ok := e.NamespaceAnnotations[config.LabelSystemNamespace]; ok {
 		return true
 	}
 

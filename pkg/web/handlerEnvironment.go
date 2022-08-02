@@ -34,6 +34,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const clickRefreshButton = "Pipeline(s) successfully created. Click Refresh button to see status."
+
 func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
 	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -204,7 +206,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, err
 		}
 
-		result.Result = "Pipeline(s) successfully created. Click Refresh button to see status."
+		result.Result = clickRefreshButton
 	case "make-save-namespace-name":
 		type SaveNamespaceName struct {
 			Name string
@@ -221,7 +223,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, errors.Wrap(errBadFormat, "no namespace name specified")
 		}
 
-		annotations := environment.NamespaceAnotations
+		annotations := environment.NamespaceAnnotations
 		if annotations == nil {
 			annotations = make(map[string]string)
 		}
@@ -264,7 +266,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 		labels[userLabel] = strconv.FormatBool(!hasUserLike)
 
-		err := environment.SaveNamespaceMeta(environment.NamespaceAnotations, labels)
+		err := environment.SaveNamespaceMeta(environment.NamespaceAnnotations, labels)
 		if err != nil {
 			return result, err
 		}
@@ -536,7 +538,45 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		}
 
 		result.Result = debugSaveConfigExec.Stdout + " " + debugSaveConfigExec.Stderr
+	case "make-delete-service":
+		type DeleteService struct {
+			ProjectID string
+			Ref       string
+		}
 
+		deleteService := DeleteService{}
+
+		err = json.Unmarshal(body, &deleteService)
+		if err != nil {
+			return result, err
+		}
+
+		if len(deleteService.ProjectID) == 0 {
+			return result, errors.Wrap(errBadFormat, "no project specified")
+		}
+
+		if len(deleteService.Ref) == 0 {
+			return result, errors.Wrap(errBadFormat, "no ref specified")
+		}
+
+		// pipeline will be created with this environment variable:
+		// DELETE=true
+		// NAMESPACE=<environment.Namespace>
+		// CLUSTER=<environment.Cluster>
+		//
+		// pipeline if succeeded, must delete namespace annotation:
+		// kubectl annotate namespace $NAMESPACE kubernetes-manager/project-${CI_PROJECT_ID}-
+
+		_, err := environment.CreateGitlabPipeline(
+			deleteService.ProjectID,
+			deleteService.Ref,
+			api.GitlabPipelineOperationDelete,
+		)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = clickRefreshButton
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

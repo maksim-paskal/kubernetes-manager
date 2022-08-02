@@ -48,8 +48,8 @@ export default {
     namespaceStatus() {
       const total = this.RunningPodsCount;
       let required = 0
-      if (this.item.NamespaceAnotations && this.item.NamespaceAnotations[this.const().LabelRequiredPods]) {
-        required = this.item.NamespaceAnotations[this.const().LabelRequiredPods]
+      if (this.item.NamespaceAnnotations && this.item.NamespaceAnnotations[this.const().LabelRequiredPods]) {
+        required = this.item.NamespaceAnnotations[this.const().LabelRequiredPods]
       }
 
       if (total == 0) {

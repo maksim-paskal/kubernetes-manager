@@ -30,7 +30,7 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string) error {
 
 	projectPipelineDatas := strings.Split(services, ";")
 
-	annotations := e.NamespaceAnotations
+	annotations := e.NamespaceAnnotations
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -65,7 +65,7 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string) error {
 
 			var resultText string
 
-			_, err := e.CreateGitlabPipeline(projectID, branch)
+			_, err := e.CreateGitlabPipeline(projectID, branch, GitlabPipelineOperationBuild)
 			if err != nil {
 				resultText = err.Error()
 

@@ -75,7 +75,7 @@ func IsScaledownDelay(nowTime time.Time, environment *api.Environment) (bool, er
 		}
 	}
 
-	if scaleDelayText, ok := environment.NamespaceAnotations[config.LabelScaleDownDelay]; ok {
+	if scaleDelayText, ok := environment.NamespaceAnnotations[config.LabelScaleDownDelay]; ok {
 		scaleDelayTime, err := utils.StringToTime(scaleDelayText)
 		if err != nil {
 			return false, errors.Wrap(err, "error parsing scale delay time")
