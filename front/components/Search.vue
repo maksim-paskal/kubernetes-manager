@@ -53,8 +53,8 @@ export default {
       this.$router.push(`/${data.ID}/info`)
     },
     getEnvironmentName(data) {
-      if (data.NamespaceAnotations && data.NamespaceAnotations[this.const().LabelEnvironmentName]) {
-        return data.NamespaceAnotations[this.const().LabelEnvironmentName]
+      if (data.NamespaceAnnotations && data.NamespaceAnnotations[this.const().LabelEnvironmentName]) {
+        return data.NamespaceAnnotations[this.const().LabelEnvironmentName]
       }
 
       return data.Namespace

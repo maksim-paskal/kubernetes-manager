@@ -32,7 +32,7 @@ var errWaitTimeExpired = errors.New("time expired")
 
 //nolint: goerr113
 func checkLastScaleDate(environment *api.Environment) error {
-	lastScaleDate := environment.NamespaceAnotations[config.LabelLastScaleDate]
+	lastScaleDate := environment.NamespaceAnnotations[config.LabelLastScaleDate]
 	if len(lastScaleDate) == 0 {
 		return fmt.Errorf("Namespace has no anotations")
 	}

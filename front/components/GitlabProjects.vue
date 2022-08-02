@@ -14,17 +14,28 @@
       <b-form-input v-model="externalServiceFilter" autocomplete="off" placeholder="Type to Search" />
       <b-table striped hover :items="data" :fields="tableFields" :filter="externalServiceFilter">
         <template #cell(Service)="data">
+          <b-button title="delete service from namespace" v-if="podInfo" :disabled="data.item.GitBranch ? false : true"
+            size="sm" @click="
+              call('make-delete-service', {
+                ProjectID: `${data.item.ProjectID}`,
+                Ref: data.item.GitBranch,
+              })
+            " variant="outline-danger"><em class="bi bi-trash3" /></b-button>&nbsp;
           <em v-if="checkRequired(data.item.ProjectID)" class="text-danger bi bi-asterisk" />
-          <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description
-          }}</a>&nbsp;<span v-if="data.item.AdditionalInfo" title="docker tag"
-            class="badge rounded-pill bg-primary">{{ data.item.AdditionalInfo.PodRunning.Tag }}</span>&nbsp;<a v-if="
-              data.item.AdditionalInfo &&
-              data.item.AdditionalInfo.PodRunning.GitHash
-            " target="_blank" :href="getGitlabCommitURL(data.item)"><span title="git short commit hash"
+          <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}</a>
+          &nbsp;<span v-if="data.item.GitBranch" title="git tag" class="badge rounded-pill bg-primary">{{
+              data.item.GitBranch
+          }}</span>
+          <span v-else-if="data.item.AdditionalInfo" title="docker tag" class="badge rounded-pill bg-primary">{{
+              data.item.AdditionalInfo.PodRunning.Tag
+          }}</span>&nbsp;<a v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.PodRunning.GitHash"
+            target="_blank" :href="getGitlabCommitURL(data.item)"><span title="git short commit hash"
               class="badge rounded-pill bg-success">{{ data.item.AdditionalInfo.PodRunning.GitHash }}</span></a>
-          <a v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.Pipelines.LastSuccessPipeline"
-            :href="data.item.AdditionalInfo.Pipelines.LastSuccessPipeline" target="_blank"><span title="deploy pipeline"
-              class="badge rounded-pill bg-success">pipeline</span></a>
+          <a v-if="
+            data.item.AdditionalInfo &&
+            data.item.AdditionalInfo.Pipelines.LastSuccessPipeline
+          " :href="data.item.AdditionalInfo.Pipelines.LastSuccessPipeline" target="_blank"><span
+              title="deploy pipeline" class="badge rounded-pill bg-success">pipeline</span></a>
           <div v-if="data.item.TagsList.length > 0">
             <div style="margin-left: 5px" class="badge btn-secondary" v-bind:key="index"
               v-for="(item, index) in data.item.TagsList">
@@ -116,6 +127,18 @@ export default {
     },
   },
   methods: {
+    getGitBranch(projectID) {
+      if (!this.environment) return;
+
+      let gitBranch = "";
+      Object.keys(this.environment.NamespaceAnnotations).forEach((key) => {
+        if (key == `kubernetes-manager/project-${projectID}`) {
+          gitBranch = this.environment.NamespaceAnnotations[key];
+        }
+      });
+
+      return gitBranch;
+    },
     getSelectedServices() {
       let selectedServices = [];
 
@@ -158,6 +181,8 @@ export default {
 
       if (this.podInfo) {
         this.data.forEach(async (el) => {
+          el.GitBranch = this.getGitBranch(el.ProjectID);
+
           const projectInfo = await fetch(
             `/api/${this.$route.params.environmentID}/project-info?projectID=${el.ProjectID}`
           );

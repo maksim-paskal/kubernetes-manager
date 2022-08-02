@@ -20,7 +20,7 @@ import (
 )
 
 func (e *Environment) ScaleDownDelay(durationTime time.Duration) error {
-	annotation := e.NamespaceAnotations
+	annotation := e.NamespaceAnnotations
 	if annotation == nil {
 		annotation = make(map[string]string)
 	}

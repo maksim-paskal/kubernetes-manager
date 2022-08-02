@@ -81,7 +81,7 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	annotation := environment.NamespaceAnotations
+	annotation := environment.NamespaceAnnotations
 	if annotation == nil {
 		annotation = make(map[string]string)
 	}

@@ -21,11 +21,17 @@ import (
 
 const (
 	gitlabClusterKey   = "CLUSTER"
-	gitlabBuildKey     = "BUILD"
 	gitlabNamespaceKey = "NAMESPACE"
 )
 
-func (e *Environment) CreateGitlabPipeline(projectID string, ref string) (string, error) {
+type GitlabPipelineOperation string
+
+const (
+	GitlabPipelineOperationBuild  = "BUILD"
+	GitlabPipelineOperationDelete = "DELETE"
+)
+
+func (e *Environment) CreateGitlabPipeline(projectID, ref string, op GitlabPipelineOperation) (string, error) {
 	if e.gitlabClient == nil {
 		return "", errNoGitlabClient
 	}
@@ -38,7 +44,7 @@ func (e *Environment) CreateGitlabPipeline(projectID string, ref string) (string
 	variables := make([]*gitlab.PipelineVariableOptions, 0)
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(gitlabBuildKey),
+		Key:          gitlab.String(string(op)),
 		Value:        gitlab.String("true"),
 		VariableType: gitlab.String("env_var"),
 	})

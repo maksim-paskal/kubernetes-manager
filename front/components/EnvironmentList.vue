@@ -63,19 +63,19 @@ export default {
   },
   methods: {
     getEnvironmentName(data) {
-      if (data.NamespaceAnotations && data.NamespaceAnotations[this.const().LabelEnvironmentName]) {
-        return data.NamespaceAnotations[this.const().LabelEnvironmentName]
+      if (data.NamespaceAnnotations && data.NamespaceAnnotations[this.const().LabelEnvironmentName]) {
+        return data.NamespaceAnnotations[this.const().LabelEnvironmentName]
       }
 
       return data.Namespace
     },
     getGitBranches(data) {
-      if (!data.NamespaceAnotations) return;
+      if (!data.NamespaceAnnotations) return;
 
       let branches = [];
-      Object.keys(data.NamespaceAnotations).forEach(item => {
+      Object.keys(data.NamespaceAnnotations).forEach(item => {
         if (item.startsWith("kubernetes-manager/project-")) {
-          const name = data.NamespaceAnotations[item];
+          const name = data.NamespaceAnnotations[item];
           if (!branches.includes(name)) {
             branches.push(name);
           }

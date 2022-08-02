@@ -89,8 +89,8 @@ Vue.mixin({
       }
     },
     namespaceAnnotation(name) {
-      if (this.environment.NamespaceAnotations && this.environment.NamespaceAnotations[name]) {
-        return this.environment.NamespaceAnotations[name]
+      if (this.environment.NamespaceAnnotations && this.environment.NamespaceAnnotations[name]) {
+        return this.environment.NamespaceAnnotations[name]
       }
 
       return ""
@@ -142,7 +142,7 @@ Vue.mixin({
       }
     },
     async call(op, data, onTop = true) {
-      if (op == "make-delete") {
+      if (op == "make-delete" || op == "make-delete-service") {
         const realy = await this.$bvModal.msgBoxConfirm("Realy?");
         if (!realy) return;
       }
