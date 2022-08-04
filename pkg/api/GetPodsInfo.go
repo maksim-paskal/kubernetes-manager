@@ -36,7 +36,7 @@ type PodsInfo struct {
 
 func (e *Environment) GetPodsInfo() (*PodsInfo, error) {
 	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
-		FieldSelector: runningPodSelector,
+		FieldSelector: "status.phase!=Succeeded",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pods")
@@ -59,16 +59,31 @@ func (e *Environment) GetPodsInfo() (*PodsInfo, error) {
 			}
 		}
 
+		podReason := string(pod.Status.Phase)
+
+		for i, container := range pod.Spec.Containers {
+			result.cpuRequests += container.Resources.Requests.Cpu().AsApproximateFloat64()
+			result.memoryRequests += container.Resources.Requests.Memory().AsApproximateFloat64()
+
+			if pod.Status.ContainerStatuses[i].State.Waiting != nil {
+				if reason := pod.Status.ContainerStatuses[i].State.Waiting.Reason; len(reason) > 0 {
+					podReason = reason
+				}
+			}
+		}
+
 		if isPodReady {
 			result.PodsReady++
 		} else {
 			result.PodsFailed++
-			result.PodsFailedName = append(result.PodsFailedName, pod.Name)
-		}
 
-		for _, container := range pod.Spec.Containers {
-			result.cpuRequests += container.Resources.Requests.Cpu().AsApproximateFloat64()
-			result.memoryRequests += container.Resources.Requests.Memory().AsApproximateFloat64()
+			if podReason == string(corev1.PodRunning) {
+				podReason = "NotReady"
+			}
+
+			podName := fmt.Sprintf("%s (%s)", pod.Name, podReason)
+
+			result.PodsFailedName = append(result.PodsFailedName, podName)
 		}
 	}
 
