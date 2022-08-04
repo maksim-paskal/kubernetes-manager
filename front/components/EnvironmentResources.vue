@@ -16,7 +16,7 @@
         </td>
       </tr>
     </table>
-    <b-modal id="bv-modal-failed-pods" title="Failed pods" ok-only>
+    <b-modal size="xl" id="bv-modal-failed-pods" title="Failed pods" ok-only>
       <ul>
         <li v-bind:key="index" v-for="(item, index) in data.PodsFailedName">
           {{ item }}
