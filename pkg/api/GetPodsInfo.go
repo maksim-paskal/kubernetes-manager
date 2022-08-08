@@ -61,12 +61,14 @@ func (e *Environment) GetPodsInfo() (*PodsInfo, error) {
 
 		podReason := string(pod.Status.Phase)
 
-		for i, container := range pod.Spec.Containers {
+		for _, container := range pod.Spec.Containers {
 			result.cpuRequests += container.Resources.Requests.Cpu().AsApproximateFloat64()
 			result.memoryRequests += container.Resources.Requests.Memory().AsApproximateFloat64()
+		}
 
-			if pod.Status.ContainerStatuses[i].State.Waiting != nil {
-				if reason := pod.Status.ContainerStatuses[i].State.Waiting.Reason; len(reason) > 0 {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if containerStatus.State.Waiting != nil {
+				if reason := containerStatus.State.Waiting.Reason; len(reason) > 0 {
 					podReason = reason
 				}
 			}

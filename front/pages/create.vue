@@ -8,8 +8,13 @@
       <GitlabProjects v-if="user.user && config" ref="createNewEnvironmentProjects" />
       <b-spinner v-else size="sm" variant="primary" />
 
-      <div v-if="GitlabProjectsLoaded">
-        <b-button size="lg" @click="createEnvironment()">create new environment</b-button>
+      <div v-if="GitlabProjectsLoaded" style="display:flex;align-items:center">
+        <b-button style="margin-left: 20px;margin-right:30px" size="lg" @click="createEnvironment()">create new
+          environment</b-button>
+        <div class="align-items:center">Cluster:&nbsp;</div>
+        <select id="createClusterNameId" class="form-select" style="width:300px">
+          <option :key="index" v-for="(item, index) in this.config.Clusters">{{ item.ClusterName }}</option>
+        </select>
       </div>
     </div>
   </div>
@@ -24,11 +29,14 @@ export default {
   },
   methods: {
     async createEnvironment() {
+      const cluster = document.getElementById("createClusterNameId").value;
+
       const services = this.$refs.createNewEnvironmentProjects.getSelectedServices();
 
       await this.callEndpoint('/api/make-create-environment', {
         Services: services,
         User: this.user.user,
+        Cluster: cluster,
       }, true);
 
       if (this.infoText) {
