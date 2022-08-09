@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -224,7 +223,7 @@ func Load() error {
 		return nil
 	}
 
-	configByte, err := ioutil.ReadFile(*config.ConfigPath)
+	configByte, err := os.ReadFile(*config.ConfigPath)
 	if err != nil {
 		return errors.Wrap(err, "can not load config file")
 	}

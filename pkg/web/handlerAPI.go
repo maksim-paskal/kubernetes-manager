@@ -14,7 +14,7 @@ package web
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -77,7 +77,7 @@ func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
 		return result, errors.Wrap(err, "can parsing request")
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read request body")
 	}

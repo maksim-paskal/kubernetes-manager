@@ -23,9 +23,13 @@ import (
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func (e *Environment) CreateGitlabPipelinesByServices(services string) error {
+func (e *Environment) CreateGitlabPipelinesByServices(services string, op GitlabPipelineOperation) error {
 	if len(services) == 0 {
 		return errors.New("no services was selected")
+	}
+
+	if err := op.Check(); err != nil {
+		return errors.Wrap(err, "operation error")
 	}
 
 	projectPipelineDatas := strings.Split(services, ";")
@@ -65,7 +69,7 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string) error {
 
 			var resultText string
 
-			_, err := e.CreateGitlabPipeline(projectID, branch, GitlabPipelineOperationBuild)
+			_, err := e.CreateGitlabPipeline(projectID, branch, op)
 			if err != nil {
 				resultText = err.Error()
 

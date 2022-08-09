@@ -13,7 +13,6 @@ limitations under the License.
 package web
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,7 +68,7 @@ func (h HandlerSPA) serveStaticFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	read, err := ioutil.ReadFile(path)
+	read, err := os.ReadFile(path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.

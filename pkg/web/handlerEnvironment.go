@@ -16,7 +16,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -103,7 +103,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		return result, errors.Wrap(err, "make operation must be POST")
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read request body")
 	}
@@ -192,7 +192,8 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		result.Result = projectInfo
 	case "make-deploy-services":
 		type DeployServices struct {
-			Services string
+			Services  string
+			Operation api.GitlabPipelineOperation
 		}
 
 		deployServices := DeployServices{}
@@ -202,7 +203,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(deployServices.Services); err != nil {
+		if err := environment.CreateGitlabPipelinesByServices(deployServices.Services, deployServices.Operation); err != nil {
 			return result, err
 		}
 
