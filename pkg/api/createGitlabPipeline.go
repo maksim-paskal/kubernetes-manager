@@ -26,9 +26,21 @@ const (
 
 type GitlabPipelineOperation string
 
+func (op GitlabPipelineOperation) Check() error {
+	switch op {
+	case GitlabPipelineOperationBuild:
+	case GitlabPipelineOperationDelete:
+	case GitlabPipelineOperationDeploy:
+		return nil
+	}
+
+	return errors.Errorf("unknown operation %s", op)
+}
+
 const (
 	GitlabPipelineOperationBuild  = "BUILD"
 	GitlabPipelineOperationDelete = "DELETE"
+	GitlabPipelineOperationDeploy = "DEPLOY"
 )
 
 func (e *Environment) CreateGitlabPipeline(projectID, ref string, op GitlabPipelineOperation) (string, error) {

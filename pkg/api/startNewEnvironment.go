@@ -57,7 +57,7 @@ func processCreateNewBranch(input *StartNewEnvironmentInput) (*Environment, erro
 		return nil, errors.Wrap(err, "error creating namespace")
 	}
 
-	if err := environment.CreateGitlabPipelinesByServices(input.Services); err != nil {
+	if err := environment.CreateGitlabPipelinesByServices(input.Services, GitlabPipelineOperationBuild); err != nil {
 		return nil, errors.Wrap(err, "error creating gitlab pipelines")
 	}
 
