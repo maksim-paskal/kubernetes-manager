@@ -62,7 +62,8 @@
         </template>
         <template #cell(Deploy)="data">
           <DropDown :ref="`gitlabProjects${data.item.ProjectID}`" :id="`gitlabProjects${data.item.ProjectID}`"
-            default="" text="Select branch" :endpoint="`/api/project-refs?id=${data.item.ProjectID}`" />
+            :default="data.item.GitBranch" text="Select branch"
+            :endpoint="`/api/project-refs?id=${data.item.ProjectID}`" />
         </template>
       </b-table>
     </div>

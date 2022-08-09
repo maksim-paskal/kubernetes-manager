@@ -43,6 +43,8 @@ export default {
     }, 5000);
   },
   async fetch() {
+    if (!this.$route.params.environmentID) return;
+
     const result = await fetch(`/api/${this.$route.params.environmentID}/pods`);
     if (result.ok) {
       const data = await result.json();
