@@ -27,10 +27,19 @@ const (
 type GitlabPipelineOperation string
 
 func (op GitlabPipelineOperation) Check() error {
-	switch op {
-	case GitlabPipelineOperationBuild:
-	case GitlabPipelineOperationDelete:
-	case GitlabPipelineOperationDeploy:
+	if len(op) == 0 {
+		return errors.New("empty operation")
+	}
+
+	if op == GitlabPipelineOperationBuild {
+		return nil
+	}
+
+	if op == GitlabPipelineOperationDelete {
+		return nil
+	}
+
+	if op == GitlabPipelineOperationDeploy {
 		return nil
 	}
 
