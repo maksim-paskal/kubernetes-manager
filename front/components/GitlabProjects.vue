@@ -130,6 +130,7 @@ export default {
   methods: {
     getGitBranch(projectID) {
       if (!this.environment) return;
+      if (!this.environment.NamespaceAnnotations) return;
 
       let gitBranch = "";
       Object.keys(this.environment.NamespaceAnnotations).forEach((key) => {

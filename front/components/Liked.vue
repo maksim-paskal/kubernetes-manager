@@ -40,6 +40,8 @@ export default {
       return this.namespaceLabel(this.userLabel) == "true" ? true : false
     },
     likedUsers() {
+      if (!this.environment.NamespaceLabels) return;
+
       let users = [];
       Object.keys(this.environment.NamespaceLabels).forEach(key => {
         if (this.environment.NamespaceLabels[key] == "true" && key.startsWith(this.const().LabelLikedPrefix)) {
