@@ -6,13 +6,10 @@
       href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">https://kubernetes.io/docs/tasks/tools/install-kubectl/</a>
 
     <h2 style="margin-top:30px">Configure</h2>
-    "Save As" this
-    <a target="_blank" :href="`/api/${this.environment.ID}/kubeconfig`">file</a>
-    to {{ this.kubeconfig }}&nbsp;(token will be expired after 10h)
+    <KubectlLink />
 
     <h2 style="margin-top:30px">Test</h2>
-    <b-form-textarea readonly v-model="commandTest"
-      style="background-color:#eeeeee;border:0px;padding:10px;outline:none;width:100%" />
+    <CopyTextbox :text="commandTest" />
 
     <h2 style="margin-top:30px">kubectl Cheat Sheet</h2>
     <a href="https://kubernetes.io/docs/reference/kubectl/cheatsheet/"
@@ -20,15 +17,17 @@
   </div>
 </template>
 <script>
+import CopyTextbox from '../../components/CopyTextbox.vue';
 export default {
   layout: "details",
   computed: {
     commandTest() {
-      return `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} get pods`
+      return `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} get pods`;
     },
     kubeconfig() {
-      return `/tmp/kubeconfig-${this.environment.Cluster}-${this.environment.Namespace}`
+      return `/tmp/kubeconfig-${this.environment.Cluster}-${this.environment.Namespace}`;
     },
-  }
+  },
+  components: { CopyTextbox }
 }
 </script>
