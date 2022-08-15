@@ -15,6 +15,8 @@
         </template>
         <template v-slot:cell(Ports)="row">
           <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)">proxy</b-button>
+          <b-button size="sm" variant="outline-primary" @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
+            shell</b-button>
           <b-button size="sm" target="_blank" v-if="environment.Links.LogsPodURL && row.item.Type == 'pod'"
             variant="outline-primary" :href="getPodNameLink(row.item.Name)">logs</b-button>
           <b-button v-if="
@@ -27,6 +29,22 @@
         </template>
       </b-table>
     </div>
+    <b-modal size="xl" centered id="bv-proxy-dialog" title="Create proxy to service" ok-only>
+      <KubectlLink />
+      <div style="margin-top:20px">
+        <CopyTextbox :text="proxyDialogText" />
+      </div>
+      <br />
+      <a target="_blank"
+        href="https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/#forward-a-local-port-to-a-port-on-the-pod">Link
+        to documentation</a>
+    </b-modal>
+    <b-modal size="xl" centered id="bv-shell-dialog" title="Create shell to pod" ok-only>
+      <KubectlLink />
+      <div style="margin-top:20px">
+        <CopyTextbox :text="shellDialogText" />
+      </div>
+    </b-modal>
   </div>
 </template>
 <script>
@@ -40,6 +58,8 @@ export default {
         { key: "ServiceHost", label: "Service Host" },
         { key: "Ports", label: "Service Ports" },
       ],
+      proxyDialogText: "",
+      shellDialogText: ""
     };
   },
   async fetch() {
@@ -73,19 +93,15 @@ export default {
       if (/.+.svc.cluster.local$/.test(row.item.ServiceHost)) {
         proxyType = "svc";
       }
-      const proxyString =
-        `"Save As" this <a target="_blank" href="/api/${this.environment.ID}/kubeconfig">file</a> to ${this.kubeconfig}` +
-        `<br/><br/><textarea readonly style="background-color:#eeeeee;border:0px;padding:10px;outline:none;width:100%" onclick="this.focus();this.select()">kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} port-forward ${proxyType}/${row.item.Name} ${port}:${port}</textarea>` +
-        `<br/><br/>this will listen localy 127.0.0.1:${port} and forward all requests to service in cluster, to listen other port for example 127.0.0.1:12345 - change end of command from ${port}:${port} to <strong>12345</strong>:${port}`;
 
-      const h = this.$createElement;
-      const messageVNode = h("div", { domProps: { innerHTML: proxyString } });
+      this.proxyDialogText = `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} port-forward ${proxyType}/${row.item.Name} ${port}:${port}`
 
-      this.$bvModal.msgBoxOk([messageVNode], {
-        title: `Create proxy to remote service: ${proxyType}/${row.item.Name}`,
-        size: "xl",
-        centered: true,
-      });
+      this.$bvModal.show('bv-proxy-dialog')
+    },
+    showShellDialog(row) {
+      this.shellDialogText = `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} exec -it ${row.item.Name} -- sh`
+
+      this.$bvModal.show('bv-shell-dialog')
     },
   },
 };
