@@ -34,13 +34,17 @@ em {
 export default {
   data() {
     return {
+      podsInterval: null,
       data: {}
     }
   },
   mounted() {
-    setInterval(() => {
+    this.podsInterval = setInterval(() => {
       this.$fetch()
     }, 5000);
+  },
+  destroyed() {
+    clearInterval(this.podsInterval);
   },
   async fetch() {
     if (!this.$route.params.environmentID) return;
