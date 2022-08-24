@@ -2,7 +2,9 @@
   <div>
     <div style="padding:10px;display: flex;align-items: center;">
       <EnvironmentName />
-      <EnvironmentResources />
+      <div style="min-height: 50px;">
+        <EnvironmentResources />
+      </div>
     </div>
     <ul class="nav nav-tabs">
       <li class="nav-item" style="margin-left:20px">
