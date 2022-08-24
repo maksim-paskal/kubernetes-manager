@@ -132,6 +132,11 @@ type WebHook struct {
 	Namespace string
 }
 
+type Snapshot struct {
+	ProjectID string
+	Ref       string
+}
+
 //nolint:gochecknoglobals
 var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
@@ -168,6 +173,7 @@ type Type struct {
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
 	Links                      *Links  `yaml:"links"`
+	BatchEnabled               *bool
 	NamespaceMeta              *NamespaceMeta
 	DebugTemplates             []*Template
 	ExternalServicesTemplates  []*Template
@@ -187,7 +193,7 @@ type Type struct {
 	PodName                    *string        `yaml:"podName"`
 	PodNamespace               *string        `yaml:"podNamespace"`
 	WebHooks                   []WebHook      `yaml:"webhooks"`
-	BatchEnabled               *bool
+	Snapshots                  Snapshot       `yaml:"snapshots"`
 }
 
 func (t *Type) GetProjectTemplateByProjectID(projectID string) *ProjectTemplate {
