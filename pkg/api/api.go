@@ -12,10 +12,4 @@ limitations under the License.
 */
 package api
 
-import (
-	"context"
-)
-
-var Ctx = context.Background()
-
 const runningPodSelector = "status.phase=Running"

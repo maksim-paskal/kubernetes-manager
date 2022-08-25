@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -25,8 +26,8 @@ type GetPodByImageResult struct {
 	Found   bool
 }
 
-func (e *Environment) GetPodByImage(imagePrefix string) (*GetPodByImageResult, error) {
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
+func (e *Environment) GetPodByImage(ctx context.Context, imagePrefix string) (*GetPodByImageResult, error) {
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	})
 	if err != nil {

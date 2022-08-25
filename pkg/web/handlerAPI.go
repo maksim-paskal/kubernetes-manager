@@ -13,6 +13,7 @@ limitations under the License.
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
@@ -39,7 +41,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	result, err := apiOperation(r, vars["operation"])
+	result, err := apiOperation(r.Context(), r, vars["operation"])
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,7 +68,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
+func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) {
 	result := NewHandlerResult()
 
 	if err := checkPOSTMethod(operation, r); err != nil {
@@ -89,7 +91,7 @@ func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
 	case "environments":
 		filter := r.Form.Get("filter")
 
-		environments, err := api.GetEnvironments(filter)
+		environments, err := api.GetEnvironments(ctx, filter)
 		if err != nil {
 			return result, err
 		}
@@ -104,7 +106,10 @@ func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
 
 		result.Result = environments
 	case "external-services":
-		projects, err := api.GetGitlabProjects()
+		profile := r.Form.Get("profile")
+		namespace := r.Form.Get("namespace")
+
+		projects, err := api.GetGitlabProjects(ctx, profile, namespace)
 		if err != nil {
 			return result, err
 		}
@@ -116,7 +121,7 @@ func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
 			return result, errors.Wrap(errNoComandFound, "no id specified")
 		}
 
-		refs, err := api.GetGitlabProjectRefs(id)
+		refs, err := api.GetGitlabProjectRefs(ctx, id)
 		if err != nil {
 			return result, err
 		}
@@ -136,12 +141,28 @@ func apiOperation(r *http.Request, operation string) (*HandlerResult, error) {
 			return result, err
 		}
 
-		environment, err := api.StartNewEnvironment(&input)
+		environment, err := api.StartNewEnvironment(ctx, &input)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = environment.ID
+	case "project-profiles":
+		type projectType struct {
+			Name  string
+			Value string
+		}
+
+		projectTypes := make([]projectType, 0)
+
+		for _, projectProfiles := range config.Get().ProjectProfiles {
+			projectTypes = append(projectTypes, projectType{
+				Name:  projectProfiles.Name,
+				Value: projectProfiles.Name,
+			})
+		}
+
+		result.Result = projectTypes
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

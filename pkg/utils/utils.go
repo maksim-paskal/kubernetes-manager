@@ -63,6 +63,10 @@ func RandomString(l int) string {
 }
 
 func StringInSlice(str string, list []string) bool {
+	if len(list) == 0 {
+		return false
+	}
+
 	for _, v := range list {
 		if v == str {
 			return true

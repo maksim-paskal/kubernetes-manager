@@ -13,18 +13,20 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *Environment) DisableHPA() error {
+func (e *Environment) DisableHPA(ctx context.Context) error {
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
 	hpa := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace)
 
-	hpas, err := hpa.List(Ctx, metav1.ListOptions{})
+	hpas, err := hpa.List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing hpa")
 	}
@@ -36,13 +38,13 @@ func (e *Environment) DisableHPA() error {
 	}
 
 	for _, hpa := range hpas.Items {
-		err := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace).Delete(Ctx, hpa.Name, *opt)
+		err := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace).Delete(ctx, hpa.Name, *opt)
 		if err != nil {
 			return errors.Wrap(err, "error deleting hpa")
 		}
 	}
 
-	err = e.ScaleNamespace(1)
+	err = e.ScaleNamespace(ctx, 1)
 	if err != nil {
 		return errors.Wrap(err, "error scaling namespace")
 	}

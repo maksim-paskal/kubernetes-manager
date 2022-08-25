@@ -18,8 +18,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -112,12 +115,40 @@ type KubernetesEndpoint struct {
 	Links            *Links
 }
 
-type ProjectTemplate struct {
-	ProjectID       string
+type ProjectProfile struct {
+	Name            string
 	NamespacePrefix string
-	RequiredMessage string
-	Required        bool
-	Sluglify        bool // use namespace of selected project in slug
+	Required        string // project ids to be required (comma separated)
+	Exclude         string // project ids to exclude (comma separated)
+	Include         string // project ids to include (comma separated)
+}
+
+func (p *ProjectProfile) GetRequired() []string {
+	if len(p.Required) == 0 {
+		return []string{}
+	}
+
+	return strings.Split(p.Required, ",")
+}
+
+func (p *ProjectProfile) GetExclude() []string {
+	if len(p.Exclude) == 0 {
+		return []string{}
+	}
+
+	return strings.Split(p.Exclude, ",")
+}
+
+func (p *ProjectProfile) GetInclude() []string {
+	if len(p.Include) == 0 {
+		return []string{}
+	}
+
+	return strings.Split(p.Include, ",")
+}
+
+func (p *ProjectProfile) IsProjectRequired(projectID int) bool {
+	return utils.StringInSlice(strconv.Itoa(projectID), p.GetRequired())
 }
 
 type NamespaceMeta struct {
@@ -177,7 +208,7 @@ type Type struct {
 	NamespaceMeta              *NamespaceMeta
 	DebugTemplates             []*Template
 	ExternalServicesTemplates  []*Template
-	ProjectTemplates           []*ProjectTemplate
+	ProjectProfiles            []*ProjectProfile
 	KubernetesEndpoints        []*KubernetesEndpoint
 	Port                       *int           `yaml:"port"`
 	FrontDist                  *string        `yaml:"frontDist"`
@@ -194,16 +225,6 @@ type Type struct {
 	PodNamespace               *string        `yaml:"podNamespace"`
 	WebHooks                   []WebHook      `yaml:"webhooks"`
 	Snapshots                  Snapshot       `yaml:"snapshots"`
-}
-
-func (t *Type) GetProjectTemplateByProjectID(projectID string) *ProjectTemplate {
-	for _, projectTemplate := range t.ProjectTemplates {
-		if projectID == projectTemplate.ProjectID {
-			return projectTemplate
-		}
-	}
-
-	return nil
 }
 
 func (t *Type) DeepCopy() *Type {
@@ -239,12 +260,24 @@ func Load() error {
 		return errors.Wrap(err, "error while yaml.Unmarshal")
 	}
 
-	loadDefaults(config)
+	loadDefaults()
 
 	return nil
 }
 
-func loadDefaults(config Type) {
+func loadDefaults() {
+	// load default project profiles
+	if len(config.ProjectProfiles) == 0 {
+		log.Warning("adding default project profiles")
+
+		defaultProfile := ProjectProfile{
+			Name:            "default",
+			NamespacePrefix: fmt.Sprintf("%s-", Namespace),
+		}
+
+		config.ProjectProfiles = []*ProjectProfile{&defaultProfile}
+	}
+
 	if config.Links == nil {
 		return
 	}
@@ -329,4 +362,34 @@ var gitVersion = "dev"
 
 func GetVersion() string {
 	return gitVersion
+}
+
+func GetProjectProfileByNamespace(namespace string) *ProjectProfile {
+	for _, projectProfile := range config.ProjectProfiles {
+		if strings.HasPrefix(namespace, projectProfile.NamespacePrefix) {
+			return projectProfile
+		}
+	}
+
+	return nil
+}
+
+func GetProjectProfileByName(name string) *ProjectProfile {
+	for _, projectProfile := range config.ProjectProfiles {
+		if projectProfile.Name == name {
+			return projectProfile
+		}
+	}
+
+	return nil
+}
+
+func GetKubernetesEndpointByName(name string) *KubernetesEndpoint {
+	for _, kubernetesEndpoints := range config.KubernetesEndpoints {
+		if kubernetesEndpoints.Name == name {
+			return kubernetesEndpoints
+		}
+	}
+
+	return nil
 }

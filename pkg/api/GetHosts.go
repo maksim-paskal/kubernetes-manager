@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -25,12 +26,12 @@ const (
 	HostTypeInternal = "internal"
 )
 
-func (e *Environment) GetHosts() ([]string, []string, error) {
+func (e *Environment) GetHosts(ctx context.Context) ([]string, []string, error) {
 	opt := metav1.ListOptions{
 		LabelSelector: config.FilterLabels,
 	}
 
-	ingresss, err := e.clientset.NetworkingV1().Ingresses(e.Namespace).List(Ctx, opt)
+	ingresss, err := e.clientset.NetworkingV1().Ingresses(e.Namespace).List(ctx, opt)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "can not get ingresses")
 	}

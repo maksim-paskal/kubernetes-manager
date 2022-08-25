@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -43,8 +44,8 @@ type GetServicesItem struct {
 }
 
 // Return services and pods with port.
-func (e *Environment) GetServices() ([]*GetServicesItem, error) {
-	list, err := e.clientset.CoreV1().Services(e.Namespace).List(Ctx, metav1.ListOptions{})
+func (e *Environment) GetServices(ctx context.Context) ([]*GetServicesItem, error) {
+	list, err := e.clientset.CoreV1().Services(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error listing services")
 	}
@@ -78,7 +79,7 @@ func (e *Environment) GetServices() ([]*GetServicesItem, error) {
 		result = append(result, &item)
 	}
 
-	podList, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
+	podList, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	})
 	if err != nil {

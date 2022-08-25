@@ -13,6 +13,7 @@ limitations under the License.
 package batch
 
 import (
+	"context"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -30,7 +31,7 @@ const (
 
 var isStoped = *atomic.NewBool(false)
 
-func Schedule() {
+func Schedule(ctx context.Context) {
 	log.Info("starting batch")
 
 	isStoped.Store(false)
@@ -51,7 +52,7 @@ func Schedule() {
 
 		span := tracer.StartSpan("scheduleBatch")
 
-		if err := Execute(span); err != nil {
+		if err := Execute(ctx, span); err != nil {
 			log.WithError(err).Error()
 		}
 
@@ -63,7 +64,7 @@ func Stop() {
 	isStoped.Store(true)
 }
 
-func scaleDownALL(rootSpan opentracing.Span) error {
+func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
 
@@ -75,7 +76,7 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 		return nil
 	}
 
-	environments, err := api.GetEnvironments("")
+	environments, err := api.GetEnvironments(ctx, "")
 	if err != nil {
 		return errors.Wrap(err, "error listing environments")
 	}
@@ -93,7 +94,7 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 
 			log.Info("scaledown")
 
-			err = environment.ScaleALL(0)
+			err = environment.ScaleALL(ctx, 0)
 			if err != nil {
 				log.WithError(err).Error()
 			}
@@ -103,17 +104,17 @@ func scaleDownALL(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func Execute(rootSpan opentracing.Span) error {
+func Execute(ctx context.Context, rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
 
-	if err := scaleDownALL(span); err != nil {
+	if err := scaleDownALL(ctx, span); err != nil {
 		log.WithError(err).Error()
 	}
 
-	environments, err := api.GetEnvironments("")
+	environments, err := api.GetEnvironments(ctx, "")
 	if err != nil {
 		return errors.Wrap(err, "error list ingress")
 	}
@@ -130,7 +131,7 @@ func Execute(rootSpan opentracing.Span) error {
 		}
 
 		// delete temporary tokens in namespace
-		if err := environment.DeleteTemporaryTokens(); err != nil {
+		if err := environment.DeleteTemporaryTokens(ctx); err != nil {
 			log.WithError(err).Error()
 		}
 
@@ -139,7 +140,7 @@ func Execute(rootSpan opentracing.Span) error {
 		log.WithField("reason", reason).Debug(description)
 
 		if reason != api.StaledReasonNone {
-			deleteALLResult := environment.DeleteALL()
+			deleteALLResult := environment.DeleteALL(ctx)
 
 			log.Info(deleteALLResult.JSON())
 		}

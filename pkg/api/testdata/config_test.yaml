@@ -1,0 +1,9 @@
+projectprofiles:
+- name: "test"
+  namespaceprefix: "test-main-"
+  required: "1"
+  exclude: "72"
+
+kubernetesendpoints:
+- name: test
+- name: test2

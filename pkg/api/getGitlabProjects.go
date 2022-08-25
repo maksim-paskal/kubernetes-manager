@@ -13,10 +13,13 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"sort"
+	"strconv"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -30,21 +33,58 @@ type GetGitlabProjectsItem struct {
 	TagsList       []string
 	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
 	Deploy         string                     // custom field for front end
+	Required       bool
 }
 
-func GetGitlabProjects() ([]*GetGitlabProjectsItem, error) {
+// get gitlab project by profile or namespace.
+func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([]*GetGitlabProjectsItem, error) {
 	gitlabClient := client.GetGitlabClient()
 
 	if gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
 
-	projects, _, err := gitlabClient.Projects.ListProjects(&gitlab.ListProjectsOptions{
-		Topic: config.Get().ExternalServicesTopic,
-	})
+	projects, _, err := gitlabClient.Projects.ListProjects( //nolint:contextcheck
+		&gitlab.ListProjectsOptions{
+			Topic: config.Get().ExternalServicesTopic,
+		},
+		gitlab.WithContext(ctx),
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not list projects")
 	}
+
+	var (
+		exludeProjects  []string
+		includeProjects []string
+		projectProfile  *config.ProjectProfile
+	)
+
+	if len(profile) > 0 { //nolint:gocritic
+		projectProfile = config.GetProjectProfileByName(profile)
+	} else if len(namespace) > 0 {
+		projectProfile = config.GetProjectProfileByNamespace(namespace)
+	} else {
+		return nil, errors.Wrap(err, "need profile or namespace")
+	}
+
+	if projectProfile == nil {
+		return nil, errors.Errorf("unknown project profile for %s %s", profile, namespace)
+	}
+
+	if projectProfile != nil {
+		if projectProfile.Exclude == "*" {
+			for _, project := range projects {
+				if !projectProfile.IsProjectRequired(project.ID) {
+					exludeProjects = append(exludeProjects, strconv.Itoa(project.ID))
+				}
+			}
+		} else {
+			exludeProjects = projectProfile.GetExclude()
+		}
+	}
+
+	includeProjects = projectProfile.GetInclude()
 
 	result := make([]*GetGitlabProjectsItem, 0)
 
@@ -56,9 +96,19 @@ func GetGitlabProjects() ([]*GetGitlabProjectsItem, error) {
 			DefaultBranch: project.DefaultBranch,
 			WebURL:        project.WebURL,
 			TagsList:      formatProjectTags(project.TagList),
+			Required:      projectProfile.IsProjectRequired(project.ID),
 		}
 
-		result = append(result, &item)
+		exclude := utils.StringInSlice(strconv.Itoa(item.ProjectID), exludeProjects)
+
+		// if project in includes it must be always shown
+		if utils.StringInSlice(strconv.Itoa(item.ProjectID), includeProjects) {
+			exclude = false
+		}
+
+		if !exclude {
+			result = append(result, &item)
+		}
 	}
 
 	sort.SliceStable(result, func(i, j int) bool {

@@ -85,13 +85,13 @@ func waitForPodCount(environment *api.Environment, count int64) (*api.GetContain
 	for {
 		total++
 
-		podInfo, err := environment.GetPodsInfo()
+		podInfo, err := environment.GetPodsInfo(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		if podInfo.PodsTotal == count {
-			pods, err := environment.GetContainers("", "")
+			pods, err := environment.GetContainers(ctx, "", "")
 			if err != nil {
 				return nil, err
 			}

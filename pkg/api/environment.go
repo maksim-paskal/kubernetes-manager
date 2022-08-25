@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
@@ -46,11 +47,11 @@ type Environment struct {
 }
 
 // GetEnvironments list all kubernetes-manager environments.
-func GetEnvironments(filter string) ([]*Environment, error) {
+func GetEnvironments(ctx context.Context, filter string) ([]*Environment, error) {
 	result := make([]*Environment, 0)
 
 	for cluster := range client.GetAllClientsets() {
-		items, err := getEnvironmentsFromCluster(cluster, filter)
+		items, err := getEnvironmentsFromCluster(ctx, cluster, filter)
 		if err != nil {
 			return nil, errors.Wrap(err, "error getting namespaces in "+cluster)
 		}
@@ -61,7 +62,7 @@ func GetEnvironments(filter string) ([]*Environment, error) {
 	return result, nil
 }
 
-func getEnvironmentsFromCluster(cluster string, filter string) ([]*Environment, error) {
+func getEnvironmentsFromCluster(ctx context.Context, cluster string, filter string) ([]*Environment, error) {
 	clientset, err := client.GetClientset(cluster)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get clientset")
@@ -76,7 +77,7 @@ func getEnvironmentsFromCluster(cluster string, filter string) ([]*Environment, 
 		opt.LabelSelector = opt.LabelSelector + "," + filter
 	}
 
-	namespaces, err := clientset.CoreV1().Namespaces().List(Ctx, opt)
+	namespaces, err := clientset.CoreV1().Namespaces().List(ctx, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get namespaces")
 	}
@@ -89,7 +90,7 @@ func getEnvironmentsFromCluster(cluster string, filter string) ([]*Environment, 
 			Cluster:   cluster,
 		}
 
-		if err := item.loadFromNamespace(namespace); err != nil {
+		if err := item.loadFromNamespace(ctx, namespace); err != nil {
 			return nil, errors.Wrap(err, "can not load namespace")
 		}
 
@@ -99,7 +100,7 @@ func getEnvironmentsFromCluster(cluster string, filter string) ([]*Environment, 
 	return result, nil
 }
 
-func (e *Environment) loadFromNamespace(namespace corev1.Namespace) error {
+func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Namespace) error {
 	if namespace.Labels == nil || namespace.Labels[config.Namespace] != config.TrueValue {
 		return errors.New("namespace is not managed by kubernetes-manager")
 	}
@@ -134,7 +135,7 @@ func (e *Environment) loadFromNamespace(namespace corev1.Namespace) error {
 	}
 
 	// get ingress hosts
-	hosts, hostsInternal, err := e.GetHosts()
+	hosts, hostsInternal, err := e.GetHosts(ctx)
 	if err != nil {
 		return errors.Wrap(err, "can not get environment hosts")
 	}

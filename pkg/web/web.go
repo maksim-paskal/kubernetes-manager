@@ -16,12 +16,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	serverReadTimeout    = 5 * time.Second
+	serverRequestTimeout = 60 * time.Second
+	serverWriteTimeout   = 70 * time.Second
 )
 
 var (
@@ -82,8 +89,16 @@ func GetHandler() *mux.Router {
 func StartServer() {
 	log.Info(fmt.Sprintf("Starting on port %d...", *config.Get().Port))
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", *config.Get().Port), GetHandler())
-	if err != nil {
+	timeoutMessage := fmt.Sprintf("Server timeout after %s", serverRequestTimeout)
+
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", *config.Get().Port),
+		Handler:      http.TimeoutHandler(GetHandler(), serverRequestTimeout, timeoutMessage),
+		ReadTimeout:  serverReadTimeout,
+		WriteTimeout: serverWriteTimeout,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.WithError(err).Fatal()
 	}
 }
