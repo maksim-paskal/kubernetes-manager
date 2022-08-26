@@ -600,6 +600,25 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		}
 
 		result.Result = clearCache.Stdout + " " + clearCache.Stderr
+	case "make-snapshot":
+		if len(config.Get().Snapshots.ProjectID) == 0 {
+			return result, errors.Wrap(errBadFormat, "no projectID for snapshoting specified")
+		}
+
+		if len(config.Get().Snapshots.Ref) == 0 {
+			return result, errors.Wrap(errBadFormat, "no ref for snapshoting specified")
+		}
+
+		url, err := environment.CreateGitlabPipeline(
+			config.Get().Snapshots.ProjectID,
+			config.Get().Snapshots.Ref,
+			api.GitlabPipelineOperationSnapshot,
+		)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = fmt.Sprintf("Pipeline created %s", url)
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

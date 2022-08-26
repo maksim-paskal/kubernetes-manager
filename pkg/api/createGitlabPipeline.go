@@ -47,9 +47,10 @@ func (op GitlabPipelineOperation) Check() error {
 }
 
 const (
-	GitlabPipelineOperationBuild  = "BUILD"
-	GitlabPipelineOperationDelete = "DELETE"
-	GitlabPipelineOperationDeploy = "DEPLOY"
+	GitlabPipelineOperationBuild    = "BUILD"
+	GitlabPipelineOperationDelete   = "DELETE"
+	GitlabPipelineOperationDeploy   = "DEPLOY"
+	GitlabPipelineOperationSnapshot = "SNAPSHOT"
 )
 
 func (e *Environment) CreateGitlabPipeline(projectID, ref string, op GitlabPipelineOperation) (string, error) {
