@@ -13,6 +13,8 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
@@ -20,12 +22,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *Environment) DeleteTemporaryTokens() error {
+func (e *Environment) DeleteTemporaryTokens(ctx context.Context) error {
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	saList, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).List(Ctx, metav1.ListOptions{
+	saList, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "kubernetes-manager=true",
 	})
 	if err != nil {
@@ -37,7 +39,7 @@ func (e *Environment) DeleteTemporaryTokens() error {
 
 		tokenHourActive := utils.DiffToNowHours(sa.CreationTimestamp.Time)
 		if tokenHourActive > config.TemporaryTokenDurationHours {
-			err = e.deleteTemporaryToken(sa.Name)
+			err = e.deleteTemporaryToken(ctx, sa.Name)
 			if err != nil {
 				return errors.Wrap(err, "error deleting temporary token")
 			}
@@ -47,18 +49,18 @@ func (e *Environment) DeleteTemporaryTokens() error {
 	return nil
 }
 
-func (e *Environment) deleteTemporaryToken(name string) error {
-	err := e.clientset.RbacV1().RoleBindings(e.Namespace).Delete(Ctx, name, metav1.DeleteOptions{})
+func (e *Environment) deleteTemporaryToken(ctx context.Context, name string) error {
+	err := e.clientset.RbacV1().RoleBindings(e.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		log.WithError(err).Errorf("error deleting role binding %s", name)
 	}
 
-	err = e.clientset.RbacV1().Roles(e.Namespace).Delete(Ctx, name, metav1.DeleteOptions{})
+	err = e.clientset.RbacV1().Roles(e.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		log.WithError(err).Errorf("error deleting role %s", name)
 	}
 
-	err = e.clientset.CoreV1().ServiceAccounts(e.Namespace).Delete(Ctx, name, metav1.DeleteOptions{})
+	err = e.clientset.CoreV1().ServiceAccounts(e.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error deleting service account")
 	}

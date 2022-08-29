@@ -13,13 +13,15 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetEnvironmentByID(id string) (*Environment, error) {
+func GetEnvironmentByID(ctx context.Context, id string) (*Environment, error) {
 	idInfo, err := types.NewIDInfo(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not parse id")
@@ -37,12 +39,12 @@ func GetEnvironmentByID(id string) (*Environment, error) {
 		clientset: clientset,
 	}
 
-	namespace, err := e.clientset.CoreV1().Namespaces().Get(Ctx, e.Namespace, metav1.GetOptions{})
+	namespace, err := e.clientset.CoreV1().Namespaces().Get(ctx, e.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get namespace")
 	}
 
-	if err = e.loadFromNamespace(*namespace); err != nil {
+	if err = e.loadFromNamespace(ctx, *namespace); err != nil {
 		return nil, errors.Wrap(err, "can not get namespace info")
 	}
 

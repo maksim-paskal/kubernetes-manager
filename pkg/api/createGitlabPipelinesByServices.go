@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -23,7 +24,7 @@ import (
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func (e *Environment) CreateGitlabPipelinesByServices(services string, op GitlabPipelineOperation) error {
+func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error { //nolint:lll
 	if len(services) == 0 {
 		return errors.New("no services was selected")
 	}
@@ -32,22 +33,23 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string, op Gitlab
 		return errors.Wrap(err, "operation error")
 	}
 
-	projectPipelineDatas := strings.Split(services, ";")
+	environmentServices, err := ParseEnvironmentServices(services)
+	if err != nil {
+		return errors.Wrap(err, "error parsing services")
+	}
 
 	annotations := e.NamespaceAnnotations
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
 
-	for _, projectPipelineData := range projectPipelineDatas {
-		data := strings.Split(projectPipelineData, ":")
+	for _, environmentService := range environmentServices {
+		label := fmt.Sprintf("%s-%d", config.LabelInstalledProject, environmentService.ProjectID)
 
-		label := fmt.Sprintf("%s-%s", config.LabelInstalledProject, data[0])
-
-		annotations[label] = data[1]
+		annotations[label] = environmentService.Ref
 	}
 
-	err := e.SaveNamespaceMeta(annotations, e.NamespaceLabels)
+	err = e.SaveNamespaceMeta(ctx, annotations, e.NamespaceLabels)
 	if err != nil {
 		return errors.Wrap(err, "error saving namespace annotations")
 	}
@@ -59,17 +61,15 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string, op Gitlab
 
 	pipelineErrors := make([]string, 0)
 
-	wg.Add(len(projectPipelineDatas))
+	wg.Add(len(environmentServices))
 
-	for _, projectPipelineData := range projectPipelineDatas {
-		data := strings.Split(projectPipelineData, ":")
-
-		go func(e *Environment, projectID string, branch string) {
+	for _, environmentService := range environmentServices {
+		go func(e *Environment, environmentService *EnvironmentServices) {
 			defer wg.Done()
 
 			var resultText string
 
-			_, err := e.CreateGitlabPipeline(projectID, branch, op)
+			_, err := e.CreateGitlabPipeline(ctx, environmentService.GeProjectID(), environmentService.Ref, op)
 			if err != nil {
 				resultText = err.Error()
 
@@ -78,7 +78,7 @@ func (e *Environment) CreateGitlabPipelinesByServices(services string, op Gitlab
 
 				pipelineErrors = append(pipelineErrors, resultText)
 			}
-		}(e, data[0], data[1])
+		}(e, environmentService)
 	}
 
 	wg.Wait()

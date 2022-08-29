@@ -14,6 +14,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	b64 "encoding/base64"
 	"fmt"
 	"text/template"
@@ -68,8 +69,8 @@ users:
 	return out.Bytes(), nil
 }
 
-func (e *Environment) GetKubeconfig() (*GetClusterKubeconfigResult, error) {
-	temporaryToken, err := e.createTemporaryToken()
+func (e *Environment) GetKubeconfig(ctx context.Context) (*GetClusterKubeconfigResult, error) {
+	temporaryToken, err := e.createTemporaryToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func (e *Environment) GetKubeconfig() (*GetClusterKubeconfigResult, error) {
 
 // remove old tokens with
 // kubectl delete sa,role,rolebinding -A -lkubernetes-manager=true.
-func (e *Environment) createTemporaryToken() (*corev1.Secret, error) {
+func (e *Environment) createTemporaryToken(ctx context.Context) (*corev1.Secret, error) {
 	if e.IsSystemNamespace() {
 		return nil, errors.New("cannot create temporary token in system namespace")
 	}
@@ -114,7 +115,7 @@ func (e *Environment) createTemporaryToken() (*corev1.Secret, error) {
 		},
 	}
 
-	sa, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Create(Ctx, &serviceAccount, metav1.CreateOptions{})
+	sa, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Create(ctx, &serviceAccount, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating service account")
 	}
@@ -133,7 +134,7 @@ func (e *Environment) createTemporaryToken() (*corev1.Secret, error) {
 		},
 	}
 
-	role, err := e.clientset.RbacV1().Roles(e.Namespace).Create(Ctx, &serviceAccountRole, metav1.CreateOptions{})
+	role, err := e.clientset.RbacV1().Roles(e.Namespace).Create(ctx, &serviceAccountRole, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating role")
 	}
@@ -157,17 +158,17 @@ func (e *Environment) createTemporaryToken() (*corev1.Secret, error) {
 		},
 	}
 
-	_, err = e.clientset.RbacV1().RoleBindings(e.Namespace).Create(Ctx, &serviceAccountRoleBinding, metav1.CreateOptions{})
+	_, err = e.clientset.RbacV1().RoleBindings(e.Namespace).Create(ctx, &serviceAccountRoleBinding, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating role binding")
 	}
 
-	createdUser, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Get(Ctx, sa.Name, metav1.GetOptions{})
+	createdUser, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Get(ctx, sa.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting user")
 	}
 
-	secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(Ctx, createdUser.Secrets[0].Name, metav1.GetOptions{})
+	secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(ctx, createdUser.Secrets[0].Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting user")
 	}

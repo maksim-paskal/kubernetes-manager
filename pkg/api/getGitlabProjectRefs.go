@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"regexp"
 	"sort"
 	"strings"
@@ -29,7 +30,7 @@ type GetGitlabProjectBranchItem struct {
 	updated *time.Time
 }
 
-func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, error) {
+func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabProjectBranchItem, error) {
 	gitlabClient := client.GetGitlabClient()
 
 	if gitlabClient == nil {
@@ -53,12 +54,16 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 	for {
 		currentPage++
 
-		gitBranches, _, err := gitlabClient.Branches.ListBranches(projectID, &gitlab.ListBranchesOptions{
-			ListOptions: gitlab.ListOptions{
-				Page:    currentPage,
-				PerPage: gitlabListPerPage,
+		gitBranches, _, err := gitlabClient.Branches.ListBranches( //nolint:contextcheck
+			projectID,
+			&gitlab.ListBranchesOptions{
+				ListOptions: gitlab.ListOptions{
+					Page:    currentPage,
+					PerPage: gitlabListPerPage,
+				},
 			},
-		})
+			gitlab.WithContext(ctx),
+		)
 		if err != nil {
 			return nil, errors.Wrap(err, "can not list branches")
 		}
@@ -89,13 +94,17 @@ func GetGitlabProjectRefs(projectID string) ([]*GetGitlabProjectBranchItem, erro
 	// add project tags
 	orderBy := "updated"
 
-	gitTags, _, err := gitlabClient.Tags.ListTags(projectID, &gitlab.ListTagsOptions{
-		ListOptions: gitlab.ListOptions{
-			Page:    0,
-			PerPage: maxTags,
+	gitTags, _, err := gitlabClient.Tags.ListTags( //nolint:contextcheck
+		projectID,
+		&gitlab.ListTagsOptions{
+			ListOptions: gitlab.ListOptions{
+				Page:    0,
+				PerPage: maxTags,
+			},
+			OrderBy: &orderBy,
 		},
-		OrderBy: &orderBy,
-	})
+		gitlab.WithContext(ctx),
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not list tags")
 	}

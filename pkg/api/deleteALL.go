@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -36,12 +37,12 @@ func (t *DeleteALLResult) JSON() string {
 	return string(result)
 }
 
-func (e *Environment) DeleteALL() *DeleteALLResult {
+func (e *Environment) DeleteALL(ctx context.Context) *DeleteALLResult {
 	deleteNamespace := make(chan error)
 	deleteClusterRolesAndBindings := make(chan error)
 
 	go func() {
-		deleteNamespace <- e.DeleteNamespace()
+		deleteNamespace <- e.DeleteNamespace(ctx)
 	}()
 
 	go func() {

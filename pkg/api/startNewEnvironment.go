@@ -13,7 +13,9 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
@@ -27,17 +29,98 @@ import (
 )
 
 type StartNewEnvironmentInput struct {
+	Profile  string
 	Services string
 	User     string
 	Cluster  string
 }
 
-func StartNewEnvironment(input *StartNewEnvironmentInput) (*Environment, error) {
+func (input *StartNewEnvironmentInput) Validation() error {
+	if len(input.Cluster) == 0 {
+		return errors.Wrap(errCreateNewBranchMissingInput, "cluster is required")
+	}
+
+	if len(input.Services) == 0 {
+		return errors.Wrap(errCreateNewBranchMissingInput, "services is required")
+	}
+
+	if len(input.User) == 0 {
+		return errors.Wrap(errCreateNewBranchMissingInput, "user is required")
+	}
+
+	if len(input.Profile) == 0 {
+		return errors.Wrap(errCreateNewBranchMissingInput, "profile is required")
+	}
+
+	if input.GetProfile() == nil {
+		return errors.Wrapf(errCreateNewBranchMissingInput, "profile %s unknown", input.Profile)
+	}
+
+	if config.GetKubernetesEndpointByName(input.Cluster) == nil {
+		return errors.Wrapf(errCreateNewBranchMissingInput, "cluster %s unknown", input.Cluster)
+	}
+
+	services, err := ParseEnvironmentServices(input.Services)
+	if err != nil {
+		return errors.Wrap(errCreateNewBranchMissingInput, "can not get services")
+	}
+
+	selectedProjectIDs := make([]string, 0)
+	for _, service := range services {
+		selectedProjectIDs = append(selectedProjectIDs, service.GeProjectID())
+	}
+
+	for _, required := range input.GetProfile().GetRequired() {
+		if !utils.StringInSlice(required, selectedProjectIDs) {
+			return errors.Wrapf(errCreateNewBranchMissingInput, "required service is missing")
+		}
+	}
+
+	return nil
+}
+
+func (input *StartNewEnvironmentInput) GetProfile() *config.ProjectProfile {
+	return config.GetProjectProfileByName(input.Profile)
+}
+
+type EnvironmentServices struct {
+	ProjectID int
+	Ref       string
+}
+
+func (services *EnvironmentServices) GeProjectID() string {
+	return strconv.Itoa(services.ProjectID)
+}
+
+func ParseEnvironmentServices(services string) ([]*EnvironmentServices, error) {
+	result := make([]*EnvironmentServices, 0)
+
+	for _, service := range strings.Split(services, ";") {
+		serviceData := strings.Split(service, ":")
+		if len(serviceData) != config.KeyValueLength {
+			return nil, errors.Wrap(errCreateNewBranchWrongFormat, service)
+		}
+
+		projectID, err := strconv.Atoi(serviceData[0])
+		if err != nil {
+			return nil, errors.Wrapf(err, "error converting project id %s", serviceData[0])
+		}
+
+		result = append(result, &EnvironmentServices{
+			ProjectID: projectID,
+			Ref:       serviceData[1],
+		})
+	}
+
+	return result, nil
+}
+
+func StartNewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
 	if len(input.Cluster) == 0 {
 		input.Cluster = config.Get().KubernetesEndpoints[0].Name
 	}
 
-	environment, err := processCreateNewBranch(input)
+	environment, err := processCreateNewBranch(ctx, input)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating new namespace")
 	}
@@ -45,19 +128,24 @@ func StartNewEnvironment(input *StartNewEnvironmentInput) (*Environment, error) 
 	return environment, nil
 }
 
-func processCreateNewBranch(input *StartNewEnvironmentInput) (*Environment, error) {
-	if err := createNewBranchValidation(input); err != nil {
+func processCreateNewBranch(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
+	if err := input.Validation(); err != nil {
 		return nil, errors.Wrap(err, "error validating")
 	}
 
-	ID := fmt.Sprintf("%s:%s", input.Cluster, getNamespaceByServices(input.Services))
+	namespace, err := GetNamespaceByServices(input.GetProfile(), input.Services)
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting namespace")
+	}
 
-	environment, err := NewEnvironment(ID, input.User)
+	ID := fmt.Sprintf("%s:%s", input.Cluster, namespace)
+
+	environment, err := NewEnvironment(ctx, ID, input.User)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating namespace")
 	}
 
-	if err := environment.CreateGitlabPipelinesByServices(input.Services, GitlabPipelineOperationBuild); err != nil {
+	if err := environment.CreateGitlabPipelinesByServices(ctx, input.Services, GitlabPipelineOperationBuild); err != nil {
 		return nil, errors.Wrap(err, "error creating gitlab pipelines")
 	}
 
@@ -65,49 +153,9 @@ func processCreateNewBranch(input *StartNewEnvironmentInput) (*Environment, erro
 }
 
 var (
-	errCreateNewBranchMissingInput           = errors.New("missing input")
-	errCreateNewBranchWrongFormat            = errors.New("wrong format")
-	errCreateNewBranchRequiredServiceMissing = errors.New("required service is missing")
+	errCreateNewBranchMissingInput = errors.New("missing input")
+	errCreateNewBranchWrongFormat  = errors.New("wrong format")
 )
-
-func createNewBranchValidation(input *StartNewEnvironmentInput) error {
-	if len(input.Cluster) == 0 {
-		return errors.Wrap(errCreateNewBranchMissingInput, "cluster is empty")
-	}
-
-	if len(input.Services) == 0 {
-		return errors.Wrap(errCreateNewBranchMissingInput, "services is empty")
-	}
-
-	for _, projectTemplate := range config.Get().ProjectTemplates {
-		if projectTemplate.Required {
-			requiredServiceFound := false
-
-			for _, service := range strings.Split(input.Services, ";") {
-				serviceData := strings.Split(service, ":")
-				if len(serviceData) != config.KeyValueLength {
-					return errors.Wrap(errCreateNewBranchWrongFormat, service)
-				}
-
-				if serviceData[0] == projectTemplate.ProjectID {
-					requiredServiceFound = true
-				}
-			}
-
-			if !requiredServiceFound {
-				errorText := fmt.Sprintf("ProjectID=%s", projectTemplate.ProjectID)
-
-				if len(projectTemplate.RequiredMessage) > 0 {
-					errorText = projectTemplate.RequiredMessage
-				}
-
-				return errors.Wrap(errCreateNewBranchRequiredServiceMissing, errorText)
-			}
-		}
-	}
-
-	return nil
-}
 
 const (
 	getSlugStringNamespaceLength  = 40
@@ -115,36 +163,38 @@ const (
 	getNamespaceByServicesTailLen = 3
 )
 
-func getNamespaceByServices(services string) string {
-	namespacePrefix := fmt.Sprintf("%s-", config.Namespace)
+// Return namespace by selected profile, if profile has required services,
+// namespace will have ref of first required service in namespace name.
+func GetNamespaceByServices(profile *config.ProjectProfile, services string) (string, error) {
 	namespaceSuffix := utils.RandomString(getNamespaceByServicesRandLen)
 
-	for _, service := range strings.Split(services, ";") {
-		serviceData := strings.Split(service, ":")
+	if len(profile.Required) > 0 {
+		environmentServices, err := ParseEnvironmentServices(services)
+		if err != nil {
+			return "", errors.Wrapf(err, "error parsing services")
+		}
 
-		projectTemplate := config.Get().GetProjectTemplateByProjectID(serviceData[0])
+		projectForNamespace := profile.GetRequired()[0]
 
-		if projectTemplate != nil {
-			if len(projectTemplate.NamespacePrefix) > 0 {
-				namespacePrefix = projectTemplate.NamespacePrefix
-			}
+		for _, service := range environmentServices {
+			if projectForNamespace == service.GeProjectID() {
+				namespaceSuffix = fmt.Sprintf("%s-%s", service.Ref, namespaceSuffix)
 
-			if projectTemplate.Sluglify {
-				namespaceSuffix = fmt.Sprintf("%s-%s", serviceData[1], namespaceSuffix)
+				break
 			}
 		}
 	}
 
-	namespace := fmt.Sprintf("%s%s", namespacePrefix, namespaceSuffix)
+	namespace := fmt.Sprintf("%s%s", profile.NamespacePrefix, namespaceSuffix)
 
 	return sluglify.GetSlugString(
 		namespace,
 		getSlugStringNamespaceLength,
 		utils.RandomString(getNamespaceByServicesTailLen),
-	)
+	), nil
 }
 
-func NewEnvironment(id string, creator string) (*Environment, error) {
+func NewEnvironment(ctx context.Context, id string, creator string) (*Environment, error) {
 	idInfo, err := types.NewIDInfo(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing id")
@@ -174,12 +224,12 @@ func NewEnvironment(id string, creator string) (*Environment, error) {
 	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, creator)
 	namespace.ObjectMeta.Labels[creatorLabel] = config.TrueValue
 
-	_, err = clientset.CoreV1().Namespaces().Create(Ctx, &namespace, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating namespace")
 	}
 
-	environment, err := GetEnvironmentByID(id)
+	environment, err := GetEnvironmentByID(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating new namespace")
 	}

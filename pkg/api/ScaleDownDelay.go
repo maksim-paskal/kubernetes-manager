@@ -13,13 +13,14 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
-func (e *Environment) ScaleDownDelay(durationTime time.Duration) error {
+func (e *Environment) ScaleDownDelay(ctx context.Context, durationTime time.Duration) error {
 	annotation := e.NamespaceAnnotations
 	if annotation == nil {
 		annotation = make(map[string]string)
@@ -27,7 +28,7 @@ func (e *Environment) ScaleDownDelay(durationTime time.Duration) error {
 
 	annotation[config.LabelScaleDownDelay] = utils.TimeToString(time.Now().Add(durationTime))
 
-	err := e.SaveNamespaceMeta(annotation, e.NamespaceLabels)
+	err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels)
 	if err != nil {
 		return err
 	}

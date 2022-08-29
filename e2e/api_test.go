@@ -13,6 +13,7 @@ limitations under the License.
 package api_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -26,6 +27,8 @@ const (
 	TotalTestCount      = 5
 	TestNamespaceFilter = "test-kubernetes-manager=true"
 )
+
+var ctx = context.Background()
 
 var counters sync.Map
 
@@ -46,7 +49,7 @@ func TestEnvironment(t *testing.T) {
 
 	t.Parallel()
 
-	envieronments, err := api.GetEnvironments(TestNamespaceFilter)
+	envieronments, err := api.GetEnvironments(ctx, TestNamespaceFilter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,12 +74,12 @@ func TestPods(t *testing.T) {
 
 	t.Parallel()
 
-	environment, err := api.GetEnvironmentByID(ID)
+	environment, err := api.GetEnvironmentByID(ctx, ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = environment.ScaleNamespace(2)
+	err = environment.ScaleNamespace(ctx, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,12 +91,12 @@ func TestPods(t *testing.T) {
 
 	annotation["test"] = "value"
 
-	err = environment.SaveNamespaceMeta(annotation, environment.NamespaceLabels)
+	err = environment.SaveNamespaceMeta(ctx, annotation, environment.NamespaceLabels)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	envieronments, err := api.GetEnvironments(TestNamespaceFilter)
+	envieronments, err := api.GetEnvironments(ctx, TestNamespaceFilter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +117,7 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = environment.DisableHPA()
+	err = environment.DisableHPA(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +127,7 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alpineImage, err := environment.GetPodByImage("alpine:latest")
+	alpineImage, err := environment.GetPodByImage(ctx, "alpine:latest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +136,7 @@ func TestPods(t *testing.T) {
 		t.Fatal("alpine image must be found")
 	}
 
-	fakeImage, err := environment.GetPodByImage("somefakeimage")
+	fakeImage, err := environment.GetPodByImage(ctx, "somefakeimage")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +169,7 @@ func TestPods(t *testing.T) {
 		t.Fatal("results not valid")
 	}
 
-	err = environment.DisableMTLS()
+	err = environment.DisableMTLS(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,12 +180,12 @@ func TestToken(t *testing.T) {
 
 	t.Parallel()
 
-	environment, err := api.GetEnvironmentByID(ID)
+	environment, err := api.GetEnvironmentByID(ctx, ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	getClusterKubeconfig, err := environment.GetKubeconfig()
+	getClusterKubeconfig, err := environment.GetKubeconfig(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,12 +200,12 @@ func TestServices(t *testing.T) {
 
 	t.Parallel()
 
-	environment, err := api.GetEnvironmentByID(ID)
+	environment, err := api.GetEnvironmentByID(ctx, ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	list, err := environment.GetServices()
+	list, err := environment.GetServices(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +232,7 @@ func TestServices(t *testing.T) {
 func TestDeleteNamespace(t *testing.T) {
 	t.Parallel()
 
-	environment, err := api.GetEnvironmentByID(ID)
+	environment, err := api.GetEnvironmentByID(ctx, ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +254,7 @@ func TestDeleteNamespace(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 
-	if err := environment.DeleteNamespace(); err != nil {
+	if err := environment.DeleteNamespace(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -261,7 +264,7 @@ func TestDeleteClusterRole(t *testing.T) {
 
 	t.Parallel()
 
-	environment, err := api.GetEnvironmentByID(ID)
+	environment, err := api.GetEnvironmentByID(ctx, ID)
 	if err != nil {
 		t.Fatal(err)
 	}

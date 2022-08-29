@@ -11,8 +11,11 @@
     }}</b-alert>
     <b-spinner v-if="$fetchState.pending" variant="primary" />
     <div v-else>
-      <b-form-input v-model="externalServiceFilter" autocomplete="off" placeholder="Type to Search" />
-      <b-table striped hover :items="data" :fields="tableFields" :filter="externalServiceFilter">
+      <div v-if="projectProfile">
+        <b-button variant="outline-primary" @click="selectAllFromMain()">Select all services from main</b-button>
+        <b-button variant="outline-primary" @click="clearAllSelection()">Clear selection</b-button>
+      </div>
+      <b-table striped hover :items="data" :fields="tableFields">
         <template #cell(Service)="data">
           <b-button title="delete service from namespace" v-if="podInfo" :disabled="data.item.GitBranch ? false : true"
             size="sm" @click="
@@ -21,7 +24,7 @@
                 Ref: data.item.GitBranch,
               })
             " variant="outline-danger"><em class="bi bi-trash3" /></b-button>&nbsp;
-          <em v-if="checkRequired(data.item.ProjectID)" class="text-danger bi bi-asterisk" />
+          <em v-if="data.item.Required" class="text-danger bi bi-asterisk" />
           <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}</a>
           &nbsp;<span v-if="data.item.GitBranch" title="git tag" class="badge rounded-pill bg-primary">{{
               data.item.GitBranch
@@ -62,7 +65,7 @@
         </template>
         <template #cell(Deploy)="data">
           <DropDown :ref="`gitlabProjects${data.item.ProjectID}`" :id="`gitlabProjects${data.item.ProjectID}`"
-            :default="data.item.GitBranch" text="Select branch"
+            :default="data.item.GitBranch" text="Select branch" :value="data.item.Deploy"
             :endpoint="`/api/project-refs?id=${data.item.ProjectID}`" />
         </template>
       </b-table>
@@ -71,7 +74,12 @@
 </template>
 <script>
 export default {
-  props: ["podInfo"],
+  props: ["podInfo", "namespace", "projectProfile"],
+  watch: {
+    projectProfile: function () {
+      this.$fetch();
+    }
+  },
   mounted() {
     this.errorText = "";
     this.infoText = "";
@@ -83,7 +91,6 @@ export default {
             row.ProjectID == dropdownData.id.replace(/^(gitlabProjects)/, "")
           ) {
             row.Deploy = dropdownData.selected;
-            this.disableDeploy = false;
             break;
           }
         }
@@ -92,8 +99,6 @@ export default {
   },
   data() {
     return {
-      externalServiceFilter: "",
-      disableDeploy: true,
       data: {},
       fieldsPodInfo: [
         {
@@ -128,6 +133,16 @@ export default {
     },
   },
   methods: {
+    selectAllFromMain() {
+      this.data.forEach(async (row) => {
+        row.Deploy = row.DefaultBranch
+      });
+    },
+    clearAllSelection() {
+      this.data.forEach(async (row) => {
+        row.Deploy = ""
+      });
+    },
     getGitBranch(projectID) {
       if (!this.environment) return;
       if (!this.environment.NamespaceAnnotations) return;
@@ -159,24 +174,17 @@ export default {
         return `${obj.WebURL}/-/tree/${obj.AdditionalInfo.PodRunning.GitHash}`;
       }
     },
-    checkRequired(projectID) {
-      if (!this.config.ProjectTemplates) {
-        return false;
-      }
-      for (let row of this.config.ProjectTemplates) {
-        if (row.ProjectID == projectID) {
-          return row.Required;
-        }
-      }
-      return false;
-    },
   },
   async fetch() {
     this.$store.commit("setComponentLoaded", {
       id: "GitlabProjects",
       loaded: false,
     });
-    const result = await fetch(`/api/external-services`);
+    let params = `profile=${this.projectProfile}`
+    if (this.namespace) {
+      params = `namespace=${this.namespace}`
+    }
+    const result = await fetch(`/api/external-services?${params}`);
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result;

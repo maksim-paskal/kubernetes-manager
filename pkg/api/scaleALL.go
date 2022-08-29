@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
@@ -22,7 +23,7 @@ import (
 )
 
 // ScaleALL scale namespace and process webhooks.
-func (e *Environment) ScaleALL(replicas int32) error {
+func (e *Environment) ScaleALL(ctx context.Context, replicas int32) error {
 	processWebhook := make(chan error)
 	processScale := make(chan error)
 
@@ -32,15 +33,17 @@ func (e *Environment) ScaleALL(replicas int32) error {
 			eventType = types.EventStop
 		}
 
-		processWebhook <- webhook.NewEvent(types.WebhookMessage{
-			Event:     eventType,
-			Namespace: e.Namespace,
-			Cluster:   e.Cluster,
-		})
+		processWebhook <- webhook.NewEvent(
+			ctx,
+			types.WebhookMessage{
+				Event:     eventType,
+				Namespace: e.Namespace,
+				Cluster:   e.Cluster,
+			})
 	}()
 
 	go func() {
-		processScale <- e.ScaleNamespace(replicas)
+		processScale <- e.ScaleNamespace(ctx, replicas)
 	}()
 
 	type Result struct {

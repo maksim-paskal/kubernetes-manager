@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ const (
 	GitlabPipelineOperationSnapshot = "SNAPSHOT"
 )
 
-func (e *Environment) CreateGitlabPipeline(projectID, ref string, op GitlabPipelineOperation) (string, error) {
+func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref string, op GitlabPipelineOperation) (string, error) { //nolint:lll
 	if e.gitlabClient == nil {
 		return "", errNoGitlabClient
 	}
@@ -83,10 +84,14 @@ func (e *Environment) CreateGitlabPipeline(projectID, ref string, op GitlabPipel
 		VariableType: gitlab.String("env_var"),
 	})
 
-	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline(projectIDInt, &gitlab.CreatePipelineOptions{
-		Ref:       &ref,
-		Variables: &variables,
-	})
+	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline( //nolint:contextcheck
+		projectIDInt,
+		&gitlab.CreatePipelineOptions{
+			Ref:       &ref,
+			Variables: &variables,
+		},
+		gitlab.WithContext(ctx),
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "can not create pipeline")
 	}

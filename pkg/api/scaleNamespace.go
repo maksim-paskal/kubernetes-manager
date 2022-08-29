@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -26,14 +27,14 @@ import (
 )
 
 // ScaleNamespace scale deployments and statefullsets.
-func (e *Environment) ScaleNamespace(replicas int32) error {
-	ds, err := e.clientset.AppsV1().Deployments(e.Namespace).List(Ctx, metav1.ListOptions{})
+func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error {
+	ds, err := e.clientset.AppsV1().Deployments(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing deployments")
 	}
 
 	for _, d := range ds.Items {
-		dps, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(Ctx, d.Name, metav1.GetOptions{})
+		dps, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(ctx, d.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting deployment")
 		}
@@ -41,7 +42,7 @@ func (e *Environment) ScaleNamespace(replicas int32) error {
 		dps.Spec.Replicas = &replicas
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
-			_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(Ctx, dps, metav1.UpdateOptions{})
+			_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(ctx, dps, metav1.UpdateOptions{})
 			switch {
 			case err == nil:
 				return true, nil
@@ -59,13 +60,13 @@ func (e *Environment) ScaleNamespace(replicas int32) error {
 		}
 	}
 
-	sf, err := e.clientset.AppsV1().StatefulSets(e.Namespace).List(Ctx, metav1.ListOptions{})
+	sf, err := e.clientset.AppsV1().StatefulSets(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing statefullsets")
 	}
 
 	for _, s := range sf.Items {
-		ss, err := e.clientset.AppsV1().StatefulSets(e.Namespace).Get(Ctx, s.Name, metav1.GetOptions{})
+		ss, err := e.clientset.AppsV1().StatefulSets(e.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error getting statefullset")
 		}
@@ -73,7 +74,7 @@ func (e *Environment) ScaleNamespace(replicas int32) error {
 		ss.Spec.Replicas = &replicas
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
-			_, err = e.clientset.AppsV1().StatefulSets(e.Namespace).Update(Ctx, ss, metav1.UpdateOptions{})
+			_, err = e.clientset.AppsV1().StatefulSets(e.Namespace).Update(ctx, ss, metav1.UpdateOptions{})
 			switch {
 			case err == nil:
 				return true, nil
@@ -94,14 +95,14 @@ func (e *Environment) ScaleNamespace(replicas int32) error {
 	if replicas > 0 {
 		annotation := map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())}
 
-		err = e.SaveNamespaceMeta(annotation, e.NamespaceLabels)
+		err = e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels)
 		if err != nil {
 			return errors.Wrap(err, "error saving lastScaleDate")
 		}
 	}
 
 	if replicas == 0 {
-		if err := e.deletePodsNow(); err != nil {
+		if err := e.deletePodsNow(ctx); err != nil {
 			return errors.Wrap(err, "error deleting pods")
 		}
 	}
@@ -110,12 +111,12 @@ func (e *Environment) ScaleNamespace(replicas int32) error {
 }
 
 // deletes pods with grace-period=0.
-func (e *Environment) deletePodsNow() error {
+func (e *Environment) deletePodsNow(ctx context.Context) error {
 	opt := metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	}
 
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, opt)
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, opt)
 	if err != nil {
 		return errors.Wrap(err, "error listing pods")
 	}
@@ -123,7 +124,7 @@ func (e *Environment) deletePodsNow() error {
 	zero := int64(0)
 
 	for _, pod := range pods.Items {
-		err = e.clientset.CoreV1().Pods(e.Namespace).Delete(Ctx, pod.Name, metav1.DeleteOptions{
+		err = e.clientset.CoreV1().Pods(e.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{
 			GracePeriodSeconds: &zero,
 		})
 		if err != nil {

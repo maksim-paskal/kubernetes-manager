@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/pkg/errors"
@@ -20,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (e *Environment) SaveNamespaceMeta(annotation map[string]string, labels map[string]string) error {
+func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[string]string, labels map[string]string) error { //nolint:lll
 	type metadataStringValue struct {
 		Annotations map[string]string `json:"annotations"`
 		Labels      map[string]string `json:"labels"`
@@ -44,7 +45,7 @@ func (e *Environment) SaveNamespaceMeta(annotation map[string]string, labels map
 
 	namespaces := e.clientset.CoreV1().Namespaces()
 
-	_, err = namespaces.Patch(Ctx, e.Namespace, types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
+	_, err = namespaces.Patch(ctx, e.Namespace, types.StrategicMergePatchType, payloadBytes, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}

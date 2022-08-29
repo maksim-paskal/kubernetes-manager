@@ -12,10 +12,14 @@ limitations under the License.
 */
 package api
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"context"
 
-func (e *Environment) DeletePod(podName string) error {
-	err := e.clientset.CoreV1().Pods(e.Namespace).Delete(Ctx, podName, metav1.DeleteOptions{})
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func (e *Environment) DeletePod(ctx context.Context, podName string) error {
+	err := e.clientset.CoreV1().Pods(e.Namespace).Delete(ctx, podName, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}

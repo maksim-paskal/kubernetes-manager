@@ -13,6 +13,7 @@ limitations under the License.
 package web
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -45,7 +46,7 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	result, err := environmentOperation(r, vars["environmentID"], vars["operation"])
+	result, err := environmentOperation(r.Context(), r, vars["environmentID"], vars["operation"])
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
@@ -96,7 +97,7 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func environmentOperation(r *http.Request, environmentID string, operation string) (*HandlerResult, error) { //nolint:gocyclo,lll,maintidx
+func environmentOperation(ctx context.Context, r *http.Request, environmentID string, operation string) (*HandlerResult, error) { //nolint:gocyclo,lll,maintidx
 	result := NewHandlerResult()
 
 	if err := checkPOSTMethod(operation, r); err != nil {
@@ -109,7 +110,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 	}
 	defer r.Body.Close()
 
-	environment, err := api.GetEnvironmentByID(environmentID)
+	environment, err := api.GetEnvironmentByID(ctx, environmentID)
 	if err != nil {
 		return result, errors.Wrap(err, "can not get environment")
 	}
@@ -120,7 +121,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 	switch strings.ToLower(operation) {
 	case "pods":
-		pods, err := environment.GetPodsInfo()
+		pods, err := environment.GetPodsInfo(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -128,7 +129,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		result.cached = true
 		result.Result = pods
 	case "services":
-		services, err := environment.GetServices()
+		services, err := environment.GetServices(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -140,7 +141,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		filter := r.Form.Get("filter")
 		containerInAnnotation := r.Form.Get("annotation")
 
-		containers, err := environment.GetContainers(filter, containerInAnnotation)
+		containers, err := environment.GetContainers(ctx, filter, containerInAnnotation)
 		if err != nil {
 			return result, err
 		}
@@ -184,7 +185,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, errors.Wrap(errBadFormat, "no projectID specified")
 		}
 
-		projectInfo, err := environment.GetGitlabProjectsInfo(projectID)
+		projectInfo, err := environment.GetGitlabProjectsInfo(ctx, projectID)
 		if err != nil {
 			return result, err
 		}
@@ -203,7 +204,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(deployServices.Services, deployServices.Operation); err != nil {
+		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
 			return result, err
 		}
 
@@ -231,7 +232,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 		annotations[config.LabelEnvironmentName] = saveNamespaceName.Name
 
-		err := environment.SaveNamespaceMeta(annotations, environment.NamespaceLabels)
+		err := environment.SaveNamespaceMeta(ctx, annotations, environment.NamespaceLabels)
 		if err != nil {
 			return result, err
 		}
@@ -267,14 +268,14 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 		labels[userLabel] = strconv.FormatBool(!hasUserLike)
 
-		err := environment.SaveNamespaceMeta(environment.NamespaceAnnotations, labels)
+		err := environment.SaveNamespaceMeta(ctx, environment.NamespaceAnnotations, labels)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = "ok"
 	case "kubeconfig":
-		kubeconfig, err := environment.GetKubeconfig()
+		kubeconfig, err := environment.GetKubeconfig(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -293,21 +294,21 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		result.output = HandlerResultOutputRAW
 		result.Result = kubeconfigFile
 	case "make-pause":
-		err := environment.ScaleALL(0)
+		err := environment.ScaleALL(ctx, 0)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = fmt.Sprintf("All pods in namespace %s paused", environment.Namespace)
 	case "make-start":
-		err := environment.ScaleALL(1)
+		err := environment.ScaleALL(ctx, 1)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = fmt.Sprintf("All pods in namespace %s started", environment.Namespace)
 	case "make-delete":
-		deleteResult := environment.DeleteALL()
+		deleteResult := environment.DeleteALL(ctx)
 
 		if deleteResult.HasErrors {
 			return result, errors.New(deleteResult.JSON())
@@ -331,21 +332,21 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, err
 		}
 
-		err = environment.ScaleDownDelay(durationTime)
+		err = environment.ScaleDownDelay(ctx, durationTime)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = fmt.Sprintf("Delayed scaleDown on next %s", scaledownDelay.Delay)
 	case "make-disable-hpa":
-		err := environment.DisableHPA()
+		err := environment.DisableHPA(ctx)
 		if err != nil {
 			return result, err
 		}
 
 		result.Result = fmt.Sprintf("Disabled HPA in namespace %s", environment.Namespace)
 	case "make-disable-mtls":
-		err := environment.DisableMTLS()
+		err := environment.DisableMTLS(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -366,7 +367,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 
 		containerInfoResult := ContainerInfoResult{}
 
-		containerInfo, err := environment.GetContainerInfo(container)
+		containerInfo, err := environment.GetContainerInfo(ctx, container)
 		if err != nil {
 			return result, err
 		}
@@ -458,7 +459,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 			return result, err
 		}
 
-		err = environment.DeletePod(containerInfo.PodName)
+		err = environment.DeletePod(ctx, containerInfo.PodName)
 		if err != nil {
 			return result, err
 		}
@@ -569,6 +570,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		// kubectl annotate namespace $NAMESPACE kubernetes-manager/project-${CI_PROJECT_ID}-
 
 		_, err := environment.CreateGitlabPipeline(
+			ctx,
 			deleteService.ProjectID,
 			deleteService.Ref,
 			api.GitlabPipelineOperationDelete,
@@ -610,6 +612,7 @@ func environmentOperation(r *http.Request, environmentID string, operation strin
 		}
 
 		url, err := environment.CreateGitlabPipeline(
+			ctx,
 			config.Get().Snapshots.ProjectID,
 			config.Get().Snapshots.Ref,
 			api.GitlabPipelineOperationSnapshot,

@@ -13,6 +13,8 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -25,13 +27,13 @@ type GetContainerInfoResult struct {
 	ContainerImage string
 }
 
-func (e *Environment) GetContainerInfo(container string) (*GetContainerInfoResult, error) {
+func (e *Environment) GetContainerInfo(ctx context.Context, container string) (*GetContainerInfoResult, error) {
 	containerInfo, err := types.NewContainerInfo(container)
 	if err != nil {
 		return nil, err
 	}
 
-	podInfo, err := e.clientset.CoreV1().Pods(e.Namespace).Get(Ctx, containerInfo.PodName, metav1.GetOptions{})
+	podInfo, err := e.clientset.CoreV1().Pods(e.Namespace).Get(ctx, containerInfo.PodName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

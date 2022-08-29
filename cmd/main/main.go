@@ -148,8 +148,8 @@ func RunLeaderElection() {
 		RenewDeadline:   defaultRenewDeadline,
 		RetryPeriod:     defaultRetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(context.Context) {
-				batch.Schedule()
+			OnStartedLeading: func(ctx context.Context) {
+				batch.Schedule(ctx)
 			},
 			OnStoppedLeading: func() {
 				batch.Stop()

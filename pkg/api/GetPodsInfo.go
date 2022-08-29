@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -34,8 +35,8 @@ type PodsInfo struct {
 	StorageRequests string
 }
 
-func (e *Environment) GetPodsInfo() (*PodsInfo, error) {
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, metav1.ListOptions{
+func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
 		FieldSelector: "status.phase!=Succeeded",
 	})
 	if err != nil {
@@ -89,7 +90,7 @@ func (e *Environment) GetPodsInfo() (*PodsInfo, error) {
 		}
 	}
 
-	pvc, err := e.clientset.CoreV1().PersistentVolumeClaims(e.Namespace).List(Ctx, metav1.ListOptions{})
+	pvc, err := e.clientset.CoreV1().PersistentVolumeClaims(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pvc")
 	}

@@ -25,6 +25,11 @@
 <script>
 export default {
   props: ['id', 'text', 'default', 'endpoint', 'value'],
+  watch: {
+    value: function () {
+      this.selected = this.value;
+    }
+  },
   mounted() {
     this.$root.$on('bv::dropdown::show', bvEvent => {
       if (bvEvent.componentId === this.id && !this.isLoaded) {

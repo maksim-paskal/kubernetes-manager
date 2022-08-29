@@ -13,6 +13,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -77,16 +78,16 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	return nil
 }
 
-func (provider *Provider) Process() error {
+func (provider *Provider) Process(ctx context.Context) error {
 	processInstances := make(chan error)
 	processDatabases := make(chan error)
 
 	go func() {
-		processInstances <- provider.processInstances()
+		processInstances <- provider.processInstances(ctx)
 	}()
 
 	go func() {
-		processDatabases <- provider.processDatabases()
+		processDatabases <- provider.processDatabases(ctx)
 	}()
 
 	type Result struct {
@@ -119,7 +120,7 @@ func (provider *Provider) Process() error {
 	return nil
 }
 
-func (provider *Provider) processInstances() error {
+func (provider *Provider) processInstances(ctx context.Context) error {
 	svc := ec2.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	params := &ec2.DescribeInstancesInput{
@@ -141,7 +142,7 @@ func (provider *Provider) processInstances() error {
 
 	log.Debug(params)
 
-	resp, err := svc.DescribeInstances(params)
+	resp, err := svc.DescribeInstancesWithContext(ctx, params) //nolint:contextcheck
 	if err != nil {
 		return errors.Wrap(err, "error while getting instances")
 	}
@@ -167,7 +168,7 @@ func (provider *Provider) processInstances() error {
 
 	switch provider.message.Event {
 	case types.EventStart:
-		result, err := svc.StartInstances(&ec2.StartInstancesInput{
+		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{ //nolint:contextcheck
 			DryRun:      aws.Bool(false),
 			InstanceIds: instances,
 		})
@@ -177,7 +178,7 @@ func (provider *Provider) processInstances() error {
 
 		log.Debug(result.String())
 	case types.EventStop:
-		result, err := svc.StopInstances(&ec2.StopInstancesInput{
+		result, err := svc.StopInstancesWithContext(ctx, &ec2.StopInstancesInput{ //nolint:contextcheck
 			DryRun:      aws.Bool(false),
 			InstanceIds: instances,
 		})
@@ -193,7 +194,7 @@ func (provider *Provider) processInstances() error {
 	return nil
 }
 
-func (provider *Provider) processDatabases() error {
+func (provider *Provider) processDatabases(ctx context.Context) error {
 	resources := resourcegroupstaggingapi.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	// list databases by tags, rds.DescribeDBInstances do not use tags for filtering
@@ -217,7 +218,7 @@ func (provider *Provider) processDatabases() error {
 	svc := rds.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	for _, resource := range dbs.ResourceTagMappingList {
-		database, err := svc.DescribeDBInstances(&rds.DescribeDBInstancesInput{
+		database, err := svc.DescribeDBInstancesWithContext(ctx, &rds.DescribeDBInstancesInput{ //nolint:contextcheck
 			DBInstanceIdentifier: resource.ResourceARN,
 		})
 		if err != nil {
@@ -235,7 +236,7 @@ func (provider *Provider) processDatabases() error {
 				continue
 			}
 
-			result, err := svc.StartDBInstance(&rds.StartDBInstanceInput{
+			result, err := svc.StartDBInstanceWithContext(ctx, &rds.StartDBInstanceInput{ //nolint:contextcheck
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {
@@ -252,7 +253,7 @@ func (provider *Provider) processDatabases() error {
 				continue
 			}
 
-			result, err := svc.StopDBInstance(&rds.StopDBInstanceInput{
+			result, err := svc.StopDBInstanceWithContext(ctx, &rds.StopDBInstanceInput{ //nolint:contextcheck
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {

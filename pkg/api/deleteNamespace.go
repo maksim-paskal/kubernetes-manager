@@ -13,17 +13,19 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteNamespace delete kubernetes namespace.
-func (e *Environment) DeleteNamespace() error {
+func (e *Environment) DeleteNamespace(ctx context.Context) error {
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	err := e.clientset.CoreV1().Namespaces().Delete(Ctx, e.Namespace, metav1.DeleteOptions{})
+	err := e.clientset.CoreV1().Namespaces().Delete(ctx, e.Namespace, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error deleting namespace")
 	}

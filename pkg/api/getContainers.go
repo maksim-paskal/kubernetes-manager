@@ -13,6 +13,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -26,7 +27,7 @@ type GetContainersItem struct {
 
 // returns list of containers
 // containerInLabels is pod label to store returned containers.
-func (e *Environment) GetContainers(filter string, containerInLabels string) (*GetContainersItem, error) {
+func (e *Environment) GetContainers(ctx context.Context, filter string, containerInLabels string) (*GetContainersItem, error) { //nolint:lll
 	opt := metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	}
@@ -35,7 +36,7 @@ func (e *Environment) GetContainers(filter string, containerInLabels string) (*G
 		opt.LabelSelector = filter
 	}
 
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(Ctx, opt)
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not list pods")
 	}

@@ -13,6 +13,8 @@ limitations under the License.
 package api
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,12 +25,12 @@ const (
 	envoyControlPlaneArg  = "-ssl.no-validation=true"
 )
 
-func (e *Environment) DisableMTLS() error {
+func (e *Environment) DisableMTLS(ctx context.Context) error {
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	controlPlane, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(Ctx, envoyControlPlaneName, metav1.GetOptions{})
+	controlPlane, err := e.clientset.AppsV1().Deployments(e.Namespace).Get(ctx, envoyControlPlaneName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error getting deployments")
 	}
@@ -49,7 +51,7 @@ func (e *Environment) DisableMTLS() error {
 	if needUpdate {
 		controlPlane.Spec.Template.Spec.Containers[0].Args = append(controlPlane.Spec.Template.Spec.Containers[0].Args, envoyControlPlaneArg) //nolint:lll
 
-		_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(Ctx, controlPlane, metav1.UpdateOptions{})
+		_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(ctx, controlPlane, metav1.UpdateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "error update deployment")
 		}
