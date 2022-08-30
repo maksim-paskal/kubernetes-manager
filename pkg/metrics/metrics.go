@@ -14,6 +14,7 @@ package metrics
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -34,7 +35,24 @@ var (
 		Name:      "apiserver_request_duration",
 		Help:      "The duration in seconds of kunernetes API requests",
 	}, []string{"cluster"})
+
+	WebRequest = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Name:      "request_total",
+		Help:      "The total number of web requests",
+	}, []string{"operation"})
+
+	WebRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Name:      "request_duration",
+		Help:      "The duration in seconds of web requests",
+	}, []string{"operation"})
 )
+
+func LogRequest(operation string, startTime time.Time) {
+	WebRequest.WithLabelValues(operation).Inc()
+	WebRequestDuration.WithLabelValues(operation).Observe(time.Since(startTime).Seconds())
+}
 
 func GetHandler() http.Handler {
 	return promhttp.Handler()

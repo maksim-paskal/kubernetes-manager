@@ -19,10 +19,12 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
@@ -69,6 +71,9 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) {
+	metricsStarts := time.Now()
+	defer metrics.LogRequest(operation, metricsStarts)
+
 	result := NewHandlerResult()
 
 	if err := checkPOSTMethod(operation, r); err != nil {
