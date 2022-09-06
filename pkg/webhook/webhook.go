@@ -18,6 +18,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/aws"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/azure"
 	"github.com/pkg/errors"
 )
 
@@ -77,6 +78,8 @@ func NewProvider(provider string) (Provider, error) { //nolint:ireturn
 	switch provider {
 	case "aws":
 		return new(aws.Provider), nil
+	case "azure":
+		return new(azure.Provider), nil
 	default:
 		return nil, errors.New("no provider was found " + provider)
 	}
