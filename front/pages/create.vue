@@ -10,9 +10,10 @@
     <div v-else>
       <div style="display:flex;align-items:center;margin-bottom: 10px;">
         Project profile:&nbsp;
-        <b-form-select class="form-select" v-model="projectProfile" :options="projectProfiles" style="width:300px" />
+        <b-form-select class="form-select" v-model="projectProfile" :options="projectProfiles"
+          :disabled="!GitlabProjectsLoaded" style="width:300px" />
         &nbsp;&nbsp;Cluster:&nbsp;
-        <select id="createClusterNameId" class="form-select" style="width:300px">
+        <select id="createClusterNameId" class="form-select" :disabled="!GitlabProjectsLoaded" style="width:300px">
           <option :key="index" v-for="(item, index) in this.config.Clusters">{{ item.ClusterName }}</option>
         </select>
       </div>
