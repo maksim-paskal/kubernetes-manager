@@ -79,6 +79,17 @@ Vue.mixin({
     },
   },
   methods: {
+    pageTitle(name, namespaced = false) {
+      let devider = "::"
+      if (namespaced && this.environment && this.environment.Namespace) {
+        let name = this.environment.Namespace
+        if (this.environment.NamespaceAnnotations && this.environment.NamespaceAnnotations[this.const().LabelEnvironmentName]) {
+          name = this.environment.NamespaceAnnotations[this.const().LabelEnvironmentName]
+        }
+        devider += ` ${name} ::`
+      }
+      return `Kubernetes Manager ${devider} ${name}`
+    },
     const(data) {
       return {
         LabelEnvironmentName: `${KubernetesManager}/environment-name`,

@@ -4,6 +4,11 @@
 </template>
 <script>
 export default {
+  head() {
+    return {
+      title: this.pageTitle('Created by me')
+    }
+  },
   computed: {
     userLabel() {
       return this.const({ user: this.user.user }).LabelCreator

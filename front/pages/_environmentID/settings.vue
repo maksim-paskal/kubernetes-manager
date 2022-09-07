@@ -36,5 +36,10 @@
 <script>
 export default {
   layout: "details",
+  head() {
+    return {
+      title: this.pageTitle('Settings', true)
+    }
+  },
 };
 </script>
