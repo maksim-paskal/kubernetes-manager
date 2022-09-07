@@ -1,7 +1,7 @@
 <template>
   <div style="padding: 10px">
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+    $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="errorText" variant="danger" show>{{ errorText }}</b-alert>
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
@@ -32,6 +32,11 @@
 <script>
 export default {
   layout: "create",
+  head() {
+    return {
+      title: this.pageTitle('Create')
+    }
+  },
   computed: {
     GitlabProjectsLoaded() {
       return this.$store.state.componentLoaded.GitlabProjects;

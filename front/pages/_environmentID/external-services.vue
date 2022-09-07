@@ -21,6 +21,11 @@
 <script>
 export default {
   layout: "details",
+  head() {
+    return {
+      title: this.pageTitle('External services', true)
+    }
+  },
   computed: {
     GitlabProjectsLoaded() {
       return this.$store.state.componentLoaded.GitlabProjects;

@@ -11,7 +11,7 @@
         :endpoint="`/api/${this.$route.params.environmentID}/containers?filter=kubernetes-manager/debug-containers&annotation=kubernetes-manager/debug-containers`" />
 
       <b-alert v-if="$fetchState.error" variant="danger" show>{{
-          $fetchState.error.message
+      $fetchState.error.message
       }}</b-alert>
       <b-spinner v-if="$fetchState.pending" variant="primary" />
       <div v-else-if="selectedContainer">
@@ -39,6 +39,11 @@
 <script>
 export default {
   layout: "details",
+  head() {
+    return {
+      title: this.pageTitle('Debug', true)
+    }
+  },
   mounted() {
     this.$nuxt.$on("component::DropDown::selected", (data) => {
       if (data.id === "debugDropdownContainers") {

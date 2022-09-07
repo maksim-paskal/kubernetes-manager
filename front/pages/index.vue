@@ -4,6 +4,11 @@
 </template>
 <script>
 export default {
+  head() {
+    return {
+      title: this.pageTitle('Favorites')
+    }
+  },
   computed: {
     userLabel() {
       return this.const({ user: this.user.user }).LabelLiked

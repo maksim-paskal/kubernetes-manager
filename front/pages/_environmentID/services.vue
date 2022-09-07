@@ -1,7 +1,7 @@
 <template>
   <div class="detail-tab">
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+    $fetchState.error.message
     }}</b-alert>
     <b-spinner v-if="$fetchState.pending" variant="primary" />
     <div v-else>
@@ -10,7 +10,7 @@
       <b-table striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(ServiceHost)="row">
           {{ row.item.ServiceHost }}&nbsp;<span v-if="row.item.Labels" class="badge rounded-pill bg-primary">{{
-              row.item.Labels
+          row.item.Labels
           }}</span>
         </template>
         <template v-slot:cell(Ports)="row">
@@ -50,6 +50,11 @@
 <script>
 export default {
   layout: "details",
+  head() {
+    return {
+      title: this.pageTitle('Services', true)
+    }
+  },
   data() {
     return {
       data: {},

@@ -20,6 +20,11 @@
 import CopyTextbox from '../../components/CopyTextbox.vue';
 export default {
   layout: "details",
+  head() {
+    return {
+      title: this.pageTitle('Kubectl', true)
+    }
+  },
   computed: {
     commandTest() {
       return `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} get pods`;
