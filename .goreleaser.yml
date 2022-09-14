@@ -1,16 +1,38 @@
+project_name: kubernetes-manager
 release:
   footer: |
     ## Docker Images
-    - `paskalmaksim/kubernetes-manager:latest`
-    - `paskalmaksim/kubernetes-manager:{{ .Tag }}`
+    - `paskalmaksim/{{.ProjectName}}:latest`
+    - `paskalmaksim/{{.ProjectName}}:{{.Tag}}`
 dockers:
-- goos: linux
+- use: buildx
+  goos: linux
   goarch: amd64
   image_templates:
-  - paskalmaksim/kubernetes-manager:latest
-  - paskalmaksim/kubernetes-manager:{{ .Tag }}
+  - paskalmaksim/{{.ProjectName}}:latest
+  - paskalmaksim/{{.ProjectName}}:{{ .Tag }}
   build_flag_templates:
-  - --build-arg=APPVERSION={{.ShortCommit}}
+  - "--build-arg=APPVERSION={{.ShortCommit}}"
+  - "--platform=linux/amd64"
+  - "--label=org.opencontainers.image.created={{.Date}}"
+  - "--label=org.opencontainers.image.title={{.ProjectName}}"
+  - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  - "--label=org.opencontainers.image.version={{.Version}}"
+  extra_files:
+  - front/
+- use: buildx
+  goos: linux
+  goarch: arm64
+  image_templates:
+  - paskalmaksim/{{.ProjectName}}:latest
+  - paskalmaksim/{{.ProjectName}}:{{.Tag}}
+  build_flag_templates:
+  - "--build-arg=APPVERSION={{.ShortCommit}}"
+  - "--platform=linux/arm64/v8"
+  - "--label=org.opencontainers.image.created={{.Date}}"
+  - "--label=org.opencontainers.image.title={{.ProjectName}}"
+  - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  - "--label=org.opencontainers.image.version={{.Version}}"
   extra_files:
   - front/
 builds:
@@ -25,6 +47,7 @@ builds:
   - linux
   goarch:
   - amd64
+  - arm64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
