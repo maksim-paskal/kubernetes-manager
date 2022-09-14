@@ -55,6 +55,11 @@ export default {
       title: this.pageTitle('Services', true)
     }
   },
+  mounted() {
+    if (this.$route.hash) {
+      this.dataFilter = this.$route.hash.substring(1);
+    }
+  },
   data() {
     return {
       data: {},
