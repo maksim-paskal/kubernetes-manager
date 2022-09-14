@@ -30,7 +30,7 @@ const (
 
 var errWaitTimeExpired = errors.New("time expired")
 
-// nolint: goerr113
+//nolint: goerr113
 func checkLastScaleDate(environment *api.Environment) error {
 	lastScaleDate := environment.NamespaceAnnotations[config.LabelLastScaleDate]
 	if len(lastScaleDate) == 0 {
@@ -45,7 +45,7 @@ func checkLastScaleDate(environment *api.Environment) error {
 	return nil
 }
 
-// nolint: goerr113
+//nolint: goerr113
 func checkEnvironment(environment *api.Environment) error {
 	if want := "test-kubernetes-manager"; environment.Namespace != want {
 		return fmt.Errorf("want=%s;got=%s", want, environment.Namespace)
@@ -58,7 +58,7 @@ func checkEnvironment(environment *api.Environment) error {
 	return nil
 }
 
-// nolint: goerr113
+//nolint: goerr113
 func checkHosts(environment *api.Environment) error {
 	if len(environment.Hosts) != 1 {
 		return errors.New("hosts not found")

@@ -14,7 +14,8 @@
           }}</span>
         </template>
         <template v-slot:cell(Ports)="row">
-          <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)">proxy</b-button>
+          <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)" v-if="row.item.Ports">proxy
+          </b-button>
           <b-button size="sm" variant="outline-primary" @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
             shell</b-button>
           <b-button size="sm" target="_blank" v-if="environment.Links.LogsPodURL && row.item.Type == 'pod'"
