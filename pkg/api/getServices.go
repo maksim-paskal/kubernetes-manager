@@ -95,17 +95,15 @@ func (e *Environment) GetServices(ctx context.Context) ([]*GetServicesItem, erro
 			}
 		}
 
-		if len(ports) > 0 {
-			item := GetServicesItem{
-				Type:        GetServicesItemTypePod,
-				Name:        pod.Name,
-				ServiceHost: pod.Name,
-				Ports:       strings.Join(ports, ","),
-				Labels:      getFilteredLabels(pod.Labels),
-			}
-
-			result = append(result, &item)
+		item := GetServicesItem{
+			Type:        GetServicesItemTypePod,
+			Name:        pod.Name,
+			ServiceHost: pod.Name,
+			Ports:       strings.Join(ports, ","),
+			Labels:      getFilteredLabels(pod.Labels),
 		}
+
+		result = append(result, &item)
 	}
 
 	return result, nil
