@@ -48,10 +48,10 @@ func (op GitlabPipelineOperation) Check() error {
 }
 
 const (
-	GitlabPipelineOperationBuild    = "BUILD"
-	GitlabPipelineOperationDelete   = "DELETE"
-	GitlabPipelineOperationDeploy   = "DEPLOY"
-	GitlabPipelineOperationSnapshot = "SNAPSHOT"
+	GitlabPipelineOperationBuild    GitlabPipelineOperation = "BUILD"
+	GitlabPipelineOperationDelete   GitlabPipelineOperation = "DELETE"
+	GitlabPipelineOperationDeploy   GitlabPipelineOperation = "DEPLOY"
+	GitlabPipelineOperationSnapshot GitlabPipelineOperation = "SNAPSHOT"
 )
 
 func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref string, op GitlabPipelineOperation) (string, error) { //nolint:lll

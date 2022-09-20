@@ -30,8 +30,8 @@ var allowedServiceLabels = []string{
 type GetServicesItemType string
 
 const (
-	GetServicesItemTypePod     = "pod"
-	GetServicesItemTypeService = "service"
+	GetServicesItemTypePod     GetServicesItemType = "pod"
+	GetServicesItemTypeService GetServicesItemType = "service"
 )
 
 type GetServicesItem struct {
