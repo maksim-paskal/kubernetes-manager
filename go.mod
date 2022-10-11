@@ -10,6 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/aws/aws-sdk-go v1.44.86
 	github.com/gorilla/mux v1.8.0
+	github.com/hetznercloud/hcloud-go v1.35.3
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
 	github.com/maksim-paskal/logrus-hook-sentry v0.0.9
 	github.com/maksim-paskal/sluglify v0.0.8

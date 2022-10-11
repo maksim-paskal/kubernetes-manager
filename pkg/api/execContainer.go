@@ -30,7 +30,7 @@ type ExecContainerResults struct {
 }
 
 // exec command in container
-// container must contains <pod>:<container.
+// @container must contains <pod>:<container>.
 func (e *Environment) ExecContainer(container string, command string) (*ExecContainerResults, error) {
 	containerInfo, err := types.NewContainerInfo(container)
 	if err != nil {

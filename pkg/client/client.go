@@ -13,6 +13,7 @@ limitations under the License.
 package client
 
 import (
+	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,7 @@ import (
 
 var (
 	gitlabClient *gitlab.Client
+	hcloudClient *hcloud.Client
 
 	clientsetCluster  map[string]*kubernetes.Clientset
 	restconfigCluster map[string]*rest.Config
@@ -72,6 +74,10 @@ func GetInclusterClientset() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
+func GetHcloudClient() *hcloud.Client {
+	return hcloudClient
+}
+
 func Init() error {
 	var (
 		err        error
@@ -115,6 +121,8 @@ func Init() error {
 		clientsetCluster[kubernetesEndpoints.Name] = clientset
 		restconfigCluster[kubernetesEndpoints.Name] = restconfig
 	}
+
+	hcloudClient = hcloud.NewClient(hcloud.WithToken(config.Get().RemoteServer.HetznerToken))
 
 	return nil
 }

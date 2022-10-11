@@ -168,6 +168,10 @@ type Snapshot struct {
 	Ref       string
 }
 
+type RemoteServer struct {
+	HetznerToken string
+}
+
 //nolint:gochecknoglobals
 var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
@@ -225,6 +229,7 @@ type Type struct {
 	PodNamespace               *string        `yaml:"podNamespace"`
 	WebHooks                   []WebHook      `yaml:"webhooks"`
 	Snapshots                  Snapshot       `yaml:"snapshots"`
+	RemoteServer               RemoteServer   `yaml:"remoteServer"`
 }
 
 func (t *Type) DeepCopy() *Type {

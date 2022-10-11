@@ -142,7 +142,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 
 	log.Debug(params)
 
-	resp, err := svc.DescribeInstancesWithContext(ctx, params) //nolint:contextcheck
+	resp, err := svc.DescribeInstancesWithContext(ctx, params)
 	if err != nil {
 		return errors.Wrap(err, "error while getting instances")
 	}
@@ -168,7 +168,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 
 	switch provider.message.Event {
 	case types.EventStart:
-		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{ //nolint:contextcheck
+		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{
 			DryRun:      aws.Bool(false),
 			InstanceIds: instances,
 		})
@@ -178,7 +178,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 
 		log.Debug(result.String())
 	case types.EventStop:
-		result, err := svc.StopInstancesWithContext(ctx, &ec2.StopInstancesInput{ //nolint:contextcheck
+		result, err := svc.StopInstancesWithContext(ctx, &ec2.StopInstancesInput{
 			DryRun:      aws.Bool(false),
 			InstanceIds: instances,
 		})
@@ -218,7 +218,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 	svc := rds.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	for _, resource := range dbs.ResourceTagMappingList {
-		database, err := svc.DescribeDBInstancesWithContext(ctx, &rds.DescribeDBInstancesInput{ //nolint:contextcheck
+		database, err := svc.DescribeDBInstancesWithContext(ctx, &rds.DescribeDBInstancesInput{
 			DBInstanceIdentifier: resource.ResourceARN,
 		})
 		if err != nil {
@@ -236,7 +236,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 				continue
 			}
 
-			result, err := svc.StartDBInstanceWithContext(ctx, &rds.StartDBInstanceInput{ //nolint:contextcheck
+			result, err := svc.StartDBInstanceWithContext(ctx, &rds.StartDBInstanceInput{
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {
@@ -253,7 +253,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 				continue
 			}
 
-			result, err := svc.StopDBInstanceWithContext(ctx, &rds.StopDBInstanceInput{ //nolint:contextcheck
+			result, err := svc.StopDBInstanceWithContext(ctx, &rds.StopDBInstanceInput{
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {
