@@ -101,6 +101,23 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 		}(environment)
 	}
 
+	// scaledown servers
+	servers, err := api.GetRemoteServers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "error listing servers")
+	}
+
+	for _, server := range servers {
+		err := api.SetRemoteServerAction(ctx, api.SetRemoteServerActionInput{
+			Cloud:  server.Cloud,
+			ID:     server.ID,
+			Action: api.SetRemoteServerStatusPowerOff,
+		})
+		if err != nil {
+			log.WithError(err).Errorf("error power off server %s", server.ID)
+		}
+	}
+
 	return nil
 }
 

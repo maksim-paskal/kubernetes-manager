@@ -168,6 +168,27 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		}
 
 		result.Result = projectTypes
+	case "remote-servers":
+		remoteServers, err := api.GetRemoteServers(ctx)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = remoteServers
+	case "make-remote-server-action":
+		input := api.SetRemoteServerActionInput{}
+
+		err = json.Unmarshal(body, &input)
+		if err != nil {
+			return result, err
+		}
+
+		err := api.SetRemoteServerAction(ctx, input)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = "server status changed, press Refresh to view changes"
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

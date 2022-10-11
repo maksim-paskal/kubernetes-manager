@@ -43,9 +43,9 @@ func IsScaleDownActive(now time.Time) bool {
 }
 
 // check if scale down is active, namespace will be scaled if false, there is no scaledown if
-// if namespace created less than 60m
-// if last scale date less than 60m
-// if user ask to nodelay.
+// namespace created less than 60m
+// last scale date less than 60m
+// user ask to nodelay.
 func IsScaledownDelay(nowTime time.Time, environment *api.Environment) (bool, error) {
 	log := log.WithField("namespace", environment.Namespace)
 
