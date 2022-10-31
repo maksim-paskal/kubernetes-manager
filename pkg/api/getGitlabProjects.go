@@ -34,6 +34,7 @@ type GetGitlabProjectsItem struct {
 	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
 	Deploy         string                     // custom field for front end
 	Required       bool
+	SelectedBranch string
 }
 
 // get gitlab project by profile or namespace.
@@ -44,7 +45,7 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 		return nil, errNoGitlabClient
 	}
 
-	projects, _, err := gitlabClient.Projects.ListProjects( //nolint:contextcheck
+	projects, _, err := gitlabClient.Projects.ListProjects(
 		&gitlab.ListProjectsOptions{
 			Topic: config.Get().ExternalServicesTopic,
 		},
@@ -90,13 +91,14 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 
 	for _, project := range projects {
 		item := GetGitlabProjectsItem{
-			ProjectID:     project.ID,
-			Name:          project.NameWithNamespace,
-			Description:   project.Description,
-			DefaultBranch: project.DefaultBranch,
-			WebURL:        project.WebURL,
-			TagsList:      formatProjectTags(project.TagList),
-			Required:      projectProfile.IsProjectRequired(project.ID),
+			ProjectID:      project.ID,
+			Name:           project.NameWithNamespace,
+			Description:    project.Description,
+			DefaultBranch:  project.DefaultBranch,
+			WebURL:         project.WebURL,
+			TagsList:       formatProjectTags(project.TagList),
+			Required:       projectProfile.IsProjectRequired(project.ID),
+			SelectedBranch: projectProfile.GetProjectSelectedBranch(project.ID),
 		}
 
 		exclude := utils.StringInSlice(strconv.Itoa(item.ProjectID), exludeProjects)

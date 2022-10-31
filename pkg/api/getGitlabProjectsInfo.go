@@ -29,7 +29,7 @@ func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID strin
 		return nil, errNoGitlabClient
 	}
 
-	project, _, err := e.gitlabClient.Projects.GetProject( //nolint:contextcheck
+	project, _, err := e.gitlabClient.Projects.GetProject(
 		projectID,
 		&gitlab.GetProjectOptions{},
 		gitlab.WithContext(ctx),

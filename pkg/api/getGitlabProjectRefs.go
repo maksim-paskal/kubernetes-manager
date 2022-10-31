@@ -54,7 +54,7 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 	for {
 		currentPage++
 
-		gitBranches, _, err := gitlabClient.Branches.ListBranches( //nolint:contextcheck
+		gitBranches, _, err := gitlabClient.Branches.ListBranches(
 			projectID,
 			&gitlab.ListBranchesOptions{
 				ListOptions: gitlab.ListOptions{
@@ -94,7 +94,7 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 	// add project tags
 	orderBy := "updated"
 
-	gitTags, _, err := gitlabClient.Tags.ListTags( //nolint:contextcheck
+	gitTags, _, err := gitlabClient.Tags.ListTags(
 		projectID,
 		&gitlab.ListTagsOptions{
 			ListOptions: gitlab.ListOptions{
