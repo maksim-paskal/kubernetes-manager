@@ -2,6 +2,9 @@ FROM node:lts as front
 
 ARG APPVERSION=dev
 
+# bug in node 16+
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
 WORKDIR /app
 COPY front /app
 RUN yarn install && yarn generate

@@ -118,6 +118,7 @@ type KubernetesEndpoint struct {
 type ProjectProfile struct {
 	Name            string
 	NamespacePrefix string
+	DefaultBranch   string // use default branch for project (comma separated format projectId=main)
 	Required        string // project ids to be required (comma separated)
 	Exclude         string // project ids to exclude (comma separated)
 	Include         string // project ids to include (comma separated)
@@ -149,6 +150,27 @@ func (p *ProjectProfile) GetInclude() []string {
 
 func (p *ProjectProfile) IsProjectRequired(projectID int) bool {
 	return utils.StringInSlice(strconv.Itoa(projectID), p.GetRequired())
+}
+
+func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
+	if len(p.DefaultBranch) == 0 {
+		return ""
+	}
+
+	for _, defaultBranch := range strings.Split(p.DefaultBranch, ",") {
+		defaultBranchData := strings.Split(defaultBranch, "=")
+		if len(defaultBranchData) != KeyValueLength {
+			log.Errorf("invalid defaultBranch format %s", defaultBranch)
+
+			continue
+		}
+
+		if defaultBranchData[0] == strconv.Itoa(projectID) {
+			return defaultBranchData[1]
+		}
+	}
+
+	return ""
 }
 
 type NamespaceMeta struct {

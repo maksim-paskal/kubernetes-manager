@@ -189,6 +189,15 @@ export default {
       const data = await result.json();
       this.data = data.Result;
 
+      // set default branch for creation
+      if (!this.podInfo) {
+        this.data.forEach(async (el) => {
+          if (el.SelectedBranch) {
+            el.Deploy = el.SelectedBranch;
+          }
+        });
+      }
+
       if (this.podInfo) {
         this.data.forEach(async (el) => {
           el.GitBranch = this.getGitBranch(el.ProjectID);

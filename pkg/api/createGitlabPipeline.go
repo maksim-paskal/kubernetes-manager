@@ -84,7 +84,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref s
 		VariableType: gitlab.String("env_var"),
 	})
 
-	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline( //nolint:contextcheck
+	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline(
 		projectIDInt,
 		&gitlab.CreatePipelineOptions{
 			Ref:       &ref,

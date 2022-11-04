@@ -36,7 +36,7 @@ func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID st
 	result := GetGitlabPipelinesStatusResults{}
 
 	// return last 20 project pipelines, that was created by API
-	projectPipelines, _, err := e.gitlabClient.Pipelines.ListProjectPipelines( //nolint:contextcheck
+	projectPipelines, _, err := e.gitlabClient.Pipelines.ListProjectPipelines(
 		projectID,
 		&gitlab.ListProjectPipelinesOptions{
 			ListOptions: gitlab.ListOptions{
@@ -55,7 +55,7 @@ func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID st
 	}
 
 	for _, projectPipeline := range projectPipelines {
-		pipelineVars, _, err := e.gitlabClient.Pipelines.GetPipelineVariables( //nolint:contextcheck
+		pipelineVars, _, err := e.gitlabClient.Pipelines.GetPipelineVariables(
 			projectID,
 			projectPipeline.ID,
 			gitlab.WithContext(ctx),
