@@ -1,19 +1,24 @@
 <template>
   <div class="detail-tab">
+    <b-alert v-if="errorText" variant="danger" show>{{ errorText }}</b-alert>
+    <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
+
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-    $fetchState.error.message
+        $fetchState.error.message
     }}</b-alert>
-    <b-spinner v-if="$fetchState.pending" variant="primary" />
+    <b-spinner v-if="$fetchState.pending || callIsLoading" variant="primary" />
     <div v-else>
-      <WarningDisableMTLS />
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
       <b-table striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(ServiceHost)="row">
           {{ row.item.ServiceHost }}&nbsp;<span v-if="row.item.Labels" class="badge rounded-pill bg-primary">{{
-          row.item.Labels
+              row.item.Labels
           }}</span>
         </template>
-        <template v-slot:cell(Ports)="row">
+        <template v-slot:cell(Actions)="row">
+          <b-button size="sm" variant="outline-danger"
+            @click="call('make-delete-pod', { PodName: row.item.ServiceHost })" v-if="row.item.Type == 'pod'">restart
+          </b-button>
           <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)" v-if="row.item.Ports">proxy
           </b-button>
           <b-button size="sm" variant="outline-primary" @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
@@ -26,11 +31,12 @@
             )
           " size="sm" variant="outline-primary" target="_blank"
             :href="`${environment.Links.PhpMyAdminURL}?host=${row.item.ServiceHost}`">
-            phpmyadmin</b-button>&nbsp;{{ row.value }}
+            phpmyadmin</b-button>
         </template>
       </b-table>
     </div>
     <b-modal size="xl" centered id="bv-proxy-dialog" title="Create proxy to service" ok-only>
+      <WarningDisableMTLS />
       <KubectlLink />
       <div style="margin-top:20px">
         <CopyTextbox :text="proxyDialogText" />
@@ -67,7 +73,7 @@ export default {
       dataFilter: null,
       dataFields: [
         { key: "ServiceHost", label: "Service Host" },
-        { key: "Ports", label: "Service Ports" },
+        { key: "Actions", label: "Actions" },
       ],
       proxyDialogText: "",
       shellDialogText: ""

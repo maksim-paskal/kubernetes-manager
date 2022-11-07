@@ -442,7 +442,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = enableGit.Stdout + enableGit.Stderr
-	case "make-delete-pod":
+	case "make-delete-container":
 		type DeletePod struct {
 			Container string
 		}
@@ -469,6 +469,29 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = fmt.Sprintf("Pod %s deleted", containerInfo.PodName)
+	case "make-delete-pod":
+		type DeletePod struct {
+			PodName string
+		}
+
+		deletePod := DeletePod{}
+
+		err = json.Unmarshal(body, &deletePod)
+		if err != nil {
+			return result, err
+		}
+
+		if len(deletePod.PodName) == 0 {
+			return result, errors.Wrap(errBadFormat, "no pod specified")
+		}
+
+		err = environment.DeletePod(ctx, deletePod.PodName)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = fmt.Sprintf("Pod %s deleted", deletePod.PodName)
+
 	case "make-git-sync-fetch":
 		type GitSyncFetch struct {
 			Container string

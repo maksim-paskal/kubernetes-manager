@@ -11,7 +11,7 @@
         :endpoint="`/api/${this.$route.params.environmentID}/containers?filter=kubernetes-manager/debug-containers&annotation=kubernetes-manager/debug-containers`" />
 
       <b-alert v-if="$fetchState.error" variant="danger" show>{{
-      $fetchState.error.message
+          $fetchState.error.message
       }}</b-alert>
       <b-spinner v-if="$fetchState.pending" variant="primary" />
       <div v-else-if="selectedContainer">
@@ -78,7 +78,7 @@ export default {
       this.data.PhpFpmSettings += `${data}\n`;
     },
     async deletePod() {
-      await this.call("make-delete-pod", { Container: this.selectedContainer });
+      await this.call("make-delete-container", { Container: this.selectedContainer });
 
       if (!this.errorText) {
         this.$refs.debugDropdownContainers.select("");
