@@ -192,6 +192,7 @@ type Snapshot struct {
 
 type RemoteServer struct {
 	HetznerToken string
+	Links        []*OtherLink
 }
 
 //nolint:gochecknoglobals
