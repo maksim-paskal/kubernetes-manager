@@ -30,50 +30,47 @@ const (
 
 var errWaitTimeExpired = errors.New("time expired")
 
-// nolint: goerr113
 func checkLastScaleDate(environment *api.Environment) error {
 	lastScaleDate := environment.NamespaceAnnotations[config.LabelLastScaleDate]
 	if len(lastScaleDate) == 0 {
-		return fmt.Errorf("Namespace has no anotations")
+		return fmt.Errorf("Namespace has no anotations") //nolint: goerr113
 	}
 
 	_, err := utils.StringToTime(lastScaleDate)
 	if err != nil {
-		return fmt.Errorf("LabelLastScaleDate format error")
+		return fmt.Errorf("LabelLastScaleDate format error") //nolint: goerr113
 	}
 
 	return nil
 }
 
-// nolint: goerr113
 func checkEnvironment(environment *api.Environment) error {
 	if want := "test-kubernetes-manager"; environment.Namespace != want {
-		return fmt.Errorf("want=%s;got=%s", want, environment.Namespace)
+		return fmt.Errorf("want=%s;got=%s", want, environment.Namespace) //nolint: goerr113
 	}
 
 	if want := ID; environment.ID != want {
-		return fmt.Errorf("want=%s;got=%s", want, environment.ID)
+		return fmt.Errorf("want=%s;got=%s", want, environment.ID) //nolint: goerr113
 	}
 
 	return nil
 }
 
-// nolint: goerr113
 func checkHosts(environment *api.Environment) error {
 	if len(environment.Hosts) != 1 {
-		return errors.New("hosts not found")
+		return errors.New("hosts not found") //nolint: goerr113
 	}
 
 	if want := "https://backend-some-feature-branch.yourdomain.com"; environment.Hosts[0] != want {
-		return fmt.Errorf("want=%s;got=%s", want, environment.Hosts[0])
+		return fmt.Errorf("want=%s;got=%s", want, environment.Hosts[0]) //nolint: goerr113
 	}
 
 	if len(environment.HostsInternal) != 1 {
-		return errors.New("internal hosts not found")
+		return errors.New("internal hosts not found") //nolint: goerr113
 	}
 
 	if want := "https://backend-some-feature-branch-internal.yourdomain.com"; environment.HostsInternal[0] != want {
-		return fmt.Errorf("want=%s;got=%s", want, environment.HostsInternal[0])
+		return fmt.Errorf("want=%s;got=%s", want, environment.HostsInternal[0]) //nolint: goerr113
 	}
 
 	return nil
