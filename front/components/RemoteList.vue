@@ -1,13 +1,13 @@
 <template>
   <div>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-    $fetchState.error.message
+        $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="this.errorText" variant="danger" show>{{
-    this.errorText
+        this.errorText
     }}</b-alert>
     <b-alert v-if="this.infoText" variant="info" show>{{
-    this.infoText
+        this.infoText
     }}</b-alert>
 
     <div v-if="$fetchState.pending || callIsLoading" style="padding: 50px" class="text-center">
@@ -24,7 +24,7 @@
         <template v-slot:cell(Status)="row">
           {{ row.item.Status }}
           <div v-if="row.item.Status == 'Stoped'">
-            <b-button size="sm" variant="success" @click="serverAction(row,'power_on')">
+            <b-button size="sm" variant="success" @click="serverAction(row, 'power_on')">
               Start
             </b-button>
           </div>
@@ -35,12 +35,13 @@
           </b-button>
         </template>
       </b-table>
-      <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Local configuration" ok-only>
-        <h3>MacOS users</h3>
-        <CopyTextbox :text="darwinText" />
-        <br />
-        <h3>Linux users</h3>
-        <CopyTextbox :text="linuxText" />
+      <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run this commands in your local terminal"
+        ok-only>
+        <div v-for="(item, index) in this.links" :key="index">
+          <h3>{{ item.Name }}</h3>
+          <CopyTextbox :text="item.URL" />
+          <br />
+        </div>
       </b-modal>
     </div>
   </div>
@@ -73,13 +74,19 @@ export default {
       ],
       darwinText: "",
       linuxText: "",
-      data: []
+      data: [],
+      links: []
     }
   },
   methods: {
     showConfigDialog(row) {
-      this.darwinText = `sudo curl -sSL https://get.paskal-dev.com/local-dev-darwin.sh | sudo REMOTE_IP=${row.item.IPv4} sh`
-      this.linuxText = `sudo curl -sSL https://get.paskal-dev.com/local-dev-linux.sh | sudo REMOTE_IP=${row.item.IPv4} sh`
+      this.links = []
+      this.config.RemoteServersLinks.forEach((item) => {
+        this.links.push({
+          Name: item.Name,
+          URL: item.URL.replace("{REMOTE_IP}", row.item.IPv4)
+        })
+      })
 
       this.$bvModal.show('bv-remote-servers-config-dialog')
     },
