@@ -82,9 +82,16 @@ export default {
     showConfigDialog(row) {
       this.links = []
       this.config.RemoteServersLinks.forEach((item) => {
+        let url = item.URL
+
+        url = url.replaceAll("{REMOTE_IP}", row.item.IPv4)
+        if (this.user.user) {
+          url = url.replaceAll("{USER_LOGIN}", this.user.user)
+        }
+
         this.links.push({
           Name: item.Name,
-          URL: item.URL.replace("{REMOTE_IP}", row.item.IPv4)
+          URL: url
         })
       })
 
