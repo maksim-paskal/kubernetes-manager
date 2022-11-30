@@ -18,6 +18,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -108,14 +109,31 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, server := range servers {
-		err := api.SetRemoteServerAction(ctx, api.SetRemoteServerActionInput{
-			Cloud:  server.Cloud,
-			ID:     server.ID,
-			Action: api.SetRemoteServerStatusPowerOff,
-		})
-		if err != nil {
-			log.WithError(err).Errorf("error power off server %s", server.ID)
-		}
+		go func(server *api.GetRemoteServerItem) {
+			log := log.WithField("server", server.Name)
+			// calculate is delay is active
+			if delay, ok := server.Labels[config.LabelScaleDownDelayShort]; ok {
+				scaleDelayTime, err := utils.UnixToTime(delay)
+				if err != nil {
+					log.WithError(err).Error()
+				} else if time.Now().Before(scaleDelayTime) {
+					log.Info("scale down delay is active")
+
+					return
+				}
+			}
+
+			log.Info("scaledown server")
+
+			err := api.SetRemoteServerAction(ctx, api.SetRemoteServerActionInput{
+				Cloud:  server.Cloud,
+				ID:     server.ID,
+				Action: api.SetRemoteServerStatusPowerOff,
+			})
+			if err != nil {
+				log.WithError(err).Errorf("error power off server %s", server.ID)
+			}
+		}(server)
 	}
 
 	return nil

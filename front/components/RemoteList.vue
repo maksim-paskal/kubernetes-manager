@@ -33,6 +33,8 @@
           <b-button size="sm" variant="outline-primary" @click="showConfigDialog(row)">Local
             configuration
           </b-button>
+          <b-button size="sm" variant="outline-primary" @click="delayAutopause(row)">Delay autopause for next 3
+            hours</b-button>
         </template>
       </b-table>
       <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run this commands in your local terminal"
@@ -102,6 +104,13 @@ export default {
         Cloud: row.item.Cloud,
         ID: row.item.ID,
         Action: action
+      }, true);
+    },
+    async delayAutopause(row) {
+      await this.callEndpoint('/api/make-remote-server-delay', {
+        Cloud: row.item.Cloud,
+        ID: row.item.ID,
+        Duration: '3h'
       }, true);
     }
   }
