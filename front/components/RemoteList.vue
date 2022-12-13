@@ -23,9 +23,13 @@
         </template>
         <template v-slot:cell(Status)="row">
           {{ row.item.Status }}
-          <div v-if="row.item.Status == 'Stoped'">
-            <b-button size="sm" variant="success" @click="serverAction(row, 'power_on')">
+          <div>
+            <b-button v-if="row.item.Status == 'Stoped'" size="sm" variant="success"
+              @click="serverAction(row, 'power_on')">
               Start
+            </b-button>
+            <b-button v-else size="sm" variant="danger" @click="serverAction(row, 'power_off')">
+              Stop
             </b-button>
           </div>
         </template>
