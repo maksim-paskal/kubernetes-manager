@@ -15,6 +15,7 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -189,6 +190,22 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		}
 
 		result.Result = "server status changed, press Refresh to view changes"
+
+	case "make-remote-server-delay":
+		input := api.SetRemoteServerDelayInput{}
+
+		err = json.Unmarshal(body, &input)
+		if err != nil {
+			return result, err
+		}
+
+		err := api.SetRemoteServerDelay(ctx, input)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = fmt.Sprintf("Delayed scaleDown on next %s", input.Duration)
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

@@ -47,10 +47,12 @@ const (
 
 	TrueValue = "true"
 
+	LabelScaleDownDelayShort = "scaleDownDelay"
+
 	Namespace             = "kubernetes-manager"
 	FilterLabels          = Namespace + "=true"
 	LabelType             = Namespace + "/type"
-	LabelScaleDownDelay   = Namespace + "/scaleDownDelay"
+	LabelScaleDownDelay   = Namespace + "/" + LabelScaleDownDelayShort
 	LabelLastScaleDate    = Namespace + "/lastScaleDate"
 	LabelGitBranch        = Namespace + "/git-branch"
 	LabelGitProjectID     = Namespace + "/git-project-id"

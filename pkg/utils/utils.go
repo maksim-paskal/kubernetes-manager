@@ -30,6 +30,19 @@ const (
 	keyValueLength              = 2
 )
 
+func TimeToUnix(t time.Time) string {
+	return strconv.Itoa(int(t.Unix()))
+}
+
+func UnixToTime(value string) (time.Time, error) {
+	i, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return time.Now(), err
+	}
+
+	return time.Unix(i, 0), nil
+}
+
 func TimeToString(t time.Time) string {
 	return t.Format(timeFormat)
 }
