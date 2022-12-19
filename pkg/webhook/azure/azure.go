@@ -20,6 +20,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/mysql/armmysql"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/mysql/armmysqlflexibleservers"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
@@ -29,10 +30,11 @@ import (
 )
 
 const (
-	tagNamespace        = config.Namespace + "-namespace"
-	tagCluster          = config.Namespace + "-cluster"
-	azureTypeDBforMySQL = "Microsoft.DBforMySQL/servers"
-	azureTypeCompute    = "Microsoft.Compute/virtualMachines"
+	tagNamespace                = config.Namespace + "-namespace"
+	tagCluster                  = config.Namespace + "-cluster"
+	azureTypeDBforMySQL         = "Microsoft.DBforMySQL/servers"
+	azureTypeDBforMySQLFlexible = "Microsoft.DBforMySQL/flexibleServers"
+	azureTypeCompute            = "Microsoft.Compute/virtualMachines"
 )
 
 type providerConfig struct {
@@ -49,6 +51,7 @@ type Provider struct {
 	message               types.WebhookMessage
 	virtualMachinesClient *armcompute.VirtualMachinesClient
 	serverClient          *armmysql.ServersClient
+	serverClientFlexible  *armmysqlflexibleservers.ServersClient
 }
 
 func (provider *Provider) Init(condition config.WebHook, message types.WebhookMessage) error {
@@ -84,11 +87,17 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 		return errors.Wrap(err, "can not create mysql databases client")
 	}
 
+	serverClientFlexible, err := armmysqlflexibleservers.NewServersClient(provider.config.SubscriptionID, cred, nil)
+	if err != nil {
+		return errors.Wrap(err, "can not create mysql databases client")
+	}
+
 	provider.cred = cred
 	provider.condition = condition
 	provider.message = message
 	provider.virtualMachinesClient = virtualMachinesClient
 	provider.serverClient = serverClient
+	provider.serverClientFlexible = serverClientFlexible
 
 	return nil
 }
@@ -101,7 +110,11 @@ func (provider *Provider) Process(ctx context.Context) error {
 		return errors.Wrap(err, "can not create resources client")
 	}
 
-	filter := fmt.Sprintf("resourceType eq '%s' or resourceType eq '%s'", azureTypeDBforMySQL, azureTypeCompute)
+	filter := fmt.Sprintf("resourceType eq '%s' or resourceType eq '%s' or resourceType eq '%s'",
+		azureTypeDBforMySQL,
+		azureTypeDBforMySQLFlexible,
+		azureTypeCompute,
+	)
 	log.Debugf("filter: %s", filter)
 
 	pager := newClient.NewListPager(&armresources.ClientListOptions{
@@ -155,6 +168,11 @@ func (provider *Provider) Process(ctx context.Context) error {
 				if err != nil {
 					return errors.Wrapf(err, "can start resource %s", name)
 				}
+			case azureTypeDBforMySQLFlexible:
+				_, err := provider.serverClientFlexible.BeginStart(ctx, resource.ResourceGroupName, resource.Name, nil)
+				if err != nil {
+					return errors.Wrapf(err, "can start resource %s", name)
+				}
 			case azureTypeCompute:
 				_, err := provider.virtualMachinesClient.BeginStart(ctx, resource.ResourceGroupName, resource.Name, nil)
 				if err != nil {
@@ -169,6 +187,11 @@ func (provider *Provider) Process(ctx context.Context) error {
 			switch resource.ResourceType.String() {
 			case azureTypeDBforMySQL:
 				_, err := provider.serverClient.BeginStop(ctx, resource.ResourceGroupName, resource.Name, nil)
+				if err != nil {
+					return errors.Wrapf(err, "can stop resource %s", name)
+				}
+			case azureTypeDBforMySQLFlexible:
+				_, err := provider.serverClientFlexible.BeginStop(ctx, resource.ResourceGroupName, resource.Name, nil)
 				if err != nil {
 					return errors.Wrapf(err, "can stop resource %s", name)
 				}
