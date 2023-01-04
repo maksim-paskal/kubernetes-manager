@@ -1,13 +1,13 @@
 <template>
   <div>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+      $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="this.errorText" variant="danger" show>{{
-        this.errorText
+      this.errorText
     }}</b-alert>
     <b-alert v-if="this.infoText" variant="info" show>{{
-        this.infoText
+      this.infoText
     }}</b-alert>
 
     <div v-if="$fetchState.pending || callIsLoading" style="padding: 50px" class="text-center">
@@ -19,7 +19,7 @@
       </div>
       <b-table striped hover :fields="fields" :items="data" :filter="tableFilter">
         <template v-slot:cell(Address)="row">
-          {{ row.item.IPv4 }}
+          <CopyIcon :text="row.item.IPv4" />{{ row.item.IPv4 }}
         </template>
         <template v-slot:cell(Status)="row">
           {{ row.item.Status }}

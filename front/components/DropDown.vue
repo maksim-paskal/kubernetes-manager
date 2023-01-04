@@ -16,8 +16,8 @@
             v-for="(item, index) in this.filterResults()" :key="index">{{ item }}</b-dropdown-item>
         </div>
       </div>
-      <b-button :disabled="!this.isLoaded" @click="reload()" variant="link" class="text-decoration-none text-black"><em
-          class="bi bi bi-arrow-repeat" /></b-button>
+      <b-button :disabled="!this.isLoaded" @click="reload()" variant="link" size="sm"
+        class="text-decoration-none text-black"><em class="bi bi bi-arrow-repeat" /></b-button>
     </div>
   </b-dropdown>
 </template>
