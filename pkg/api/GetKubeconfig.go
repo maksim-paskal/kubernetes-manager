@@ -163,14 +163,25 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*corev1.Secret,
 		return nil, errors.Wrap(err, "error creating role binding")
 	}
 
-	createdUser, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Get(ctx, sa.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "error getting user")
+	saSecret := corev1.Secret{
+		Type: corev1.SecretTypeServiceAccountToken,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   sa.Name,
+			Labels: labels,
+			Annotations: map[string]string{
+				"kubernetes.io/service-account.name": sa.Name,
+			},
+		},
 	}
 
-	secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(ctx, createdUser.Secrets[0].Name, metav1.GetOptions{})
+	token, err := e.clientset.CoreV1().Secrets(e.Namespace).Create(ctx, &saSecret, metav1.CreateOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "error getting user")
+		return nil, errors.Wrap(err, "error creating token")
+	}
+
+	secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(ctx, token.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting secrets")
 	}
 
 	return secret, nil

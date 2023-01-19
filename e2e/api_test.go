@@ -147,7 +147,7 @@ func TestPods(t *testing.T) {
 
 	containerName := containers.Contaners[0]
 
-	resultsByPodName, err := environment.ExecContainer(containerName, "ls")
+	resultsByPodName, err := environment.ExecContainer(ctx, containerName, "ls")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestPods(t *testing.T) {
 		t.Fatal("exit code must be empty")
 	}
 
-	resultsByPodLabels, err := environment.ExecContainer(containerName, "ls")
+	resultsByPodLabels, err := environment.ExecContainer(ctx, containerName, "ls")
 	if err != nil {
 		t.Fatal(err)
 	}
