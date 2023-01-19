@@ -164,7 +164,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		containerInfo := ContainerInfo{}
 
-		xdebugInfo, err := environment.ExecContainer(container, "/kubernetes-manager/xdebugInfo")
+		xdebugInfo, err := environment.ExecContainer(ctx, container, "/kubernetes-manager/xdebugInfo")
 		if err != nil {
 			return result, err
 		}
@@ -173,7 +173,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			containerInfo.XdebugEnabled = true
 		}
 
-		phpFpmSettings, err := environment.ExecContainer(container, "/kubernetes-manager/getPhpSettings")
+		phpFpmSettings, err := environment.ExecContainer(ctx, container, "/kubernetes-manager/getPhpSettings")
 		if err != nil {
 			return result, err
 		}
@@ -383,7 +383,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		containerInfoResult.GitOrigin = containerInfo.PodAnnotations[config.LabelGitSyncOrigin]
 		containerInfoResult.GitBranch = containerInfo.PodAnnotations[config.LabelGitSyncBranch]
 
-		gitSyncResult, err := environment.ExecContainer(container, "/kubernetes-manager/getGitBranch")
+		gitSyncResult, err := environment.ExecContainer(ctx, container, "/kubernetes-manager/getGitBranch")
 		if err != nil {
 			return result, err
 		}
@@ -392,7 +392,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.New(gitSyncResult.Stderr)
 		}
 
-		getGitPubKey, err := environment.ExecContainer(container, "/kubernetes-manager/getGitPubKey")
+		getGitPubKey, err := environment.ExecContainer(ctx, container, "/kubernetes-manager/getGitPubKey")
 		if err != nil {
 			return result, err
 		}
@@ -436,7 +436,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		enableGitCommand := fmt.Sprintf("/kubernetes-manager/enableGit %s %s", gitSyncInit.GitOrigin, gitSyncInit.GitBranch)
 
-		enableGit, err := environment.ExecContainer(gitSyncInit.Container, enableGitCommand)
+		enableGit, err := environment.ExecContainer(ctx, gitSyncInit.Container, enableGitCommand)
 		if err != nil {
 			return result, err
 		}
@@ -508,7 +508,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.Wrap(errBadFormat, "no container specified")
 		}
 
-		gitFetch, err := environment.ExecContainer(gitSyncFetch.Container, "/kubernetes-manager/gitFetch")
+		gitFetch, err := environment.ExecContainer(ctx, gitSyncFetch.Container, "/kubernetes-manager/gitFetch")
 		if err != nil {
 			return result, err
 		}
@@ -530,7 +530,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.Wrap(errBadFormat, "no container specified")
 		}
 
-		debugXdebug, err := environment.ExecContainer(debugXdebugInit.Container, "/kubernetes-manager/enableXdebug")
+		debugXdebug, err := environment.ExecContainer(ctx, debugXdebugInit.Container, "/kubernetes-manager/enableXdebug")
 		if err != nil {
 			return result, err
 		}
@@ -561,7 +561,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		cmd := fmt.Sprintf("/kubernetes-manager/setPhpSettings %s", base64Config)
 
-		debugSaveConfigExec, err := environment.ExecContainer(debugSaveConfig.Container, cmd)
+		debugSaveConfigExec, err := environment.ExecContainer(ctx, debugSaveConfig.Container, cmd)
 		if err != nil {
 			return result, err
 		}
@@ -623,7 +623,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.Wrap(errBadFormat, "no container specified")
 		}
 
-		clearCache, err := environment.ExecContainer(gitSyncClearCache.Container, "/kubernetes-manager/clearCache")
+		clearCache, err := environment.ExecContainer(ctx, gitSyncClearCache.Container, "/kubernetes-manager/clearCache")
 		if err != nil {
 			return result, err
 		}

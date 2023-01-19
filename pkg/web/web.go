@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -26,6 +27,7 @@ import (
 )
 
 const (
+	recoveryBufferSize   = 2048
 	serverReadTimeout    = 5 * time.Second
 	serverRequestTimeout = 60 * time.Second
 	serverWriteTimeout   = 70 * time.Second
@@ -60,9 +62,27 @@ func NewHandlerResult() *HandlerResult {
 	}
 }
 
+func panicRecovery(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				buf := make([]byte, recoveryBufferSize)
+				n := runtime.Stack(buf, false)
+				buf = buf[:n]
+
+				log.Errorf("recovering from err %v\n %s", err, buf)
+				http.Error(w, fmt.Sprintf("server got panic: %v", err), http.StatusInternalServerError)
+			}
+		}()
+
+		h.ServeHTTP(w, r)
+	})
+}
+
 func GetHandler() *mux.Router {
 	mux := mux.NewRouter()
 
+	mux.Use(panicRecovery)
 	mux.HandleFunc("/api/ready", handlerReady)
 	mux.HandleFunc("/api/healthz", handlerHealthz)
 	mux.HandleFunc("/oauth2/userinfo", handlerUser)

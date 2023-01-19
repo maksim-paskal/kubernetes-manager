@@ -14,6 +14,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
@@ -31,7 +32,7 @@ type ExecContainerResults struct {
 
 // exec command in container
 // @container must contains <pod>:<container>.
-func (e *Environment) ExecContainer(container string, command string) (*ExecContainerResults, error) {
+func (e *Environment) ExecContainer(ctx context.Context, container string, command string) (*ExecContainerResults, error) { //nolint:lll
 	containerInfo, err := types.NewContainerInfo(container)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func (e *Environment) ExecContainer(container string, command string) (*ExecCont
 
 	var stdout, stderr bytes.Buffer
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: &stdout,
 		Stderr: &stderr,
