@@ -4,15 +4,16 @@
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
 
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+      $fetchState.error.message
     }}</b-alert>
     <b-spinner v-if="$fetchState.pending || callIsLoading" variant="primary" />
     <div v-else>
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
       <b-table striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(ServiceHost)="row">
+          <CopyIcon :text="row.item.ServiceHost" />
           {{ row.item.ServiceHost }}&nbsp;<span v-if="row.item.Labels" class="badge rounded-pill bg-primary">{{
-              row.item.Labels
+            row.item.Labels
           }}</span>
         </template>
         <template v-slot:cell(Actions)="row">

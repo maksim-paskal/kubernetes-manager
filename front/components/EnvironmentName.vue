@@ -8,8 +8,10 @@
       &nbsp;<b-button @click="cancel()">cancel</b-button>
     </b-form>
     <div v-else style="display:flex;align-items: center;">
-      <h4>{{ environmentName }}</h4>
-      <b-button variant="link" @click="saveMode = true; newNamespaceName = environmentName"><em class="bi bi-pencil" />
+      <h4>{{ environmentName }}</h4>&nbsp;
+      <CopyIcon :text="environmentName" />
+      <b-button title="edit" variant="link" size="sm" @click="saveMode = true; newNamespaceName = environmentName"><em
+          class="bi bi-pencil" />
       </b-button>
       <Liked :environmentID="this.$route.params.environmentID" />
     </div>

@@ -35,3 +35,7 @@
 .col-deploy-service-text {
   min-width: 400px;
 }
+
+em {
+  font-size: 18px;
+}

@@ -1,9 +1,12 @@
 <template>
-  <b-button variant="link" v-if="!this.environment.ID || this.loading || !this.user.user"><em class="bi bi-hourglass" />
+  <b-button variant="link" size="sm" v-if="!this.environment.ID || this.loading || !this.user.user"><em
+      class="bi bi-hourglass" />
   </b-button>
   <b-alert variant="danger" v-else-if="this.errorText" show>{{ this.errorText }}</b-alert>
-  <b-button variant="link" :title="likedUsers.join(', ')" style="text-decoration: none" v-else @click="save()"><em
-      :class="this.fillClass">{{ likedUsers.length ? `&nbsp;${likedUsers.length}` : "" }}</em></b-button>
+  <b-button variant="link" size="sm" :title="likedUsers.length ? 'users who likes: ' + likedUsers.join(', ') : 'like'"
+    style="text-decoration: none" v-else @click="save()"><em :class="this.fillClass">{{
+      likedUsers.length ? `&nbsp;${likedUsers.length}` : ""
+    }}</em></b-button>
 </template>
 <script>
 export default {

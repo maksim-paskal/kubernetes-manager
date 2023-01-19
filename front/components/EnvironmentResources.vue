@@ -1,11 +1,12 @@
 <template>
-  <b-spinner v-if="typeof data.PodsReady === 'undefined'" variant="primary" />
-  <div v-else style="margin-left:10px">
-    <table>
+  <div style="min-height:70px;margin-left:10px">
+    <b-spinner v-if="typeof data.PodsReady === 'undefined'" variant="primary" />
+    <table v-else>
       <tr>
         <td><em class="bi bi-check-circle-fill text-success" />&nbsp;Pod running: {{ data.PodsReady }}</td>
         <td style="cursor: pointer;" @click="$bvModal.show('bv-modal-failed-pods')" v-if="data.PodsFailed > 0"><em
-            class="bi bi-x-circle-fill text-danger" />&nbsp;Pod failed: {{ data.PodsFailed
+            class="bi bi-x-circle-fill text-danger" />&nbsp;Pod failed: {{
+              data.PodsFailed
             }}</td>
       </tr>
       <tr>
