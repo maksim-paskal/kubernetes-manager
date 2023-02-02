@@ -97,6 +97,7 @@ Vue.mixin({
         LabelLikedPrefix: `${KubernetesManager}/user-liked-`,
         LabelLiked: `${KubernetesManager}/user-liked-${data && data.user ? data.user : "unknown"}`,
         LabelCreator: `${KubernetesManager}/user-creator-${data && data.user ? data.user : "unknown"}`,
+        AnnotationAlert: `${KubernetesManager}/alert`,
       }
     },
     namespaceAnnotation(name) {

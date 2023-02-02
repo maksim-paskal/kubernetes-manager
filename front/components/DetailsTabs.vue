@@ -1,5 +1,8 @@
 <template>
   <div>
+    <div v-if="alertMessage" style="padding:10px;padding-bottom: 0px;">
+      <b-alert show dismissible fade variant="warning">{{ alertMessage }}</b-alert>
+    </div>
     <div style="padding:10px;display: flex;align-items: center;">
       <EnvironmentName />
       <div style="min-height: 50px;">
@@ -32,5 +35,11 @@
   </div>
 </template>
 <script>
-export default {}
+export default {
+  computed: {
+    alertMessage() {
+      return this.namespaceAnnotation(this.const().AnnotationAlert);
+    },
+  },
+}
 </script>
