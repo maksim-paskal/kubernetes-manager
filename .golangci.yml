@@ -16,3 +16,4 @@ linters:
   - varnamelen
   - execinquery
   - exhaustruct
+  - musttag

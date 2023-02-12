@@ -107,12 +107,12 @@ func GetHandler() *mux.Router {
 }
 
 func StartServer() {
-	log.Info(fmt.Sprintf("Starting on port %d...", *config.Get().Port))
+	log.Info(fmt.Sprintf("Starting on %s...", *config.Get().WebListen))
 
 	timeoutMessage := fmt.Sprintf("Server timeout after %s", serverRequestTimeout)
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", *config.Get().Port),
+		Addr:         *config.Get().WebListen,
 		Handler:      http.TimeoutHandler(GetHandler(), serverRequestTimeout, timeoutMessage),
 		ReadTimeout:  serverReadTimeout,
 		WriteTimeout: serverWriteTimeout,

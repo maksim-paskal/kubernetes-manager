@@ -1,4 +1,4 @@
-port: 3333
+webListen: ":3333"
 
 links:
   sentryUrl: "1"
