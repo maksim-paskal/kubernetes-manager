@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultPort                      = 9000
+	defaultAddr                      = ":9000"
 	defaultRemoveBranchLastScaleDate = 10
 	defaultBatchShedulePeriod        = 30 * time.Minute
 	defaultBatchTimezone             = "UTC"
@@ -208,7 +208,7 @@ var config = Type{
 		KubeConfigPath:   "",
 	}},
 
-	Port:      flag.Int("server.port", defaultPort, ""),
+	WebListen: flag.String("web.listen", defaultAddr, ""),
 	FrontDist: flag.String("front.dist", "front/dist", ""),
 
 	PodName:      flag.String("pod.name", os.Getenv("POD_NAME"), ""),
@@ -239,7 +239,7 @@ type Type struct {
 	ExternalServicesTemplates  []*Template
 	ProjectProfiles            []*ProjectProfile
 	KubernetesEndpoints        []*KubernetesEndpoint
-	Port                       *int           `yaml:"port"`
+	WebListen                  *string        `yaml:"webListen"`
 	FrontDist                  *string        `yaml:"frontDist"`
 	RemoveBranchDaysInactive   *int           `yaml:"removeBranchDaysInactive"`
 	GitlabToken                *string        `yaml:"gitlabToken"`

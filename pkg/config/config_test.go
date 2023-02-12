@@ -27,8 +27,8 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := 3333; *config.Get().Port != want {
-		t.Fatalf("Port != %d", want)
+	if want := ":3333"; *config.Get().WebListen != want {
+		t.Fatalf("webListen != %s", want)
 	}
 
 	links := config.Get().KubernetesEndpoints[0].Links
