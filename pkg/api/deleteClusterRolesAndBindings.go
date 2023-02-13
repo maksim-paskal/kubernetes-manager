@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func deleteClusterRoleAndBinding(clientset *kubernetes.Clientset, roleName string, roleBindingName string) error {
+func deleteClusterRoleAndBinding(ctx context.Context, clientset *kubernetes.Clientset, roleName string, roleBindingName string) error { //nolint:lll
 	if strings.HasPrefix(roleName, "system:") || strings.HasPrefix(roleBindingName, "system:") {
 		log.Warnf("role %s or binding %s can not be deleted", roleName, roleBindingName)
 
@@ -30,8 +30,6 @@ func deleteClusterRoleAndBinding(clientset *kubernetes.Clientset, roleName strin
 	}
 
 	log.Infof("deleting rolebindingname=%s,role=%s", roleBindingName, roleName)
-
-	ctx := context.Background()
 
 	err := clientset.RbacV1().ClusterRoles().Delete(ctx, roleName, metav1.DeleteOptions{})
 	if err != nil {
@@ -47,9 +45,7 @@ func deleteClusterRoleAndBinding(clientset *kubernetes.Clientset, roleName strin
 }
 
 // delete all cluster role and bindings linken to namespace.
-func (e *Environment) DeleteClusterRolesAndBindings() error {
-	ctx := context.Background()
-
+func (e *Environment) DeleteClusterRolesAndBindings(ctx context.Context) error {
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
@@ -64,7 +60,7 @@ func (e *Environment) DeleteClusterRolesAndBindings() error {
 			subject := roleBinding.Subjects[0]
 
 			if subject.Namespace == e.Namespace {
-				err = deleteClusterRoleAndBinding(e.clientset, roleBinding.RoleRef.Name, roleBinding.Name)
+				err = deleteClusterRoleAndBinding(ctx, e.clientset, roleBinding.RoleRef.Name, roleBinding.Name)
 				if err != nil {
 					return errors.Wrap(err, "error deleting cluster role and binding")
 				}

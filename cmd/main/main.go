@@ -18,6 +18,7 @@ import (
 	"fmt"
 	_ "net/http/pprof" //nolint:gosec
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -52,6 +53,11 @@ func main() {
 		fmt.Println(config.GetVersion()) //nolint:forbidigo
 		os.Exit(0)
 	}
+
+	// get background context
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChanInterrupt := make(chan os.Signal, 1)
+	signal.Notify(signalChanInterrupt, os.Interrupt)
 
 	var err error
 
@@ -127,13 +133,26 @@ func main() {
 	defer closer.Close()
 
 	if *config.Get().BatchEnabled {
-		go RunLeaderElection()
+		go RunLeaderElection(ctx)
 	}
 
-	web.StartServer()
+	go web.StartServer()
+
+	go func() {
+		select {
+		case <-signalChanInterrupt:
+			log.Error("Got interruption signal...")
+			cancel()
+		case <-ctx.Done():
+		}
+		<-signalChanInterrupt
+		os.Exit(1)
+	}()
+
+	<-ctx.Done()
 }
 
-func RunLeaderElection() {
+func RunLeaderElection(ctx context.Context) {
 	lock, err := api.GetLeaseLock(*config.Get().PodNamespace, *config.Get().PodName)
 	if err != nil {
 		log.WithError(err).Fatal()
@@ -141,7 +160,7 @@ func RunLeaderElection() {
 		return
 	}
 
-	leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 		Lock:            lock,
 		ReleaseOnCancel: true,
 		LeaseDuration:   defaultLeaseDuration,

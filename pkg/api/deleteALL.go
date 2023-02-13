@@ -46,7 +46,7 @@ func (e *Environment) DeleteALL(ctx context.Context) *DeleteALLResult {
 	}()
 
 	go func() {
-		deleteClusterRolesAndBindings <- e.DeleteClusterRolesAndBindings()
+		deleteClusterRolesAndBindings <- e.DeleteClusterRolesAndBindings(ctx)
 	}()
 
 	result := DeleteALLResult{

@@ -269,7 +269,7 @@ func TestDeleteClusterRole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = environment.DeleteClusterRolesAndBindings()
+	err = environment.DeleteClusterRolesAndBindings(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
