@@ -36,7 +36,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const clickRefreshButton = "Pipeline(s) successfully created. Click Refresh button to see status."
+const (
+	clickRefreshButton = "Pipeline(s) successfully created. Click Refresh button to see status."
+	scaleMaxTime       = 5 * time.Minute
+)
 
 func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 	tracer := opentracing.GlobalTracer()
@@ -298,19 +301,27 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		result.output = HandlerResultOutputRAW
 		result.Result = kubeconfigFile
 	case "make-pause":
-		err := environment.ScaleALL(ctx, 0)
-		if err != nil {
-			return result, err
-		}
+		go func() {
+			ctx, cancel := context.WithTimeout(backgroudContext, scaleMaxTime)
+			defer cancel()
 
-		result.Result = fmt.Sprintf("All pods in namespace %s paused", environment.Namespace)
+			if err := environment.ScaleALL(ctx, 0); err != nil {
+				log.WithError(err).Error()
+			}
+		}()
+
+		result.Result = fmt.Sprintf("All pods in namespace %s will be paused next %s", environment.Namespace, scaleMaxTime)
 	case "make-start":
-		err := environment.ScaleALL(ctx, 1)
-		if err != nil {
-			return result, err
-		}
+		go func() {
+			ctx, cancel := context.WithTimeout(backgroudContext, scaleMaxTime)
+			defer cancel()
 
-		result.Result = fmt.Sprintf("All pods in namespace %s started", environment.Namespace)
+			if err := environment.ScaleALL(ctx, 1); err != nil {
+				log.WithError(err).Error()
+			}
+		}()
+
+		result.Result = fmt.Sprintf("All pods in namespace %s will be started next %s", environment.Namespace, scaleMaxTime)
 	case "make-delete":
 		deleteResult := environment.DeleteALL(ctx)
 

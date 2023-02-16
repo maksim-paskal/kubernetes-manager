@@ -19,6 +19,7 @@ import (
 	_ "net/http/pprof" //nolint:gosec
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -57,7 +58,7 @@ func main() {
 	// get background context
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChanInterrupt := make(chan os.Signal, 1)
-	signal.Notify(signalChanInterrupt, os.Interrupt)
+	signal.Notify(signalChanInterrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	var err error
 
@@ -136,7 +137,7 @@ func main() {
 		go RunLeaderElection(ctx)
 	}
 
-	go web.StartServer()
+	go web.StartServer(ctx)
 
 	go func() {
 		select {

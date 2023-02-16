@@ -13,6 +13,7 @@ limitations under the License.
 package web
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -106,8 +107,12 @@ func GetHandler() *mux.Router {
 	return mux
 }
 
-func StartServer() {
+var backgroudContext context.Context
+
+func StartServer(ctx context.Context) {
 	log.Info(fmt.Sprintf("Starting on %s...", *config.Get().WebListen))
+
+	backgroudContext = ctx
 
 	timeoutMessage := fmt.Sprintf("Server timeout after %s", serverRequestTimeout)
 
