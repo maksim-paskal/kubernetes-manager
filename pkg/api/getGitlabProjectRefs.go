@@ -52,6 +52,10 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 
 	// add all project branches
 	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		currentPage++
 
 		gitBranches, _, err := gitlabClient.Branches.ListBranches(

@@ -51,7 +51,14 @@ func Schedule(ctx context.Context) {
 			return
 		}
 
+		if ctx.Err() != nil {
+			return
+		}
+
 		span := tracer.StartSpan("scheduleBatch")
+
+		ctx, cancel := context.WithTimeout(ctx, *config.Get().BatchShedulePeriod)
+		defer cancel()
 
 		if err := Execute(ctx, span); err != nil {
 			log.WithError(err).Error()

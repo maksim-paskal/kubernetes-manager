@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -28,6 +29,94 @@ import (
 
 // ScaleNamespace scale deployments and statefullsets.
 func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error {
+	var wg sync.WaitGroup
+
+	var syncErrors sync.Map
+
+	wg.Add(3) //nolint:gomnd
+
+	go func() {
+		defer wg.Done()
+
+		if err := e.scaleDeployments(ctx, replicas); err != nil {
+			syncErrors.Store("scaleDeployments", err)
+			log.WithError(err).Error("error scaling deployments")
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		if err := e.scaleStatefulSets(ctx, replicas); err != nil {
+			syncErrors.Store("scaleStatefulSets", err)
+			log.WithError(err).Error("error scaling statefullsets")
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		if replicas > 0 {
+			annotation := map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())}
+
+			if err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels); err != nil {
+				syncErrors.Store("saveNamespaceMeta", err)
+				log.WithError(err).Error("error saving lastScaleDate")
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	syncErrorsResult := make([]error, 0)
+
+	syncErrors.Range(func(key, value any) bool {
+		if err, ok := value.(error); ok {
+			syncErrorsResult = append(syncErrorsResult, err)
+		}
+
+		return true
+	})
+
+	if len(syncErrorsResult) > 0 {
+		return errors.Errorf("errors: %+v", syncErrorsResult)
+	}
+
+	if replicas == 0 {
+		if err := e.deletePodsNow(ctx); err != nil {
+			return errors.Wrap(err, "error deleting pods")
+		}
+	}
+
+	return nil
+}
+
+// deletes pods with grace-period=0.
+func (e *Environment) deletePodsNow(ctx context.Context) error {
+	opt := metav1.ListOptions{
+		FieldSelector: runningPodSelector,
+	}
+
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, opt)
+	if err != nil {
+		return errors.Wrap(err, "error listing pods")
+	}
+
+	zero := int64(0)
+
+	for _, pod := range pods.Items {
+		err = e.clientset.CoreV1().Pods(e.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{
+			GracePeriodSeconds: &zero,
+		})
+		if err != nil {
+			log.WithError(err).Warn("error deleting pod")
+		}
+	}
+
+	return nil
+}
+
+func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) error { //nolint: dupl
 	ds, err := e.clientset.AppsV1().Deployments(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing deployments")
@@ -60,6 +149,10 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 		}
 	}
 
+	return nil
+}
+
+func (e *Environment) scaleStatefulSets(ctx context.Context, replicas int32) error { //nolint:dupl
 	sf, err := e.clientset.AppsV1().StatefulSets(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing statefullsets")
@@ -89,46 +182,6 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 		if err != nil {
 			return errors.Wrap(err, "error updating statefullset")
-		}
-	}
-
-	if replicas > 0 {
-		annotation := map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())}
-
-		err = e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels)
-		if err != nil {
-			return errors.Wrap(err, "error saving lastScaleDate")
-		}
-	}
-
-	if replicas == 0 {
-		if err := e.deletePodsNow(ctx); err != nil {
-			return errors.Wrap(err, "error deleting pods")
-		}
-	}
-
-	return nil
-}
-
-// deletes pods with grace-period=0.
-func (e *Environment) deletePodsNow(ctx context.Context) error {
-	opt := metav1.ListOptions{
-		FieldSelector: runningPodSelector,
-	}
-
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, opt)
-	if err != nil {
-		return errors.Wrap(err, "error listing pods")
-	}
-
-	zero := int64(0)
-
-	for _, pod := range pods.Items {
-		err = e.clientset.CoreV1().Pods(e.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{
-			GracePeriodSeconds: &zero,
-		})
-		if err != nil {
-			log.WithError(err).Warn("error deleting pod")
 		}
 	}
 
