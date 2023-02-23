@@ -28,6 +28,7 @@ import (
 const (
 	namespaceCreatedDelay    = 60 * time.Minute
 	namespaceLastScaledDelay = 60 * time.Minute
+	maxScaleDownDuration     = 5 * time.Minute
 )
 
 var isStoped = *atomic.NewBool(false)
@@ -90,7 +91,11 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, environment := range environments {
-		go func(environment *api.Environment) {
+		func(environment *api.Environment) {
+			// iteration must have own context
+			ctx, cancel := context.WithTimeout(ctx, maxScaleDownDuration)
+			defer cancel()
+
 			log := log.WithField("namespace", environment.Namespace)
 
 			isScaledownDelay, err := IsScaledownDelay(time.Now(), environment)
@@ -116,7 +121,11 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, server := range servers {
-		go func(server *api.GetRemoteServerItem) {
+		func(server *api.GetRemoteServerItem) {
+			// iteration must have own context
+			ctx, cancel := context.WithTimeout(ctx, maxScaleDownDuration)
+			defer cancel()
+
 			log := log.WithField("server", server.Name)
 			// calculate is delay is active
 			if delay, ok := server.Labels[config.LabelScaleDownDelayShort]; ok {
