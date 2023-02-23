@@ -15,6 +15,8 @@
       </b-button>
       <Liked :environmentID="this.$route.params.environmentID" />
     </div>
+    <div style="font-size:10pt" v-if="!saveMode && environmentName != this.environment.Namespace">{{
+      this.environment.Namespace }}</div>
   </div>
 </template>
 <script>
