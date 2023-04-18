@@ -29,6 +29,9 @@
         <b-link class="nav-link" active-class="active" to="kubectl">kubectl</b-link>
       </li>
       <li class="nav-item">
+        <b-link class="nav-link" active-class="active" to="autotests">autotests</b-link>
+      </li>
+      <li class="nav-item">
         <b-link class="nav-link" active-class="active" to="external-services">external-services</b-link>
       </li>
     </ul>

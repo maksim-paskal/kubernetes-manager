@@ -63,7 +63,7 @@ func NewHandlerResult() *HandlerResult {
 	}
 }
 
-func panicRecovery(h http.Handler) http.Handler {
+func checkForServerPanic(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -83,7 +83,7 @@ func panicRecovery(h http.Handler) http.Handler {
 func GetHandler() *mux.Router {
 	mux := mux.NewRouter()
 
-	mux.Use(panicRecovery)
+	mux.Use(checkForServerPanic)
 	mux.HandleFunc("/api/ready", handlerReady)
 	mux.HandleFunc("/api/healthz", handlerHealthz)
 	mux.HandleFunc("/oauth2/userinfo", handlerUser)
@@ -122,6 +122,15 @@ func StartServer(ctx context.Context) {
 		ReadTimeout:  serverReadTimeout,
 		WriteTimeout: serverWriteTimeout,
 	}
+
+	go func() {
+		<-ctx.Done()
+
+		ctx, cancel := context.WithTimeout(context.Background(), *config.Get().GracefulShutdownTimeout)
+		defer cancel()
+
+		_ = server.Shutdown(ctx) //nolint:contextcheck
+	}()
 
 	if err := server.ListenAndServe(); err != nil {
 		log.WithError(err).Fatal()

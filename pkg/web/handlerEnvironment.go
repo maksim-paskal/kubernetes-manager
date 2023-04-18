@@ -27,6 +27,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/modules/autotests"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
@@ -660,6 +661,41 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = fmt.Sprintf("Pipeline created %s", url)
+	case "autotests":
+		size := 10
+
+		if userSize := r.Form.Get("size"); len(userSize) > 0 {
+			size, err = strconv.Atoi(userSize)
+			if err != nil {
+				return result, errors.Wrap(err, "bad size")
+			}
+		}
+
+		autotestsResults, err := autotests.GetAutotestDetails(ctx, environment, size)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = autotestsResults
+	case "make-start-autotest":
+		type StartAutotest struct {
+			Test string
+			User string
+		}
+
+		startAutotest := StartAutotest{}
+
+		err = json.Unmarshal(body, &startAutotest)
+		if err != nil {
+			return result, err
+		}
+
+		err = autotests.StartAutotest(ctx, environment, startAutotest.Test, startAutotest.User)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = "Autotest started. Click Refresh button to see status."
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

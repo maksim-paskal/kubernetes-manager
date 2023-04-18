@@ -11,6 +11,7 @@ import {
   ModalPlugin,
   BCard,
   BCardText,
+  BCardGroup,
   BTabs,
   BTab,
   BForm,
@@ -38,6 +39,7 @@ Vue.component('b-button', BButton)
 Vue.component('b-spinner', BSpinner)
 Vue.component('b-card', BCard)
 Vue.component('b-card-text', BCardText)
+Vue.component('b-card-group', BCardGroup)
 Vue.component('b-tabs', BTabs)
 Vue.component('b-tab', BTab)
 Vue.component('b-form-textarea', BFormTextarea)
@@ -154,7 +156,7 @@ Vue.mixin({
       }
     },
     async call(op, data, onTop = true) {
-      if (op == "make-delete" || op == "make-delete-service") {
+      if (op == "make-delete" || op == "make-delete-service" || op == "make-start-autotest") {
         const realy = await this.$bvModal.msgBoxConfirm("Realy?");
         if (!realy) return;
       }

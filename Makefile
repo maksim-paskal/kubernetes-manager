@@ -7,7 +7,7 @@ config=config.yaml
 build:
 	git tag -d `git tag -l "helm-chart-*"`
 	git tag -d `git tag -l "kubernetes-manager-*"`
-	go run github.com/goreleaser/goreleaser@latest build --rm-dist --snapshot --skip-validate
+	go run github.com/goreleaser/goreleaser@latest build --clean --snapshot --skip-validate
 	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager ./kubernetes-manager
 	docker buildx build --platform=linux/amd64 --pull --push --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
 security-scan:
@@ -17,8 +17,8 @@ security-check:
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest --ignore-unfixed $(image)
 test:
 	./scripts/validate-license.sh
-	go fmt ./cmd/... ./pkg/...
-	go vet ./cmd/... ./pkg/...
+	go fmt ./...
+	go vet ./...
 	./scripts/test-pkg.sh
 	go mod tidy
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v

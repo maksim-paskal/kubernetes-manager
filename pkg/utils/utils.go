@@ -13,12 +13,16 @@ limitations under the License.
 package utils
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"strconv"
+	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -97,4 +101,54 @@ func (l JaegerLogs) Error(msg string) {
 
 func (l JaegerLogs) Infof(msg string, args ...interface{}) {
 	log.Debugf(msg, args...)
+}
+
+func GetTemplatedResult(text string, obj interface{}) ([]byte, error) {
+	t, err := template.New("getTemplatedString").Parse(text)
+	if err != nil {
+		return nil, errors.Wrap(err, "error parsing template")
+	}
+
+	buf := &bytes.Buffer{}
+
+	err = t.Execute(buf, &obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "error executing template")
+	}
+
+	return buf.Bytes(), nil
+}
+
+func HumanizeDuration(duration time.Duration) string {
+	const (
+		secondsInMinute = 60
+		minutesInHour   = 60
+		hoursInDay      = 24
+	)
+
+	if duration.Seconds() < secondsInMinute {
+		return fmt.Sprintf("%d seconds", int64(duration.Seconds()))
+	}
+
+	if duration.Minutes() < minutesInHour {
+		remainingSeconds := math.Mod(duration.Seconds(), minutesInHour)
+
+		return fmt.Sprintf("%d minutes %d seconds", int64(duration.Minutes()), int64(remainingSeconds))
+	}
+
+	if duration.Hours() < hoursInDay {
+		remainingMinutes := math.Mod(duration.Minutes(), minutesInHour)
+		remainingSeconds := math.Mod(duration.Seconds(), secondsInMinute)
+
+		return fmt.Sprintf("%d hours %d minutes %d seconds",
+			int64(duration.Hours()), int64(remainingMinutes), int64(remainingSeconds))
+	}
+
+	remainingHours := math.Mod(duration.Hours(), hoursInDay)
+	remainingMinutes := math.Mod(duration.Minutes(), minutesInHour)
+	remainingSeconds := math.Mod(duration.Seconds(), secondsInMinute)
+
+	return fmt.Sprintf("%d days %d hours %d minutes %d seconds",
+		int64(duration.Hours()/hoursInDay), int64(remainingHours),
+		int64(remainingMinutes), int64(remainingSeconds))
 }
