@@ -3,6 +3,17 @@ kind: ServiceAccount
 metadata:
   name: {{ .Release.Name }}
 ---
+# for kubernetes v1.24+ token does not created by default for serviceaccount
+{{ if .Values.sa.token }}
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: {{ .Release.Name }}-secret
+  annotations:
+    kubernetes.io/service-account.name: {{ .Release.Name }}
+---
+{{ end }}
 # need role with permissions to create namespace and serviceaccount with role in namespace
 # kubernetes not allow to create serviceaccount in namespace without cluster-admin role
 # error creating role: roles.rbac.authorization.k8s.io "kubernetes-manager-f7ee3" is forbidden: user "system:serviceaccount:kubernetes-manager:kubernetes-manager" (groups=["system:serviceaccounts" "system:serviceaccounts:kubernetes-manager" "system:authenticated"]) is attempting to grant RBAC permissions not currently held:

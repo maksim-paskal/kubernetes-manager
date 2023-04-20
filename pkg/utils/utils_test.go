@@ -88,3 +88,18 @@ func TestConvertStringToInt64(t *testing.T) {
 		t.Fatalf("expected 123, got %d", result)
 	}
 }
+
+func TestGetTemplatedResult(t *testing.T) {
+	t.Parallel()
+
+	test := "my {{ .Value }}"
+
+	result, err := utils.GetTemplatedResult(test, struct{ Value string }{Value: "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(result) != "my test" {
+		t.Fatalf("expected 'my test', got %s", result)
+	}
+}

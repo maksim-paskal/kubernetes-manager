@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +34,7 @@ const (
 	defaultRemoveBranchLastScaleDate = 10
 	defaultBatchShedulePeriod        = 30 * time.Minute
 	defaultBatchTimezone             = "UTC"
+	defaultGracefulShutdownTimeout   = 5 * time.Second
 
 	ScaleDownHourMinPeriod = 19
 	ScaleDownHourMaxPeriod = 5
@@ -197,6 +199,40 @@ type RemoteServer struct {
 	Links        []*OtherLink
 }
 
+type AutotestAction struct {
+	Name    string
+	Test    string
+	Release string
+	Ref     string
+}
+type Autotest struct {
+	Pattern           string
+	ProjectID         int
+	ReportURL         string
+	Actions           []*AutotestAction
+	FilterByNamespace bool
+}
+
+func (a *Autotest) GetActionByTest(test string) *AutotestAction {
+	for _, action := range a.Actions {
+		if action.Test == test {
+			return action
+		}
+	}
+
+	return nil
+}
+
+func (t *Type) GetAutotestByID(id string) *Autotest {
+	for _, a := range t.Autotests {
+		if regexp.MustCompile(a.Pattern).Match([]byte(id)) {
+			return a
+		}
+	}
+
+	return nil
+}
+
 //nolint:gochecknoglobals
 var config = Type{
 	ConfigPath: flag.String("config", os.Getenv("CONFIG"), "config"),
@@ -227,9 +263,13 @@ var config = Type{
 
 	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 	BatchEnabled:          flag.Bool("batch.enabled", true, "enable batch operations"),
+
+	GracefulShutdownTimeout: flag.Duration("graceful-shutdown-timeout", defaultGracefulShutdownTimeout, "graceful shutdown timeout"), //nolint:lll
 }
 
 type Type struct {
+	GracefulShutdownTimeout *time.Duration
+
 	ConfigPath                 *string `yaml:"configPath"`
 	LogLevel                   *string `yaml:"logLevel"`
 	Links                      *Links  `yaml:"links"`
@@ -255,6 +295,7 @@ type Type struct {
 	WebHooks                   []WebHook      `yaml:"webhooks"`
 	Snapshots                  Snapshot       `yaml:"snapshots"`
 	RemoteServer               RemoteServer   `yaml:"remoteServer"`
+	Autotests                  []*Autotest    `yaml:"autotests"`
 }
 
 func (t *Type) DeepCopy() *Type {

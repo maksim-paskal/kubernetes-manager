@@ -150,7 +150,16 @@ func main() {
 		os.Exit(1)
 	}()
 
+	log.RegisterExitHandler(func() {
+		cancel()
+		time.Sleep(*config.Get().GracefulShutdownTimeout)
+	})
+
 	<-ctx.Done()
+
+	log.Info("Shutting down...")
+
+	time.Sleep(*config.Get().GracefulShutdownTimeout)
 }
 
 func RunLeaderElection(ctx context.Context) {

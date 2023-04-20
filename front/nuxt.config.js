@@ -6,11 +6,14 @@ module.exports = {
     htmlAttrs: {
       lang: 'en',
     },
-    title: 'Kubernetes manager',
+    title: 'Kubernetes Manager',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, shrink-to-fit=no' },
-      { hid: 'description', name: 'description', content: 'Kubernetes manager' }
+      { hid: 'description', name: 'description', content: 'Kubernetes Manager' }
+    ],
+    link: [
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.png' }
     ]
   },
   components: [

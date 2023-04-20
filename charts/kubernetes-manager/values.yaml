@@ -26,6 +26,10 @@ sentry:
 service:
   type: ClusterIP
 
+sa:
+  # create token for public access
+  token: false
+
 config:
   # aws-dev: |
   #   apiVersion: v1

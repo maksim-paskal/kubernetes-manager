@@ -13,11 +13,9 @@ limitations under the License.
 package api
 
 import (
-	"bytes"
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	"text/template"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
@@ -54,19 +52,12 @@ users:
   user:
     token: "{{ .Token }}"`
 
-	var out bytes.Buffer
-
-	tmpl, err := template.New("kubeconfig").Parse(kubeConfig)
+	result, err := utils.GetTemplatedResult(kubeConfig, r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting templated string")
 	}
 
-	err = tmpl.Execute(&out, r)
-	if err != nil {
-		return nil, err
-	}
-
-	return out.Bytes(), nil
+	return result, nil
 }
 
 func (e *Environment) GetKubeconfig(ctx context.Context) (*GetClusterKubeconfigResult, error) {

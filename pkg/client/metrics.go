@@ -24,7 +24,7 @@ type requestResult struct {
 	Cluster string
 }
 
-func (r *requestResult) Increment(ctx context.Context, code string, method string, host string) {
+func (r *requestResult) Increment(_ context.Context, code string, _ string, host string) {
 	metrics.KubernetesAPIRequest.WithLabelValues(host, code).Inc()
 }
 
@@ -32,6 +32,6 @@ type requestLatency struct {
 	Cluster string
 }
 
-func (r *requestLatency) Observe(ctx context.Context, verb string, u url.URL, latency time.Duration) {
+func (r *requestLatency) Observe(_ context.Context, _ string, u url.URL, latency time.Duration) {
 	metrics.KubernetesAPIRequestDuration.WithLabelValues(u.Host).Observe(latency.Seconds())
 }
