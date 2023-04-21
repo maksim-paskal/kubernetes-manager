@@ -1,4 +1,4 @@
-FROM node:lts as front
+FROM node:lts AS front
 
 ARG APPVERSION=dev
 
@@ -10,6 +10,7 @@ COPY front /app
 RUN yarn install && yarn generate
 
 FROM alpine:latest
+ARG TARGETARCH
 
 # app env
 ENV KUBERNETES_ENDPOINT=https://api:6443
@@ -23,7 +24,7 @@ RUN apk upgrade \
 && adduser -u 30001 -D -S -G app app
 
 COPY --from=front /app/dist /app/dist
-COPY ./kubernetes-manager /app/kubernetes-manager
+COPY ./kubernetes-manager-${TARGETARCH} /app/kubernetes-manager
 
 USER app
 

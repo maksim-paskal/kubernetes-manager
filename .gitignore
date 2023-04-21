@@ -1,6 +1,6 @@
 test.sh
 dist
-/kubernetes-manager
+/kubernetes-manager*
 kubeconfig*
 __debug_bin
 coverage.out

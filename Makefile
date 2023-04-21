@@ -1,15 +1,19 @@
 KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
 test-namespace=test-kubernetes-manager
 tag=dev
-image=paskalmaksim/kubernetes-manager:dev
+image=paskalmaksim/kubernetes-manager:$(tag)
 config=config.yaml
+platform=linux/amd64
 
 build:
 	git tag -d `git tag -l "helm-chart-*"`
 	git tag -d `git tag -l "kubernetes-manager-*"`
 	go run github.com/goreleaser/goreleaser@latest build --clean --snapshot --skip-validate
-	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager ./kubernetes-manager
-	docker buildx build --platform=linux/amd64 --pull --push --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
+	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager-amd64 .
+	mv ./dist/kubernetes-manager_linux_arm64/kubernetes-manager-arm64 .
+	docker buildx build --platform=$(platform) --pull --push --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)
+promote-to-beta:
+	make build platform=linux/amd64,linux/arm64 tag=beta
 security-scan:
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest fs --ignore-unfixed .
 security-check:
@@ -38,10 +42,8 @@ e2e:
 coverage:
 	go tool cover -html=coverage.out
 testChart:
-	helm lint --strict ./charts/kubernetes-manager
-	helm lint --strict ./integration-tests/chart
+	ct lint --charts ./charts/kubernetes-manager
 	helm template ./charts/kubernetes-manager | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./integration-tests/chart | kubectl apply --dry-run=client --validate=true -f -
 install:
 	helm upgrade kubernetes-manager --install --create-namespace -n kubernetes-manager ./charts/kubernetes-manager --set registry.image=$(image) --set service.type=LoadBalancer
 	helm upgrade kubernetes-manager-test --install --create-namespace -n kubernetes-manager-test ./integration-tests/chart

@@ -52,6 +52,7 @@ builds:
   - -X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion={{.Version}}-{{.ShortCommit}}-{{.Timestamp}}
   goos:
   - linux
+  binary: kubernetes-manager-{{ .Arch }}
   goarch:
   - amd64
   - arm64
