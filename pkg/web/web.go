@@ -14,6 +14,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -101,6 +102,9 @@ func GetHandler() *mux.Router {
 	// metrics
 	mux.Handle("/metrics", metrics.GetHandler())
 
+	// version
+	mux.HandleFunc("/version", handlerVersion)
+
 	mux.PathPrefix("/_nuxt").Handler(NewHandlerSPACached(*config.Get().FrontDist, "index.html"))
 	mux.PathPrefix("/").Handler(NewHandlerSPA(*config.Get().FrontDist, "index.html"))
 
@@ -135,4 +139,27 @@ func StartServer(ctx context.Context) {
 	if err := server.ListenAndServe(); err != nil {
 		log.WithError(err).Fatal()
 	}
+}
+
+func handlerVersion(w http.ResponseWriter, _ *http.Request) {
+	type RuntimeInfo struct {
+		Version string
+		GOOS    string
+		GOARCH  string
+	}
+
+	json, err := json.Marshal(RuntimeInfo{
+		Version: config.GetVersion(),
+		GOOS:    runtime.GOOS,
+		GOARCH:  runtime.GOARCH,
+	})
+	if err != nil {
+		log.WithError(err).Error()
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(json) //nolint:errcheck
 }
