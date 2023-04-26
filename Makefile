@@ -61,7 +61,12 @@ upgrade:
 	cd front && yarn update-latest
 run:
 	cp ${KUBECONFIG} ./kubeconfig
-	POD_NAME=kubernetes-manager POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main -batch.enabled=false --config=$(config) --log.level=DEBUG $(args) --web.listen="127.0.0.1:9000"
+	POD_NAME=kubernetes-manager POD_NAMESPACE=kubernetes-manager go run --race ./cmd/main $(args) \
+	--batch.enabled=false \
+	--config=$(config) \
+	--log.level=DEBUG \
+	--web.listen="127.0.0.1:9000" \
+	--graceful-shutdown-timeout=1s
 heap:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
 allocs:

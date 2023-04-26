@@ -24,7 +24,7 @@ export default {
       try {
         this.loading = true;
 
-        await this.call("make-save-user-like", { User: this.user.user })
+        await this.call("make-save-user-like")
         if (!this.errorText) {
           this.loadEnvironment(this.$route.params.environmentID)
         }

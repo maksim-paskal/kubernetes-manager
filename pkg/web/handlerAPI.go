@@ -77,8 +77,14 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 	result := NewHandlerResult()
 
-	if err := checkPOSTMethod(operation, r); err != nil {
-		return result, errors.Wrap(err, "make operation must be POST")
+	if err := checkForMakeOperation(operation, r); err != nil {
+		return result, errors.Wrap(err, "check make operation")
+	}
+
+	owner := r.Header[config.HeaderOwner]
+
+	if len(owner) > 0 {
+		log.Infof("user %s request %s", owner[0], operation)
 	}
 
 	if err := r.ParseForm(); err != nil {
@@ -140,7 +146,13 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = refsString
 	case "make-create-environment":
-		input := api.StartNewEnvironmentInput{}
+		if len(owner) == 0 {
+			return result, errors.Wrap(errBadFormat, "no owner specified")
+		}
+
+		input := api.StartNewEnvironmentInput{
+			User: owner[0],
+		}
 
 		err = json.Unmarshal(body, &input)
 		if err != nil {

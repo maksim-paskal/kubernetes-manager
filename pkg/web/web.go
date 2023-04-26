@@ -39,6 +39,7 @@ var (
 	errBadFormat     = errors.New("bad format")
 	errNoComandFound = errors.New("no command found")
 	errMustBePOST    = errors.New("must be POST method")
+	errMustHaveOwner = errors.New("must have owner header")
 )
 
 type HandlerResultOutput string
