@@ -38,7 +38,9 @@ e2e:
 	kubectl -n ${test-namespace} apply -f ./e2e/kubernetes
 	kubectl -n ${test-namespace} wait --for=condition=available deployment --all --timeout=600s
 
-	GOFLAGS="-count=1" POD_NAMESPACE=${test-namespace} CONFIG=testdata/config_test.yaml go test -race ./e2e
+	GOFLAGS="-count=1" POD_NAMESPACE=${test-namespace} CONFIG=testdata/config_test.yaml go test -race -v ./e2e
+
+	kubectl delete ns ${test-namespace}
 coverage:
 	go tool cover -html=coverage.out
 testChart:

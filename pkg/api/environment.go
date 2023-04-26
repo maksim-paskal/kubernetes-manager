@@ -157,3 +157,12 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 
 	return nil
 }
+
+func (e *Environment) ReloadFromNamespace(ctx context.Context) error {
+	namespace, err := e.clientset.CoreV1().Namespaces().Get(ctx, e.Namespace, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "can not get namespace")
+	}
+
+	return e.loadFromNamespace(ctx, *namespace)
+}
