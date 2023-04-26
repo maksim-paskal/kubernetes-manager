@@ -69,6 +69,8 @@ const (
 	LabelUserLiked        = Namespace + "/user-liked"
 	LabelGitSyncOrigin    = Namespace + "/git-sync-origin"
 	LabelGitSyncBranch    = Namespace + "/git-sync-branch"
+
+	HeaderOwner = "X-Owner"
 )
 
 type Links struct {

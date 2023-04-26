@@ -38,8 +38,9 @@ import (
 )
 
 const (
-	clickRefreshButton = "Pipeline(s) successfully created. Click Refresh button to see status."
-	scaleMaxTime       = 5 * time.Minute
+	clickRefreshButton   = "Pipeline(s) successfully created. Click Refresh button to see status."
+	scaleMaxTime         = 5 * time.Minute
+	noContainerSpecified = "no container specified"
 )
 
 func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
@@ -108,8 +109,14 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 	result := NewHandlerResult()
 
-	if err := checkPOSTMethod(operation, r); err != nil {
-		return result, errors.Wrap(err, "make operation must be POST")
+	if err := checkForMakeOperation(operation, r); err != nil {
+		return result, errors.Wrap(err, "check make operation")
+	}
+
+	owner := r.Header[config.HeaderOwner]
+
+	if len(owner) > 0 {
+		log.Infof("user %s request %s", owner[0], operation)
 	}
 
 	body, err := io.ReadAll(r.Body)
@@ -158,7 +165,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 	case "debug-info":
 		container := r.Form.Get("container")
 		if len(container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		type ContainerInfo struct {
@@ -247,27 +254,16 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		result.Result = "ok"
 	case "make-save-user-like":
-		type SaveUserLike struct {
-			User string
-		}
-
-		saveUserLike := SaveUserLike{}
-
-		err = json.Unmarshal(body, &saveUserLike)
-		if err != nil {
-			return result, err
-		}
-
-		if len(saveUserLike.User) == 0 {
-			return result, errors.Wrap(errBadFormat, "no user specified")
-		}
-
 		labels := environment.NamespaceLabels
 		if labels == nil {
 			labels = make(map[string]string)
 		}
 
-		userLabel := fmt.Sprintf("%s-%s", config.LabelUserLiked, saveUserLike.User)
+		if len(owner) == 0 {
+			return result, errors.Wrap(errBadFormat, "no owner specified")
+		}
+
+		userLabel := fmt.Sprintf("%s-%s", config.LabelUserLiked, owner[0])
 
 		hasUserLike := false
 		if labels[userLabel] == config.TrueValue {
@@ -371,7 +367,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 	case "git-sync":
 		container := r.Form.Get("container")
 		if len(container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		type ContainerInfoResult struct {
@@ -435,7 +431,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(gitSyncInit.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		if len(gitSyncInit.GitOrigin) == 0 {
@@ -467,7 +463,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(deletePod.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		containerInfo, err := types.NewContainerInfo(deletePod.Container)
@@ -517,7 +513,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(gitSyncFetch.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		gitFetch, err := environment.ExecContainer(ctx, gitSyncFetch.Container, "/kubernetes-manager/gitFetch")
@@ -539,7 +535,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(debugXdebugInit.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		debugXdebug, err := environment.ExecContainer(ctx, debugXdebugInit.Container, "/kubernetes-manager/enableXdebug")
@@ -562,7 +558,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(debugSaveConfig.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		if len(debugSaveConfig.PhpFpmSettings) == 0 {
@@ -632,7 +628,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		if len(gitSyncClearCache.Container) == 0 {
-			return result, errors.Wrap(errBadFormat, "no container specified")
+			return result, errors.Wrap(errBadFormat, noContainerSpecified)
 		}
 
 		clearCache, err := environment.ExecContainer(ctx, gitSyncClearCache.Container, "/kubernetes-manager/clearCache")
@@ -703,9 +699,17 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 	return result, nil
 }
 
-func checkPOSTMethod(operation string, r *http.Request) error {
-	if strings.HasPrefix(operation, "make-") && r.Method != "POST" {
+func checkForMakeOperation(operation string, r *http.Request) error {
+	if !strings.HasPrefix(operation, "make-") {
+		return nil
+	}
+
+	if r.Method != http.MethodPost {
 		return errMustBePOST
+	}
+
+	if _, ok := r.Header[config.HeaderOwner]; !ok {
+		return errMustHaveOwner
 	}
 
 	return nil

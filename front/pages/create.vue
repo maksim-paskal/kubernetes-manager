@@ -82,7 +82,6 @@ export default {
       await this.callEndpoint('/api/make-create-environment', {
         Profile: this.projectProfile,
         Services: services,
-        User: this.user.user,
         Cluster: cluster,
       }, true);
 

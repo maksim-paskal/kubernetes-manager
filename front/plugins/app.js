@@ -170,8 +170,18 @@ Vue.mixin({
 
       try {
         this.infoText = null
+
+        let requestHeaders = {
+          "Content-Type": "application/json",
+        }
+
+        if (this.user && this.user.user) {
+          requestHeaders["X-Owner"] = this.user.user
+        }
+
         const result = await fetch(endpoint, {
           method: "POST",
+          headers: requestHeaders,
           body: JSON.stringify(data),
         });
         if (result.ok) {
