@@ -90,27 +90,42 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, environment := range environments {
-		func(environment *api.Environment) {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		err := func(environment *api.Environment) error {
 			// iteration must have own context
 			ctx, cancel := context.WithTimeout(ctx, maxScaleDownDuration)
 			defer cancel()
 
 			log := log.WithField("namespace", environment.Namespace)
 
+			// get latest annotations and labels
+			err := environment.ReloadFromNamespace(ctx)
+			if err != nil {
+				return errors.Wrap(err, "error reload environment")
+			}
+
 			isScaledownDelay, err := IsScaledownDelay(time.Now(), environment)
 			if err != nil {
-				log.WithError(err).Error()
+				return errors.Wrap(err, "error check scaledown delay")
 			} else if isScaledownDelay {
-				return
+				return nil
 			}
 
 			log.Info("scaledown")
 
 			err = environment.ScaleALL(ctx, 0)
 			if err != nil {
-				log.WithError(err).Error()
+				return errors.Wrap(err, "error scale down")
 			}
+
+			return nil
 		}(environment)
+		if err != nil {
+			log.WithError(err).Error()
+		}
 	}
 
 	// scaledown servers
@@ -120,7 +135,11 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, server := range servers {
-		func(server *api.GetRemoteServerItem) {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		err := func(server *api.GetRemoteServerItem) error {
 			// iteration must have own context
 			ctx, cancel := context.WithTimeout(ctx, maxScaleDownDuration)
 			defer cancel()
@@ -130,11 +149,11 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 			if delay, ok := server.Labels[config.LabelScaleDownDelayShort]; ok {
 				scaleDelayTime, err := utils.UnixToTime(delay)
 				if err != nil {
-					log.WithError(err).Error()
+					return errors.Wrap(err, "error parse scale delay time")
 				} else if time.Now().Before(scaleDelayTime) {
 					log.Info("scale down delay is active")
 
-					return
+					return nil
 				}
 			}
 
@@ -146,9 +165,14 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 				Action: api.SetRemoteServerStatusPowerOff,
 			})
 			if err != nil {
-				log.WithError(err).Errorf("error power off server %s", server.ID)
+				return errors.Wrapf(err, "error power off server %s", server.ID)
 			}
+
+			return nil
 		}(server)
+		if err != nil {
+			log.WithError(err).Error()
+		}
 	}
 
 	return nil
@@ -170,6 +194,10 @@ func Execute(ctx context.Context, rootSpan opentracing.Span) error {
 	}
 
 	for _, environment := range environments {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		log := log.WithFields(log.Fields{
 			"namespace": environment.Namespace,
 		})

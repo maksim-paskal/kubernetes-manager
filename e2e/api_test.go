@@ -84,9 +84,16 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = environment.ReloadFromNamespace(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	annotation := environment.NamespaceAnnotations
-	if annotation == nil {
-		annotation = make(map[string]string)
+
+	// after ScaleNamespace, annotation should exists
+	if _, ok := annotation[config.LabelLastScaleDate]; !ok {
+		t.Fatal("annotation not found")
 	}
 
 	annotation["test"] = "value"
