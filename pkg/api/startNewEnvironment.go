@@ -205,13 +205,13 @@ func NewEnvironment(ctx context.Context, id string, creator string) (*Environmen
 		return nil, errors.Wrap(err, "can not get clientset")
 	}
 
-	defaultMeta := config.Get().DeepCopy().NamespaceMeta
+	namespaceMeta := config.GetNamespaceMeta(idInfo.Namespace)
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        idInfo.Namespace,
-			Labels:      defaultMeta.Labels,
-			Annotations: defaultMeta.Annotations,
+			Labels:      namespaceMeta.Labels,
+			Annotations: namespaceMeta.Annotations,
 		},
 	}
 
