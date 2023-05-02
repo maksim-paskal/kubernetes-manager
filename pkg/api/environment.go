@@ -40,6 +40,7 @@ type Environment struct {
 	NamespaceLastScaledDays int
 	NamespaceAnnotations    map[string]string
 	NamespaceLabels         map[string]string
+	NamespaceDescription    string
 	Links                   *config.Links
 	Hosts                   []string
 	HostsInternal           []string
@@ -124,8 +125,8 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 	e.NamespaceLastScaledDays = e.NamespaceCreatedDays
 
 	// if namespace was manually scaleup, it use date of last scale
-	if e.NamespaceAnnotations != nil && len(e.NamespaceAnnotations[config.LabelLastScaleDate]) > 0 {
-		lastScaleDate, err := utils.StringToTime(namespace.GetAnnotations()[config.LabelLastScaleDate])
+	if lastScaleDateText, ok := e.NamespaceAnnotations[config.LabelLastScaleDate]; ok {
+		lastScaleDate, err := utils.StringToTime(lastScaleDateText)
 		if err != nil {
 			log.WithError(err).Warn("can not parse time")
 		} else {
@@ -153,6 +154,16 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 
 			break
 		}
+	}
+
+	// namespace description
+	if description, ok := e.NamespaceAnnotations[config.LabelDescription]; ok {
+		namespaceDescription, err := utils.GetTemplatedResult(description, e)
+		if err != nil {
+			return errors.Wrap(err, "can not parse description")
+		}
+
+		e.NamespaceDescription = string(namespaceDescription)
 	}
 
 	return nil

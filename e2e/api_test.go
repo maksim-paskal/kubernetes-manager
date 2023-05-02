@@ -14,6 +14,7 @@ package api_test
 
 import (
 	"context"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -113,6 +114,10 @@ func TestPods(t *testing.T) {
 	}
 
 	environment = envieronments[0]
+
+	if environment.NamespaceDescription != os.Getenv("POD_NAMESPACE") {
+		t.Fatal("description must equals POD_NAMESPACE env")
+	}
 
 	err = checkLastScaleDate(environment)
 	if err != nil {

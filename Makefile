@@ -35,6 +35,7 @@ e2e:
 	kubectl create ns ${test-namespace}
 	kubectl label namespace ${test-namespace} kubernetes-manager=true
 	kubectl label namespace ${test-namespace} test-kubernetes-manager=true
+	kubectl annotate namespace ${test-namespace} kubernetes-manager/description='{{ .Namespace }}'
 	kubectl -n ${test-namespace} apply -f ./e2e/kubernetes
 	kubectl -n ${test-namespace} wait --for=condition=available deployment --all --timeout=600s
 

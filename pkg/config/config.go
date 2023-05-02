@@ -69,6 +69,7 @@ const (
 	LabelUserLiked        = Namespace + "/user-liked"
 	LabelGitSyncOrigin    = Namespace + "/git-sync-origin"
 	LabelGitSyncBranch    = Namespace + "/git-sync-branch"
+	LabelDescription      = Namespace + "/description"
 
 	HeaderOwner = "X-Owner"
 )
@@ -180,6 +181,7 @@ func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
 }
 
 type NamespaceMeta struct {
+	Pattern     string
 	Labels      map[string]string
 	Annotations map[string]string
 }
@@ -276,7 +278,7 @@ type Type struct {
 	LogLevel                   *string `yaml:"logLevel"`
 	Links                      *Links  `yaml:"links"`
 	BatchEnabled               *bool
-	NamespaceMeta              *NamespaceMeta
+	NamespaceMeta              []*NamespaceMeta
 	DebugTemplates             []*Template
 	ExternalServicesTemplates  []*Template
 	ProjectProfiles            []*ProjectProfile
@@ -465,4 +467,20 @@ func GetKubernetesEndpointByName(name string) *KubernetesEndpoint {
 	}
 
 	return nil
+}
+
+func GetNamespaceMeta(namespace string) *NamespaceMeta {
+	for _, namespaceMeta := range config.DeepCopy().NamespaceMeta {
+		if len(namespaceMeta.Pattern) == 0 {
+			return namespaceMeta
+		} else if regexp.MustCompile(namespaceMeta.Pattern).Match([]byte(namespace)) {
+			return namespaceMeta
+		}
+	}
+
+	// if not found, return empty meta
+	return &NamespaceMeta{
+		Labels:      map[string]string{},
+		Annotations: map[string]string{},
+	}
 }

@@ -13,5 +13,5 @@ kubernetesendpoints:
 - name: default
 
 namespacemeta:
-  labels:
+- labels:
     environment: dev

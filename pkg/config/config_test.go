@@ -43,14 +43,14 @@ func TestConfig(t *testing.T) {
 		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksYaml))
 	}
 
-	test1 := config.Get().DeepCopy().NamespaceMeta.Labels
+	test1 := config.GetNamespaceMeta("").Labels
 
 	test1["test1"] = "test1"
 	if test1["environment"] != "dev" {
 		t.Fatal("test1 must have environment variable")
 	}
 
-	test2 := config.Get().NamespaceMeta.Labels
+	test2 := config.GetNamespaceMeta("").Labels
 
 	test2["test2"] = "test2"
 	if test2["test1"] == "test1" {

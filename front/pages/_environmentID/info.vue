@@ -17,6 +17,10 @@
       <pre v-else class="m-0">{{ environment }}</pre>
     </b-card>
 
+    <b-card v-if="environment.NamespaceDescription" class="mt-3" header="Description">
+      <pre>{{ environment.NamespaceDescription }}</pre>
+    </b-card>
+
     <b-card class="mt-3" header="Hosts">
       <ul v-if="environment.Hosts && environment.Hosts.length > 0">
         <li v-bind:key="index" v-for="(item, index) in environment.Hosts">
@@ -27,8 +31,7 @@
         deployed...</div>
     </b-card>
 
-    <b-card class="mt-3" header="Internal Hosts"
-      v-if="environment.HostsInternal && environment.HostsInternal.length > 0">
+    <b-card class="mt-3" header="Internal Hosts" v-if="environment.HostsInternal && environment.HostsInternal.length > 0">
       <WarningDisableMTLS />
       <ul>
         <li v-bind:key="index" v-for="(item, index) in environment.HostsInternal">

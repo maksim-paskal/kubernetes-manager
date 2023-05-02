@@ -22,6 +22,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -104,7 +105,7 @@ func (l JaegerLogs) Infof(msg string, args ...interface{}) {
 }
 
 func GetTemplatedResult(text string, obj interface{}) ([]byte, error) {
-	t, err := template.New("getTemplatedString").Parse(text)
+	t, err := template.New("getTemplatedString").Funcs(sprig.FuncMap()).Parse(text)
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing template")
 	}
