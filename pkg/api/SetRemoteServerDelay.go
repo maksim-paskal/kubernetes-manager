@@ -17,7 +17,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
@@ -53,22 +52,13 @@ func SetRemoteServerDelay(ctx context.Context, input SetRemoteServerDelayInput) 
 		return errors.Wrap(err, "can not get server")
 	}
 
-	labels := server.Labels
-	if labels == nil {
-		labels = make(map[string]string)
+	labels := map[string]string{
+		config.LabelScaleDownDelayShort: utils.TimeToUnix(time.Now().Add(duration)),
 	}
 
-	// in hcloud time must have only numbers and letters
-	//	https://docs.hetzner.cloud/#labels
-	labels[config.LabelScaleDownDelayShort] = utils.TimeToUnix(time.Now().Add(duration))
-
-	opts := hcloud.ServerUpdateOpts{
-		Labels: labels,
-	}
-
-	_, _, err = hcloundClient.Server.Update(ctx, server, opts)
+	err = SetRemoteServerLabels(ctx, server, labels)
 	if err != nil {
-		return errors.Wrap(err, "error updating server")
+		return errors.Wrap(err, "error set labels")
 	}
 
 	return nil

@@ -14,17 +14,20 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
 
 type SetRemoteServerStatusAction string
 
 const (
-	SetRemoteServerStatusPowerOn  SetRemoteServerStatusAction = "power_on"
-	SetRemoteServerStatusPowerOff SetRemoteServerStatusAction = "power_off"
+	SetRemoteServerStatusPowerOn  SetRemoteServerStatusAction = "PowerOn"
+	SetRemoteServerStatusPowerOff SetRemoteServerStatusAction = "PowerOff"
 )
 
 func (a SetRemoteServerStatusAction) Validate() error {
@@ -79,6 +82,15 @@ func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput
 		if err != nil {
 			return errors.Wrap(err, "can power on server")
 		}
+	}
+
+	labels := map[string]string{
+		fmt.Sprintf("last%sTime", string(input.Action)): utils.TimeToUnix(time.Now()),
+	}
+
+	err = SetRemoteServerLabels(ctx, server, labels)
+	if err != nil {
+		return errors.Wrap(err, "error updating server")
 	}
 
 	return nil

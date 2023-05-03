@@ -21,14 +21,22 @@
         <template v-slot:cell(Address)="row">
           <CopyIcon :text="row.item.IPv4" />{{ row.item.IPv4 }}
         </template>
+        <template v-slot:cell(Name)="row">
+          {{ row.item.Name }}
+          <div v-if="row.item.Labels">
+            <span v-bind:key="v" v-for="(k, v) in row.item.Labels" class="badge rounded-pill bg-primary">
+              {{ v }}: {{ k }}
+            </span>
+          </div>
+        </template>
         <template v-slot:cell(Status)="row">
           {{ row.item.Status }}
           <div>
             <b-button v-if="row.item.Status == 'Stoped'" size="sm" variant="success"
-              @click="serverAction(row, 'power_on')">
+              @click="serverAction(row, 'PowerOn')">
               Start
             </b-button>
-            <b-button v-else size="sm" variant="danger" @click="serverAction(row, 'power_off')">
+            <b-button v-else size="sm" variant="danger" @click="serverAction(row, 'PowerOff')">
               Stop
             </b-button>
           </div>
