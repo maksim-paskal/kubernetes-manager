@@ -127,7 +127,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			Status:               PipelineStatus(pipeline.Status),
 			PipelineURL:          pipeline.WebURL,
 			PipelineCreated:      utils.TimeToString(*pipeline.CreatedAt),
-			PipelineCreatedHuman: utils.HumanizeDuration(time.Since(*pipeline.CreatedAt)),
+			PipelineCreatedHuman: utils.HumanizeDuration(utils.HumanizeDurationShort, time.Since(*pipeline.CreatedAt)),
 		}
 
 		pipelineVariables, _, err := gitlabClient.Pipelines.GetPipelineVariables(

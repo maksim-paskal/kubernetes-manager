@@ -120,7 +120,14 @@ func GetTemplatedResult(text string, obj interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func HumanizeDuration(duration time.Duration) string {
+type HumanizeDurationType string
+
+const (
+	HumanizeDurationShort HumanizeDurationType = "short"
+	HumanizeDurationFull  HumanizeDurationType = "full"
+)
+
+func HumanizeDuration(showType HumanizeDurationType, duration time.Duration) string {
 	const (
 		secondsInMinute = 60
 		minutesInHour   = 60
@@ -134,12 +141,20 @@ func HumanizeDuration(duration time.Duration) string {
 	if duration.Minutes() < minutesInHour {
 		remainingSeconds := math.Mod(duration.Seconds(), minutesInHour)
 
+		if showType == HumanizeDurationShort {
+			return fmt.Sprintf("%d minutes", int64(duration.Minutes()))
+		}
+
 		return fmt.Sprintf("%d minutes %d seconds", int64(duration.Minutes()), int64(remainingSeconds))
 	}
 
 	if duration.Hours() < hoursInDay {
 		remainingMinutes := math.Mod(duration.Minutes(), minutesInHour)
 		remainingSeconds := math.Mod(duration.Seconds(), secondsInMinute)
+
+		if showType == HumanizeDurationShort {
+			return fmt.Sprintf("%d hours", int64(duration.Hours()))
+		}
 
 		return fmt.Sprintf("%d hours %d minutes %d seconds",
 			int64(duration.Hours()), int64(remainingMinutes), int64(remainingSeconds))
@@ -148,6 +163,10 @@ func HumanizeDuration(duration time.Duration) string {
 	remainingHours := math.Mod(duration.Hours(), hoursInDay)
 	remainingMinutes := math.Mod(duration.Minutes(), minutesInHour)
 	remainingSeconds := math.Mod(duration.Seconds(), secondsInMinute)
+
+	if showType == HumanizeDurationShort {
+		return fmt.Sprintf("%d days", int64(duration.Hours()/hoursInDay))
+	}
 
 	return fmt.Sprintf("%d days %d hours %d minutes %d seconds",
 		int64(duration.Hours()/hoursInDay), int64(remainingHours),
