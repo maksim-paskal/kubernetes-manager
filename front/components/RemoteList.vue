@@ -23,12 +23,7 @@
         </template>
         <template v-slot:cell(Name)="row">
           {{ row.item.Name }}
-          <div v-if="row.item.FormattedLabels">
-            <span v-bind:key="i" v-for="(item, i) in row.item.FormattedLabels" :title="item.Description"
-              :class="`badge rounded-pill bg-${item.Key == 'staled' ? 'danger' : 'primary'}`" style="margin-right: 2px">
-              {{ item.Key }}: {{ item.Value }}
-            </span>
-          </div>
+          <EnvironmentBadges :badges="row.item.FormattedLabels" />
         </template>
         <template v-slot:cell(Status)="row">
           {{ row.item.Status }}

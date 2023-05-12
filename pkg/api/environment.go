@@ -36,6 +36,7 @@ type Environment struct {
 	NamespaceStatus         string
 	NamespaceCreated        string
 	NamespaceCreatedDays    int
+	NamespaceCreatedBy      string
 	NamespaceLastScaled     string
 	NamespaceLastScaledDays int
 	NamespaceAnnotations    map[string]string
@@ -45,6 +46,7 @@ type Environment struct {
 	Hosts                   []string
 	HostsInternal           []string
 	PodsInfo                *PodsInfo
+	NamespaceBadges         []*EnvironmentBadge
 }
 
 // GetEnvironments list all kubernetes-manager environments.
@@ -124,6 +126,9 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 	e.NamespaceLastScaled = e.NamespaceCreated
 	e.NamespaceLastScaledDays = e.NamespaceCreatedDays
 
+	// get namespace creator
+	e.NamespaceCreatedBy = e.getNamespaceCreatedBy()
+
 	// if namespace was manually scaleup, it use date of last scale
 	if lastScaleDateText, ok := e.NamespaceAnnotations[config.LabelLastScaleDate]; ok {
 		lastScaleDate, err := utils.StringToTime(lastScaleDateText)
@@ -165,6 +170,8 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 
 		e.NamespaceDescription = string(namespaceDescription)
 	}
+
+	e.NamespaceBadges = e.getBadges()
 
 	return nil
 }

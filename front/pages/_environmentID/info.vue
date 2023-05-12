@@ -12,6 +12,8 @@
       <b-button @click="showJSON = !showJSON">{{ showJSON ? "Hide" : "Show" }} info</b-button>
     </div>
 
+    <EnvironmentBadges class="mt-3" :badges="environment.NamespaceBadges" />
+
     <b-card v-if="showJSON" class="mt-3" header="Namespace information">
       <b-spinner v-if="!environment.ID" variant="primary" />
       <pre v-else class="m-0">{{ environment }}</pre>
