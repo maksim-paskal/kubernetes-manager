@@ -23,9 +23,10 @@
         </template>
         <template v-slot:cell(Name)="row">
           {{ row.item.Name }}
-          <div v-if="row.item.Labels">
-            <span v-bind:key="v" v-for="(k, v) in row.item.Labels" class="badge rounded-pill bg-primary">
-              {{ v }}: {{ k }}
+          <div v-if="row.item.FormattedLabels">
+            <span v-bind:key="i" v-for="(item, i) in row.item.FormattedLabels" :title="item.Description"
+              :class="`badge rounded-pill bg-${item.Key == 'staled' ? 'danger' : 'primary'}`" style="margin-right: 2px">
+              {{ item.Key }}: {{ item.Value }}
             </span>
           </div>
         </template>
@@ -63,7 +64,11 @@
 <script>
 export default {
   mounted() {
-    this.tableFilter = this.user.user;
+    if (this.$route.hash) {
+      this.tableFilter = this.$route.hash.substring(1);
+    } else {
+      this.tableFilter = this.user.user;
+    }
   },
   async fetch() {
     const result = await fetch('/api/remote-servers');

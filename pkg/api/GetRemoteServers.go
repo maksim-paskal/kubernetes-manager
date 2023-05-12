@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -29,17 +30,62 @@ import (
 type GetRemoteServerItemStatus string
 
 const (
+	lastPowerOnTimeLabel = "lastPowerOnTime"
+	staledTime           = 14 * 24 * time.Hour
+)
+
+const (
 	GetRemoteServerItemStatusRunning GetRemoteServerItemStatus = "Running"
 	GetRemoteServerItemStatusStoped  GetRemoteServerItemStatus = "Stoped"
 )
 
+type GetRemoteServerLabel struct {
+	Key         string
+	Value       string
+	Description string
+}
+
+func (l *GetRemoteServerLabel) ValidKey() bool {
+	validKeys := []string{
+		lastPowerOnTimeLabel,
+	}
+
+	for _, key := range validKeys {
+		if l.Key == key {
+			return true
+		}
+	}
+
+	return false
+}
+
 type GetRemoteServerItem struct {
-	Cloud  string
-	ID     string
-	Name   string
-	Status GetRemoteServerItemStatus
-	IPv4   string
-	Labels map[string]string
+	Cloud           string
+	ID              string
+	Name            string
+	Status          GetRemoteServerItemStatus
+	IPv4            string
+	Created         time.Time
+	Labels          map[string]string
+	FormattedLabels []*GetRemoteServerLabel
+}
+
+func (i *GetRemoteServerItem) GetLastPowerOnTime() (time.Time, error) {
+	lastPowerOnTimeString, ok := i.Labels[lastPowerOnTimeLabel]
+	if !ok {
+		return i.Created, nil
+	}
+
+	return utils.UnixToTime(lastPowerOnTimeString)
+}
+
+func (i *GetRemoteServerItem) IsStaled() bool {
+	lastPowerOnTime, err := i.GetLastPowerOnTime()
+	if err != nil {
+		return false
+	}
+
+	return time.Since(lastPowerOnTime) > staledTime
 }
 
 var errNoHetznerCloudToken = errors.New("no hetzner cloud token, please set it in config file")
@@ -72,40 +118,62 @@ func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
 			serverName = owner
 		}
 
-		result = append(result, &GetRemoteServerItem{
-			Cloud:  "hcloud",
-			ID:     strconv.Itoa(server.ID),
-			Name:   serverName,
-			Status: status,
-			IPv4:   server.PublicNet.IPv4.IP.String(),
-			Labels: formattedRemoteServerLabels(server.Labels),
-		})
+		item := &GetRemoteServerItem{
+			Cloud:           "hcloud",
+			ID:              strconv.Itoa(server.ID),
+			Name:            serverName,
+			Status:          status,
+			Created:         server.Created,
+			IPv4:            server.PublicNet.IPv4.IP.String(),
+			Labels:          server.Labels,
+			FormattedLabels: getRemoteServerLabels(server.Labels),
+		}
+
+		if item.IsStaled() {
+			item.FormattedLabels = append(item.FormattedLabels, &GetRemoteServerLabel{
+				Key:         "staled",
+				Value:       "true",
+				Description: "server is staled",
+			})
+		}
+
+		result = append(result, item)
 	}
 
 	return result, nil
 }
 
-func formattedRemoteServerLabels(labels map[string]string) map[string]string {
-	formatted := make(map[string]string)
+func getRemoteServerLabels(labels map[string]string) []*GetRemoteServerLabel {
+	result := make([]*GetRemoteServerLabel, 0)
 
-	formatUnixTime := func(v string) string {
+	formatUnixTime := func(v string) (string, string) {
 		d, err := utils.UnixToTime(v)
 		if err != nil {
 			log.WithError(err).Errorf("error parsing time %s", v)
 
-			return "error parsing time"
+			return "error parsing time", ""
 		}
 
 		text := utils.HumanizeDuration(utils.HumanizeDurationShort, time.Since(d))
 
-		return fmt.Sprintf("%s ago", text)
+		return fmt.Sprintf("%s ago", text), utils.TimeToString(d)
 	}
 
 	for k, v := range labels {
-		if k == "lastPowerOnTime" {
-			formatted[k] = formatUnixTime(v)
+		item := &GetRemoteServerLabel{
+			Key: k,
 		}
+
+		if !item.ValidKey() {
+			continue
+		}
+
+		if strings.HasSuffix(k, "Time") {
+			item.Value, item.Description = formatUnixTime(v)
+		}
+
+		result = append(result, item)
 	}
 
-	return formatted
+	return result
 }
