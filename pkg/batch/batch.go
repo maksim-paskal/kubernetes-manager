@@ -213,7 +213,7 @@ func Execute(ctx context.Context, rootSpan opentracing.Span) error {
 			log.WithError(err).Error()
 		}
 
-		reason, description := environment.IsStaled()
+		reason, description := environment.IsStaled(0)
 
 		log.WithField("reason", reason).Debug(description)
 

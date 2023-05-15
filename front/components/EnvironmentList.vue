@@ -1,6 +1,6 @@
 <template>
   <b-alert v-if="$fetchState.error" variant="danger" show>{{
-      $fetchState.error.message
+    $fetchState.error.message
   }}</b-alert>
   <div v-else-if="$fetchState.pending" style="padding: 50px" class="text-center">
     <b-spinner style="width: 10rem; height: 10rem" variant="primary" />
@@ -25,6 +25,7 @@
       </template>
       <template v-slot:cell(Name)="row">
         <b-link class="text-decoration-none" :to="`/${row.item.ID}/info`">{{ getEnvironmentName(row.item) }}</b-link>
+        <EnvironmentBadges :badges="row.item.NamespaceBadges" />
       </template>
     </b-table>
   </div>

@@ -172,6 +172,10 @@ func getRemoteServerLabels(labels map[string]string) []*GetRemoteServerLabel {
 			item.Value, item.Description = formatUnixTime(v)
 		}
 
+		if item.Key == lastPowerOnTimeLabel {
+			item.Key = badgeLastStarted
+		}
+
 		result = append(result, item)
 	}
 
