@@ -64,6 +64,7 @@ const (
 	TagNamespace          = Namespace + "/namespace"
 	TagCluster            = Namespace + "/cluster"
 	LabelNamespaceCreator = Namespace + "/user-creator"
+	LabelProjectProfile   = Namespace + "/profile"
 	LabelInstalledProject = Namespace + "/project"
 	LabelEnvironmentName  = Namespace + "/environment-name"
 	LabelUserLiked        = Namespace + "/user-liked"

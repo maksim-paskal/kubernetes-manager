@@ -24,7 +24,7 @@ import (
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error { //nolint:lll
+func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, projectProfile, services string, op GitlabPipelineOperation) error { //nolint:lll
 	if len(services) == 0 {
 		return errors.New("no services was selected")
 	}
@@ -41,6 +41,10 @@ func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, servi
 	annotations := e.NamespaceAnnotations
 	if annotations == nil {
 		annotations = make(map[string]string)
+	}
+
+	if len(projectProfile) > 0 {
+		annotations[config.LabelProjectProfile] = projectProfile
 	}
 
 	for _, environmentService := range environmentServices {
