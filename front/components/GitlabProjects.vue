@@ -1,19 +1,20 @@
 <template>
   <div>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+      $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="this.errorText" variant="danger" show>{{
-        this.errorText
+      this.errorText
     }}</b-alert>
     <b-alert v-if="this.infoText" variant="info" show>{{
-        this.infoText
+      this.infoText
     }}</b-alert>
     <b-spinner v-if="$fetchState.pending" variant="primary" />
     <div v-else>
       <div v-if="projectProfile">
         <b-button variant="outline-primary" @click="selectAllFromMain()">Select all services from main</b-button>
         <b-button variant="outline-primary" @click="clearAllSelection()">Clear selection</b-button>
+        <b-button variant="outline-primary" @click="showShareDialog()">Share settings</b-button>
       </div>
       <b-table striped hover :items="data" :fields="tableFields">
         <template #cell(Service)="data">
@@ -23,21 +24,20 @@
                 ProjectID: `${data.item.ProjectID}`,
                 Ref: data.item.GitBranch,
               })
-            " variant="outline-danger"><em class="bi bi-trash3" /></b-button>&nbsp;
+              " variant="outline-danger"><em class="bi bi-trash3" /></b-button>&nbsp;
           <em v-if="data.item.Required" class="text-danger bi bi-asterisk" />
           <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}</a>
           &nbsp;<span v-if="data.item.GitBranch" title="git tag" class="badge rounded-pill bg-primary">{{
-              data.item.GitBranch
+            data.item.GitBranch
           }}</span>
           <span v-else-if="data.item.AdditionalInfo" title="docker tag" class="badge rounded-pill bg-primary">{{
-              data.item.AdditionalInfo.PodRunning.Tag
+            data.item.AdditionalInfo.PodRunning.Tag
           }}</span>&nbsp;<a v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.PodRunning.GitHash"
             target="_blank" :href="getGitlabCommitURL(data.item)"><span title="git short commit hash"
               class="badge rounded-pill bg-success">{{ data.item.AdditionalInfo.PodRunning.GitHash }}</span></a>
-          <a v-if="
-            data.item.AdditionalInfo &&
+          <a v-if="data.item.AdditionalInfo &&
             data.item.AdditionalInfo.Pipelines.LastSuccessPipeline
-          " :href="data.item.AdditionalInfo.Pipelines.LastSuccessPipeline" target="_blank"><span
+            " :href="data.item.AdditionalInfo.Pipelines.LastSuccessPipeline" target="_blank"><span
               title="deploy pipeline" class="badge rounded-pill bg-success">pipeline</span></a>
           <div v-if="data.item.TagsList.length > 0">
             <div style="margin-left: 5px" class="badge btn-secondary" v-bind:key="index"
@@ -49,18 +49,15 @@
         <template #cell(Status)="data">
           <div style="height: 25px">
             <b-spinner v-if="!data.item.AdditionalInfo" variant="primary" />
-            <em v-if="
-              data.item.AdditionalInfo &&
+            <em v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.PodRunning.Found
-            " class="bi bi-check-circle-fill" style="font-size: 26px; color: green" />
-            <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastErrorPipeline" v-if="
-              data.item.AdditionalInfo &&
+              " class="bi bi-check-circle-fill" style="font-size: 26px; color: green" />
+            <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastErrorPipeline" v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.Pipelines.LastErrorPipeline
-            "><em class="bi bi-exclamation-circle-fill" style="font-size: 26px; color: #dc3545" /></a>
-            <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastRunningPipeline" v-if="
-              data.item.AdditionalInfo &&
+              "><em class="bi bi-exclamation-circle-fill" style="font-size: 26px; color: #dc3545" /></a>
+            <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastRunningPipeline" v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.Pipelines.LastRunningPipeline
-            "><em class="bi bi-hourglass-split" style="font-size: 26px; color: #1f75cb" /></a>
+              "><em class="bi bi-hourglass-split" style="font-size: 26px; color: #1f75cb" /></a>
           </div>
         </template>
         <template #cell(Deploy)="data">
@@ -70,6 +67,9 @@
         </template>
       </b-table>
     </div>
+    <b-modal size="xl" centered id="bv-create-share-dialog" title="Link to share environment" ok-only>
+      <CopyTextbox :text="this.shareLink" />
+    </b-modal>
   </div>
 </template>
 <script>
@@ -99,7 +99,8 @@ export default {
   },
   data() {
     return {
-      data: {},
+      data: [],
+      shareLink: "",
       fieldsPodInfo: [
         {
           key: "Status",
@@ -130,7 +131,7 @@ export default {
       } else {
         return this.fields;
       }
-    },
+    }
   },
   methods: {
     selectAllFromMain() {
@@ -174,6 +175,21 @@ export default {
         return `${obj.WebURL}/-/tree/${obj.AdditionalInfo.PodRunning.GitHash}`;
       }
     },
+    showShareDialog() {
+      let args = [];
+
+      args.push(`profile=${encodeURIComponent(this.projectProfile)}`);
+
+      this.data.forEach(async (row) => {
+        if (row.Deploy) {
+          args.push(`${row.ProjectID}=${encodeURIComponent(row.Deploy)}`);
+        }
+      });
+
+      this.shareLink = `${window.location.origin}/create?${args.join("&")}`;
+
+      this.$bvModal.show("bv-create-share-dialog");
+    },
   },
   async fetch() {
     this.$store.commit("setComponentLoaded", {
@@ -189,11 +205,19 @@ export default {
       const data = await result.json();
       this.data = data.Result;
 
+      const urlParams = new URLSearchParams(window.location.search);
+
       // set default branch for creation
       if (!this.podInfo) {
         this.data.forEach(async (el) => {
           if (el.SelectedBranch) {
             el.Deploy = el.SelectedBranch;
+          }
+
+          const userProjectID = urlParams.get(el.ProjectID)
+
+          if (userProjectID) {
+            el.Deploy = userProjectID
           }
         });
       }

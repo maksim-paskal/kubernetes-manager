@@ -219,7 +219,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
+		if err := environment.CreateGitlabPipelinesByServices(ctx, "", deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
 			return result, err
 		}
 

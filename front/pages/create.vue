@@ -1,7 +1,7 @@
 <template>
   <div style="padding: 10px">
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-    $fetchState.error.message
+      $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="errorText" variant="danger" show>{{ errorText }}</b-alert>
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
@@ -58,7 +58,11 @@ export default {
         });
       })
 
-      this.projectProfile = this.data[0].Value;
+      const urlParams = new URLSearchParams(window.location.search);
+      const userSelectedProfile = urlParams.get('profile');
+
+      this.projectProfile = userSelectedProfile ? userSelectedProfile : this.data[0].Value;
+
       this.projectProfileLoaded = true;
     } else {
       const text = await result.text();

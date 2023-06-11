@@ -1,15 +1,20 @@
 <template>
   <div class="detail-tab">
-    <div v-if="this.environment.Links">
-      <b-button target="_blank" :href="environment.Links.MetricsURL"><img height="16" alt="grafana"
-          src="~assets/grafana.png" />&nbsp;Metrics</b-button>
-      <b-button target="_blank" :href="environment.Links.LogsURL"><img height="16" alt="elasticsearch"
-          src="~assets/elasticsearch.png" />&nbsp;Logs</b-button>
-      <b-button target="_blank" :href="environment.Links.TracingURL"><img height="16" alt="jaeger"
-          src="~assets/jaeger.png" />&nbsp;Traces</b-button>
-      <b-button target="_blank" :href="environment.Links.SentryURL"><img height="16" alt="sentry"
-          src="~assets/sentry.png" />&nbsp;Sentry</b-button>
-      <b-button @click="showJSON = !showJSON">{{ showJSON ? "Hide" : "Show" }} info</b-button>
+    <div style="display:flex;align-items: center;">
+      <div v-if="this.environment.Links" style="margin-right:30px">
+        <b-button target="_blank" :href="environment.Links.MetricsURL"><img height="16" alt="grafana"
+            src="~assets/grafana.png" />&nbsp;Metrics</b-button>
+        <b-button target="_blank" :href="environment.Links.LogsURL"><img height="16" alt="elasticsearch"
+            src="~assets/elasticsearch.png" />&nbsp;Logs</b-button>
+        <b-button target="_blank" :href="environment.Links.TracingURL"><img height="16" alt="jaeger"
+            src="~assets/jaeger.png" />&nbsp;Traces</b-button>
+        <b-button target="_blank" :href="environment.Links.SentryURL"><img height="16" alt="sentry"
+            src="~assets/sentry.png" />&nbsp;Sentry</b-button>
+        <b-button @click="showJSON = !showJSON">{{ showJSON ? "Hide" : "Show" }} info</b-button>
+      </div>
+      <div>
+        <b-button v-if="createLink" variant="outline-primary" :to="createLink">Copy branch</b-button>
+      </div>
     </div>
 
     <EnvironmentBadges class="mt-3" :badges="environment.NamespaceBadges" />
@@ -55,6 +60,23 @@ export default {
     return {
       showJSON: false,
     };
+  },
+  computed: {
+    createLink() {
+      let args = [];
+
+      for (const key in this.environment.NamespaceAnnotations) {
+        if (key === 'kubernetes-manager/profile') {
+          args.push(`profile=${encodeURIComponent(this.environment.NamespaceAnnotations[key])}`);
+        }
+
+        if (key.startsWith('kubernetes-manager/project-')) {
+          args.push(`${key.substring(27)}=${encodeURIComponent(this.environment.NamespaceAnnotations[key])}`);
+        }
+      }
+
+      return args.length != 0 ? `/create?${args.join("&")}` : null;
+    },
   },
 }
 </script>
