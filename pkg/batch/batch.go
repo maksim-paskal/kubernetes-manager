@@ -45,7 +45,7 @@ func Schedule(ctx context.Context) {
 		log.WithError(err).Fatal()
 	}
 
-	ticker := time.NewTicker(*config.Get().BatchShedulePeriod)
+	ticker := time.NewTicker(config.Get().GetBatchShedulePeriod())
 
 	for ctx.Err() == nil {
 		if isStoped.Load() {
@@ -53,7 +53,7 @@ func Schedule(ctx context.Context) {
 		}
 
 		go func() {
-			ctx, cancel := context.WithTimeout(ctx, *config.Get().BatchShedulePeriod)
+			ctx, cancel := context.WithTimeout(ctx, config.Get().GetBatchShedulePeriod())
 			defer cancel()
 
 			span := tracer.StartSpan("scheduleBatch")
@@ -64,7 +64,10 @@ func Schedule(ctx context.Context) {
 			}
 		}()
 
-		<-ticker.C
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+		}
 	}
 }
 

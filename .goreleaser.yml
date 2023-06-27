@@ -49,7 +49,7 @@ builds:
   flags:
   - -trimpath
   ldflags:
-  - -X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion={{.Version}}-{{.ShortCommit}}-{{.Timestamp}}
+  - -s -w -X github.com/maksim-paskal/kubernetes-manager/pkg/config.gitVersion={{.Version}}-{{.ShortCommit}}-{{.Timestamp}}
   goos:
   - linux
   binary: kubernetes-manager-{{ .Arch }}

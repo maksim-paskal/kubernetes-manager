@@ -26,15 +26,15 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const (
 	defaultAddr                      = ":9000"
 	defaultRemoveBranchLastScaleDate = 10
-	defaultBatchShedulePeriod        = 30 * time.Minute
+	defaultBatchShedulePeriodSeconds = 30 * 60 // 30 minutes
 	defaultBatchTimezone             = "UTC"
-	defaultGracefulShutdownTimeout   = 5 * time.Second
+	defaultGracefulShutdownSeconds   = 5
 
 	ScaleDownHourMinPeriod = 19
 	ScaleDownHourMaxPeriod = 5
@@ -76,14 +76,14 @@ const (
 )
 
 type Links struct {
-	SentryURL     string      `yaml:"sentryUrl"`
-	SlackURL      string      `yaml:"slackUrl"`
-	LogsURL       string      `yaml:"logsUrl"`
-	LogsPodURL    string      `yaml:"logsPodUrl"`
-	PhpMyAdminURL string      `yaml:"phpMyAdminUrl"`
-	MetricsURL    string      `yaml:"metricsUrl"`
-	TracingURL    string      `yaml:"tracingUrl"`
-	Others        []OtherLink `yaml:"others"`
+	SentryURL     string
+	SlackURL      string
+	LogsURL       string
+	LogsPodURL    string
+	PhpMyAdminURL string
+	MetricsURL    string
+	TracingURL    string
+	Others        []OtherLink
 }
 
 func (l *Links) FormatedLinks(namespace string) (*Links, error) {
@@ -106,8 +106,8 @@ func (l *Links) FormatedLinks(namespace string) (*Links, error) {
 }
 
 type OtherLink struct {
-	Name string `yaml:"name"`
-	URL  string `yaml:"url"`
+	Name string
+	URL  string
 }
 
 type Template struct {
@@ -255,8 +255,8 @@ var config = Type{
 	PodName:      flag.String("pod.name", os.Getenv("POD_NAME"), ""),
 	PodNamespace: flag.String("pod.namespace", os.Getenv("POD_NAMESPACE"), ""),
 
-	BatchShedulePeriod:   flag.Duration("batch.period", defaultBatchShedulePeriod, "batch shedule period"),
-	BatchSheduleTimezone: flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
+	BatchShedulePeriodSeconds: flag.Int("batch.periodSeconds", defaultBatchShedulePeriodSeconds, "batch shedule period"),
+	BatchSheduleTimezone:      flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
 	GitlabToken:     flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
 	GitlabTokenUser: flag.String("gitlab.token.user", os.Getenv("GITLAB_TOKEN_USER"), "username of token user (need to filter pipelines)"), //nolint:lll
@@ -269,38 +269,37 @@ var config = Type{
 	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
 	BatchEnabled:          flag.Bool("batch.enabled", true, "enable batch operations"),
 
-	GracefulShutdownTimeout: flag.Duration("graceful-shutdown-timeout", defaultGracefulShutdownTimeout, "graceful shutdown timeout"), //nolint:lll
+	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"), //nolint:lll
 }
 
 type Type struct {
-	GracefulShutdownTimeout *time.Duration
+	GracefulShutdownSeconds *int
 
-	ConfigPath                 *string `yaml:"configPath"`
-	LogLevel                   *string `yaml:"logLevel"`
-	Links                      *Links  `yaml:"links"`
+	ConfigPath                 *string
+	LogLevel                   *string
+	Links                      *Links
 	BatchEnabled               *bool
 	NamespaceMeta              []*NamespaceMeta
 	DebugTemplates             []*Template
-	ExternalServicesTemplates  []*Template
 	ProjectProfiles            []*ProjectProfile
 	KubernetesEndpoints        []*KubernetesEndpoint
-	WebListen                  *string        `yaml:"webListen"`
-	FrontDist                  *string        `yaml:"frontDist"`
-	RemoveBranchDaysInactive   *int           `yaml:"removeBranchDaysInactive"`
-	GitlabToken                *string        `yaml:"gitlabToken"`
-	GitlabTokenUser            *string        `yaml:"gitlabTokenUser"`
-	GitlabURL                  *string        `yaml:"gitlabUrl"`
-	IngressHostDefaultProtocol *string        `yaml:"ingressHostDefaultProtocol"`
-	RemoveBranchLastScaleDate  *int           `yaml:"removeBranchLastScaleDate"`
-	ExternalServicesTopic      *string        `yaml:"externalServicesTopic"`
-	BatchShedulePeriod         *time.Duration `yaml:"batchShedulePeriod"`
-	BatchSheduleTimezone       *string        `yaml:"batchSheduleTimezone"`
-	PodName                    *string        `yaml:"podName"`
-	PodNamespace               *string        `yaml:"podNamespace"`
-	WebHooks                   []WebHook      `yaml:"webhooks"`
-	Snapshots                  Snapshot       `yaml:"snapshots"`
-	RemoteServer               RemoteServer   `yaml:"remoteServer"`
-	Autotests                  []*Autotest    `yaml:"autotests"`
+	WebListen                  *string
+	FrontDist                  *string
+	RemoveBranchDaysInactive   *int
+	GitlabToken                *string
+	GitlabTokenUser            *string
+	GitlabURL                  *string
+	IngressHostDefaultProtocol *string
+	RemoveBranchLastScaleDate  *int
+	ExternalServicesTopic      *string
+	BatchShedulePeriodSeconds  *int
+	BatchSheduleTimezone       *string
+	PodName                    *string
+	PodNamespace               *string
+	WebHooks                   []WebHook
+	Snapshots                  Snapshot
+	RemoteServer               RemoteServer
+	Autotests                  []*Autotest
 }
 
 func (t *Type) DeepCopy() *Type {
@@ -410,13 +409,21 @@ func Get() *Type {
 	return &config
 }
 
-func String() string {
-	out, err := yaml.Marshal(config)
+func (t *Type) String() string {
+	out, err := json.Marshal(t)
 	if err != nil {
 		return fmt.Sprintf("ERROR: %t", err)
 	}
 
 	return string(out)
+}
+
+func (t *Type) GetBatchShedulePeriod() time.Duration {
+	return time.Duration(*t.BatchShedulePeriodSeconds) * time.Second
+}
+
+func (t *Type) GetGracefulShutdown() time.Duration {
+	return time.Duration(*t.GracefulShutdownSeconds) * time.Second
 }
 
 func GetEnvDefault(name string, defaultValue string) string {

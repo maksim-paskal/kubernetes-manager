@@ -30,13 +30,12 @@ type GetFrontConfigBatch struct {
 }
 
 type GetFrontConfigResult struct {
-	Version                   string
-	Links                     *config.Links
-	Batch                     *GetFrontConfigBatch
-	Clusters                  []*GetFrontConfigItem
-	ExternalServicesTemplates []*config.Template
-	DebugTemplates            []*config.Template
-	RemoteServersLinks        []*config.OtherLink
+	Version            string
+	Links              *config.Links
+	Batch              *GetFrontConfigBatch
+	Clusters           []*GetFrontConfigItem
+	DebugTemplates     []*config.Template
+	RemoteServersLinks []*config.OtherLink
 }
 
 // Get config for front pages.
@@ -55,7 +54,6 @@ func GetFrontConfig() *GetFrontConfigResult {
 	}
 
 	result.DebugTemplates = config.Get().DebugTemplates
-	result.ExternalServicesTemplates = config.Get().ExternalServicesTemplates
 
 	result.Clusters = make([]*GetFrontConfigItem, 0)
 

@@ -131,7 +131,7 @@ func StartServer(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), *config.Get().GracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), config.Get().GetGracefulShutdown())
 		defer cancel()
 
 		_ = server.Shutdown(ctx) //nolint:contextcheck
