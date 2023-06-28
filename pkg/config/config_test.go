@@ -13,11 +13,11 @@ limitations under the License.
 package config_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
-	"gopkg.in/yaml.v3"
 )
 
 func TestConfig(t *testing.T) {
@@ -33,14 +33,14 @@ func TestConfig(t *testing.T) {
 
 	links := config.Get().KubernetesEndpoints[0].Links
 
-	linksYaml, err := yaml.Marshal(&links)
+	linksJSON, err := json.Marshal(&links)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if strings.Contains(string(linksYaml), "\"\"") {
-		t.Log(config.String())
-		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksYaml))
+	if strings.Contains(string(linksJSON), "\"\"") {
+		t.Log(config.Get().String())
+		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksJSON))
 	}
 
 	test1 := config.GetNamespaceMeta("").Labels

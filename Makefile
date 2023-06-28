@@ -69,7 +69,7 @@ run:
 	--config=$(config) \
 	--log.level=DEBUG \
 	--web.listen="127.0.0.1:9000" \
-	--graceful-shutdown-timeout=1s
+	--gracefulShutdownSeconds=1
 heap:
 	go tool pprof -http=127.0.0.1:8080 http://localhost:9000/debug/pprof/heap
 allocs:

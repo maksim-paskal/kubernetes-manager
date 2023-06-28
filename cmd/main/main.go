@@ -82,7 +82,7 @@ func main() {
 		log.WithError(err).Fatal()
 	}
 
-	log.Debugf("Using config:\n%s", config.String())
+	log.Debugf("Using config:\n%s", config.Get().String())
 
 	hookSentry, err := logrushooksentry.NewHook(logrushooksentry.Options{
 		Release: config.GetVersion(),
@@ -152,14 +152,14 @@ func main() {
 
 	log.RegisterExitHandler(func() {
 		cancel()
-		time.Sleep(*config.Get().GracefulShutdownTimeout)
+		time.Sleep(config.Get().GetGracefulShutdown())
 	})
 
 	<-ctx.Done()
 
 	log.Info("Shutting down...")
 
-	time.Sleep(*config.Get().GracefulShutdownTimeout)
+	time.Sleep(config.Get().GetGracefulShutdown())
 }
 
 func RunLeaderElection(ctx context.Context) {

@@ -14,6 +14,7 @@ package azure
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -26,7 +27,6 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -57,12 +57,12 @@ type Provider struct {
 func (provider *Provider) Init(condition config.WebHook, message types.WebhookMessage) error {
 	log.Info("init azure provider")
 
-	configBytes, err := yaml.Marshal(condition.Config)
+	configBytes, err := json.Marshal(condition.Config)
 	if err != nil {
 		return errors.Wrap(err, "invalid condition config")
 	}
 
-	err = yaml.Unmarshal(configBytes, &provider.config)
+	err = json.Unmarshal(configBytes, &provider.config)
 	if err != nil {
 		return errors.Wrap(err, "invalid config")
 	}
