@@ -30,12 +30,11 @@ type GetFrontConfigBatch struct {
 }
 
 type GetFrontConfigResult struct {
-	Version            string
-	Links              *config.Links
-	Batch              *GetFrontConfigBatch
-	Clusters           []*GetFrontConfigItem
-	DebugTemplates     []*config.Template
-	RemoteServersLinks []*config.OtherLink
+	Version        string
+	Links          *config.Links
+	Batch          *GetFrontConfigBatch
+	Clusters       []*GetFrontConfigItem
+	DebugTemplates []*config.Template
 }
 
 // Get config for front pages.
@@ -49,8 +48,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 			ScaleDownHourMaxPeriod: fmt.Sprintf("%02d", config.ScaleDownHourMaxPeriod),
 			BatchSheduleTimezone:   *config.Get().BatchSheduleTimezone,
 		},
-		Links:              config.Get().Links,
-		RemoteServersLinks: config.Get().RemoteServer.Links,
+		Links: config.Get().Links,
 	}
 
 	result.DebugTemplates = config.Get().DebugTemplates

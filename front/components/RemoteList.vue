@@ -38,20 +38,19 @@
           </div>
         </template>
         <template v-slot:cell(Actions)="row">
-          <b-button size="sm" variant="outline-primary" @click="showConfigDialog(row)">Local
-            configuration
-          </b-button>
+          <b-button size="sm" variant="outline-primary" @click="showConfigDialog(row)">Settings</b-button>
           <b-button size="sm" variant="outline-primary" @click="delayAutopause(row)">Delay autopause for next 3
             hours</b-button>
         </template>
       </b-table>
       <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run this commands in your local terminal"
         ok-only>
-        <div v-for="(item, index) in this.links" :key="index">
-          <h3>{{ item.Name }}</h3>
-          <CopyTextbox :text="item.URL" />
-          <br />
-        </div>
+        <b-tabs content-class="mt-3">
+          <b-tab :title="item.Name" v-for="(item, index) in this.links" :key="index">
+            <p v-if="item.Description">{{ item.Description }}</p>
+            <CopyTextbox :text="item.URL" />
+          </b-tab>
+        </b-tabs>
       </b-modal>
     </div>
   </div>
@@ -95,17 +94,11 @@ export default {
   methods: {
     showConfigDialog(row) {
       this.links = []
-      this.config.RemoteServersLinks.forEach((item) => {
-        let url = item.URL
-
-        url = url.replaceAll("{REMOTE_IP}", row.item.IPv4)
-        if (this.user.user) {
-          url = url.replaceAll("{USER_LOGIN}", this.user.user)
-        }
-
+      row.item.Links.forEach((item) => {
         this.links.push({
           Name: item.Name,
-          URL: url
+          Description: item.Description,
+          URL: item.URL
         })
       })
 

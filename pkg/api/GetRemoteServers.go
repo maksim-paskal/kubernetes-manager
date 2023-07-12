@@ -68,6 +68,7 @@ type GetRemoteServerItem struct {
 	Created         time.Time
 	Labels          map[string]string
 	FormattedLabels []*GetRemoteServerLabel
+	Links           []*config.OtherLink
 }
 
 func (i *GetRemoteServerItem) GetLastPowerOnTime() (time.Time, error) {
@@ -128,6 +129,24 @@ func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
 			Labels:          server.Labels,
 			FormattedLabels: getRemoteServerLabels(server.Labels),
 		}
+
+		links := make([]*config.OtherLink, len(config.Get().RemoteServer.Links))
+		for id, link := range config.Get().RemoteServer.Links {
+			links[id] = &config.OtherLink{
+				Name:        link.Name,
+				Description: link.Description,
+			}
+
+			urlFormatted, err := utils.GetTemplatedResult(link.URL, item)
+			if err != nil {
+				log.WithError(err).Errorf("error parsing link %s", link.URL)
+				links[id].URL = link.URL
+			} else {
+				links[id].URL = string(urlFormatted)
+			}
+		}
+
+		item.Links = links
 
 		if item.IsStaled() {
 			item.FormattedLabels = append(item.FormattedLabels, &GetRemoteServerLabel{

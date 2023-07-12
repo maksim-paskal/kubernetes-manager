@@ -106,8 +106,9 @@ func (l *Links) FormatedLinks(namespace string) (*Links, error) {
 }
 
 type OtherLink struct {
-	Name string
-	URL  string
+	Name        string
+	URL         string
+	Description string
 }
 
 type Template struct {
