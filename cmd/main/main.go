@@ -84,7 +84,7 @@ func main() {
 
 	log.Debugf("Using config:\n%s", config.Get().String())
 
-	hookSentry, err := logrushooksentry.NewHook(logrushooksentry.Options{
+	hookSentry, err := logrushooksentry.NewHook(ctx, logrushooksentry.Options{
 		Release: config.GetVersion(),
 	})
 	if err != nil {
@@ -92,7 +92,6 @@ func main() {
 	}
 
 	log.AddHook(hookSentry)
-	defer hookSentry.Stop()
 
 	hookTracing, err := logrushookopentracing.NewHook(logrushookopentracing.Options{})
 	if err != nil {
