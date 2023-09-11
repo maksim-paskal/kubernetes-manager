@@ -15,6 +15,7 @@ package aws
 import (
 	"context"
 	"encoding/json"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -57,21 +58,25 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	provider.condition = condition
 	provider.message = message
 
-	provider.sess, err = session.NewSession(&aws.Config{
+	if len(provider.config.Region) == 0 {
+		provider.config.Region = os.Getenv("AWS_REGION")
+	}
+
+	awsConfig := &aws.Config{
 		Region: aws.String(provider.config.Region),
-		Credentials: credentials.NewStaticCredentials(
+	}
+
+	if len(provider.config.AccessKeyID) > 0 && len(provider.config.AccessSecretKey) > 0 {
+		awsConfig.Credentials = credentials.NewStaticCredentials(
 			provider.config.AccessKeyID,
 			provider.config.AccessSecretKey,
 			"",
-		),
-	},
-	)
-	if err != nil {
-		return errors.Wrap(err, "error while creating session")
+		)
 	}
 
-	if len(provider.config.Region) == 0 {
-		return errors.New("region is not defined")
+	provider.sess, err = session.NewSession(awsConfig)
+	if err != nil {
+		return errors.Wrap(err, "error while creating session")
 	}
 
 	return nil

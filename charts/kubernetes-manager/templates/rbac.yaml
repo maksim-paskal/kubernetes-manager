@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .Release.Name }}
+{{ if .Values.sa.annotations }}
+  annotations:
+{{ toYaml .Values.sa.annotations | indent 4 }}
+{{ end }}
 ---
 # for kubernetes v1.24+ token does not created by default for serviceaccount
 {{ if .Values.sa.token }}

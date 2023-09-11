@@ -30,6 +30,7 @@ service:
 sa:
   # create token for public access
   token: false
+  annotations: {}
 
 config:
   # aws-dev: |
