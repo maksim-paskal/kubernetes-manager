@@ -10,7 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/mysql/armmysqlflexibleservers v1.1.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.1.1
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/aws/aws-sdk-go v1.45.6
+	github.com/aws/aws-sdk-go v1.45.12
 	github.com/gorilla/mux v1.8.0
 	github.com/hetznercloud/hcloud-go v1.50.0
 	github.com/maksim-paskal/logrus-hook-opentracing v0.0.1
@@ -24,9 +24,9 @@ require (
 	github.com/uber/jaeger-lib v2.4.1+incompatible
 	github.com/xanzy/go-gitlab v0.91.1
 	go.uber.org/atomic v1.11.0
-	k8s.io/api v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/client-go v0.28.1
+	k8s.io/api v0.28.2
+	k8s.io/apimachinery v0.28.2
+	k8s.io/client-go v0.28.2
 )
 
 require (

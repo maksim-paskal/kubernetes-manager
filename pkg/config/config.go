@@ -118,6 +118,7 @@ type Template struct {
 }
 
 type KubernetesEndpoint struct {
+	Disabled         bool
 	Name             string
 	KubeConfigPath   string
 	KubeConfigServer string
@@ -468,8 +469,22 @@ func GetProjectProfileByName(name string) *ProjectProfile {
 	return nil
 }
 
-func GetKubernetesEndpointByName(name string) *KubernetesEndpoint {
-	for _, kubernetesEndpoints := range config.KubernetesEndpoints {
+func (t *Type) GetKubernetesEndpoints() []*KubernetesEndpoint {
+	result := make([]*KubernetesEndpoint, 0)
+
+	for _, kubernetesEndpoints := range t.KubernetesEndpoints {
+		if kubernetesEndpoints.Disabled {
+			continue
+		}
+
+		result = append(result, kubernetesEndpoints)
+	}
+
+	return result
+}
+
+func (t *Type) GetKubernetesEndpointByName(name string) *KubernetesEndpoint {
+	for _, kubernetesEndpoints := range t.KubernetesEndpoints {
 		if kubernetesEndpoints.Name == name {
 			return kubernetesEndpoints
 		}

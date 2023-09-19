@@ -68,12 +68,8 @@ func (e *Environment) GetKubeconfig(ctx context.Context) (*GetClusterKubeconfigR
 
 	clusterEndpoint := "https://127.0.0.1:6443"
 
-	for _, endpoint := range config.Get().KubernetesEndpoints {
-		if endpoint.Name == e.Cluster {
-			clusterEndpoint = endpoint.KubeConfigServer
-
-			break
-		}
+	if endpoint := config.Get().GetKubernetesEndpointByName(e.Cluster); endpoint != nil {
+		clusterEndpoint = endpoint.KubeConfigServer
 	}
 
 	result := GetClusterKubeconfigResult{

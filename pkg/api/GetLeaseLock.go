@@ -20,18 +20,11 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
-var (
-	errNoPodNamespaceOrPodName = errors.New("no pod namespace or pod name")
-	errNoKubernetesEndpoints   = errors.New("no kubernetes endpoints")
-)
+var errNoPodNamespaceOrPodName = errors.New("no pod namespace or pod name")
 
 func GetLeaseLock(podNamespace string, podName string) (*resourcelock.LeaseLock, error) {
 	if len(podNamespace) == 0 || len(podName) == 0 {
 		return nil, errNoPodNamespaceOrPodName
-	}
-
-	if len(config.Get().KubernetesEndpoints) == 0 {
-		return nil, errNoKubernetesEndpoints
 	}
 
 	clientset, err := client.GetInclusterClientset()
