@@ -56,7 +56,7 @@ func (input *StartNewEnvironmentInput) Validation() error {
 		return errors.Wrapf(errCreateNewBranchMissingInput, "profile %s unknown", input.Profile)
 	}
 
-	if config.GetKubernetesEndpointByName(input.Cluster) == nil {
+	if config.Get().GetKubernetesEndpointByName(input.Cluster) == nil {
 		return errors.Wrapf(errCreateNewBranchMissingInput, "cluster %s unknown", input.Cluster)
 	}
 
@@ -117,7 +117,7 @@ func ParseEnvironmentServices(services string) ([]*EnvironmentServices, error) {
 
 func StartNewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
 	if len(input.Cluster) == 0 {
-		input.Cluster = config.Get().KubernetesEndpoints[0].Name
+		input.Cluster = config.Get().GetKubernetesEndpoints()[0].Name
 	}
 
 	environment, err := processCreateNewBranch(ctx, input)

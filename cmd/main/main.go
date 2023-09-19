@@ -141,12 +141,14 @@ func main() {
 	go func() {
 		select {
 		case <-signalChanInterrupt:
-			log.Error("Got interruption signal...")
+			log.Warn("Got interruption signal...")
 			cancel()
+
+			<-signalChanInterrupt
+			log.Error("Got second interruption signal...")
+			os.Exit(1)
 		case <-ctx.Done():
 		}
-		<-signalChanInterrupt
-		os.Exit(1)
 	}()
 
 	log.RegisterExitHandler(func() {

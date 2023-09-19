@@ -55,7 +55,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 
 	result.Clusters = make([]*GetFrontConfigItem, 0)
 
-	for _, cluster := range appConfig.KubernetesEndpoints {
+	for _, cluster := range appConfig.GetKubernetesEndpoints() {
 		result.Clusters = append(result.Clusters, &GetFrontConfigItem{
 			ClusterName: cluster.Name,
 			Links:       cluster.Links,

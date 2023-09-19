@@ -99,7 +99,7 @@ func Init() error {
 	clientsetCluster = make(map[string]*kubernetes.Clientset)
 	restconfigCluster = make(map[string]*rest.Config)
 
-	for _, kubernetesEndpoints := range config.Get().KubernetesEndpoints {
+	for _, kubernetesEndpoints := range config.Get().GetKubernetesEndpoints() {
 		if len(kubernetesEndpoints.KubeConfigPath) > 0 {
 			restconfig, err = clientcmd.BuildConfigFromFlags("", kubernetesEndpoints.KubeConfigPath)
 			if err != nil {
