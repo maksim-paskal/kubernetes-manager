@@ -53,21 +53,6 @@ module.exports = {
   */
   build: {
     publicPath: "/_nuxt/" + process.env.APPVERSION + "/",
-    /*
-    ** Run ESLint on save
-    */
-    extend(config, { isDev, isClient }) {
-      config.devtool = 'source-map'
-
-      if (isDev && isClient) {
-        config.module.rules.push({
-          enforce: 'pre',
-          test: /\.(js|vue)$/,
-          loader: 'eslint-loader',
-          exclude: /(node_modules)/
-        })
-      }
-    }
   }
 }
 
