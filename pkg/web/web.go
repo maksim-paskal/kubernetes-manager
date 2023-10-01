@@ -137,7 +137,7 @@ func StartServer(ctx context.Context) {
 		_ = server.Shutdown(ctx) //nolint:contextcheck
 	}()
 
-	if err := server.ListenAndServe(); err != nil && ctx.Err() != nil {
+	if err := server.ListenAndServe(); err != nil && ctx.Err() == nil {
 		log.WithError(err).Fatal()
 	}
 }

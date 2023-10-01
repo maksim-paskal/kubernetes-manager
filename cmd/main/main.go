@@ -136,8 +136,6 @@ func main() {
 		go RunLeaderElection(ctx)
 	}
 
-	go web.StartServer(ctx)
-
 	go func() {
 		select {
 		case <-signalChanInterrupt:
@@ -155,6 +153,8 @@ func main() {
 		cancel()
 		time.Sleep(config.Get().GetGracefulShutdown())
 	})
+
+	go web.StartServer(ctx)
 
 	<-ctx.Done()
 
