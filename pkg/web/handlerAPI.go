@@ -25,6 +25,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/jira"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
@@ -71,7 +72,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) {
+func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) { //nolint:gocyclo,maintidx,lll
 	metricsStarts := time.Now()
 	defer metrics.LogRequest(operation, metricsStarts)
 
@@ -102,19 +103,37 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		result.Result = api.GetFrontConfig()
 	case "environments":
 		filter := r.Form.Get("filter")
+		sortby := r.Form.Get("sortby")
+
+		if len(sortby) == 0 {
+			sortby = "created"
+		}
 
 		environments, err := api.GetEnvironments(ctx, filter)
 		if err != nil {
 			return result, err
 		}
 
-		// sort descending by created
-		sort.Slice(environments, func(i, j int) bool {
-			iCreated, _ := utils.StringToTime(environments[i].NamespaceCreated)
-			jCreated, _ := utils.StringToTime(environments[j].NamespaceCreated)
+		switch sortby {
+		case "created":
+			// sort descending by created
+			sort.Slice(environments, func(i, j int) bool {
+				iCreated, _ := utils.StringToTime(environments[i].NamespaceCreated)
+				jCreated, _ := utils.StringToTime(environments[j].NamespaceCreated)
 
-			return iCreated.After(jCreated)
-		})
+				return iCreated.After(jCreated)
+			})
+		case "lastscaled":
+			// sort descending by started
+			sort.Slice(environments, func(i, j int) bool {
+				iStarted, _ := utils.StringToTime(environments[i].NamespaceLastScaled)
+				jStarted, _ := utils.StringToTime(environments[j].NamespaceLastScaled)
+
+				return jStarted.After(iStarted)
+			})
+		default:
+			return result, errors.Wrap(errBadFormat, "unknown sortby")
+		}
 
 		result.Result = environments
 	case "external-services":
@@ -217,6 +236,34 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		}
 
 		result.Result = fmt.Sprintf("Delayed scaleDown on next %s", input.Duration)
+	case "jira-issue-info":
+		issue := r.Form.Get("issue")
+		if len(issue) == 0 {
+			return result, errors.Wrap(errNoComandFound, "no issue specified")
+		}
+
+		jiraResult, err := jira.GetIssueInfo(ctx, issue)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = jiraResult
+	case "commits-behind":
+		projectID := r.Form.Get("projectID")
+		branch := r.Form.Get("branch")
+
+		if len(projectID) == 0 {
+			return result, errors.Wrap(errNoComandFound, "no projectID specified")
+		}
+
+		if len(branch) == 0 {
+			return result, errors.Wrap(errNoComandFound, "no branch specified")
+		}
+
+		result.Result, err = api.GetCommitsBehind(ctx, nil, projectID, branch)
+		if err != nil {
+			return result, err
+		}
 
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)

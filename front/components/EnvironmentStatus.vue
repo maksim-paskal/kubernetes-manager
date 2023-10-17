@@ -1,10 +1,10 @@
 <template>
   <div>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
-        $fetchState.error.message
+      $fetchState.error.message
     }}</b-alert>
     <b-alert v-if="this.errorText" variant="danger" show>{{
-        this.errorText
+      this.errorText
     }}</b-alert>
     <b-spinner v-else-if="$fetchState.pending" variant="primary" />
     <b-spinner v-else-if="callIsLoading" variant="primary" />
@@ -21,12 +21,18 @@
 <script>
 export default {
   props: ["item"],
+  watch: {
+    item() {
+      this.$fetch();
+    }
+  },
   data() {
     return {
       RunningPodsCount: -1
     }
   },
   async fetch() {
+    this.RunningPodsCount = -1
     const result = await fetch(`/api/${this.item.ID}/pods`);
     if (result.ok) {
       const data = await result.json();

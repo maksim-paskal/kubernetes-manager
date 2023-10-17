@@ -33,11 +33,8 @@ const (
 	defaultAddr                      = ":9000"
 	defaultRemoveBranchLastScaleDate = 10
 	defaultBatchShedulePeriodSeconds = 30 * 60 // 30 minutes
-	defaultBatchTimezone             = "UTC"
 	defaultGracefulShutdownSeconds   = 5
-
-	ScaleDownHourMinPeriod = 19
-	ScaleDownHourMaxPeriod = 5
+	defaultDelayHours                = 10
 
 	TemporaryTokenRandLength    = 5
 	TemporaryTokenDurationHours = 10
@@ -83,6 +80,7 @@ type Links struct {
 	PhpMyAdminURL string
 	MetricsURL    string
 	TracingURL    string
+	JiraURL       string
 	Others        []OtherLink
 }
 
@@ -258,7 +256,6 @@ var config = Type{
 	PodNamespace: flag.String("pod.namespace", os.Getenv("POD_NAMESPACE"), ""),
 
 	BatchShedulePeriodSeconds: flag.Int("batch.periodSeconds", defaultBatchShedulePeriodSeconds, "batch shedule period"),
-	BatchSheduleTimezone:      flag.String("batch.timeZone", defaultBatchTimezone, "batch shedule timezone"),
 
 	GitlabToken:     flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
 	GitlabTokenUser: flag.String("gitlab.token.user", os.Getenv("GITLAB_TOKEN_USER"), "username of token user (need to filter pipelines)"), //nolint:lll
@@ -272,6 +269,8 @@ var config = Type{
 	BatchEnabled:          flag.Bool("batch.enabled", true, "enable batch operations"),
 
 	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"), //nolint:lll
+
+	DelayHours: flag.Int("delayHours", defaultDelayHours, "default delay hours"),
 }
 
 type Type struct {
@@ -295,13 +294,13 @@ type Type struct {
 	RemoveBranchLastScaleDate  *int
 	ExternalServicesTopic      *string
 	BatchShedulePeriodSeconds  *int
-	BatchSheduleTimezone       *string
 	PodName                    *string
 	PodNamespace               *string
 	WebHooks                   []WebHook
 	Snapshots                  Snapshot
 	RemoteServer               RemoteServer
 	Autotests                  []*Autotest
+	DelayHours                 *int
 }
 
 func (t *Type) DeepCopy() *Type {
@@ -318,6 +317,15 @@ func (t *Type) DeepCopy() *Type {
 	}
 
 	return &copyOfType
+}
+
+func (t *Type) GetDefaultDelay() string {
+	delayHours, err := time.ParseDuration(fmt.Sprintf("%dh", *t.DelayHours))
+	if err != nil {
+		return utils.TimeToString(time.Now())
+	}
+
+	return utils.TimeToString(time.Now().Add(delayHours))
 }
 
 func Load() error {
@@ -391,15 +399,14 @@ func loadDefaults() {
 		if len(config.KubernetesEndpoints[id].Links.LogsPodURL) == 0 {
 			config.KubernetesEndpoints[id].Links.LogsPodURL = config.Links.LogsPodURL
 		}
+
+		if len(config.KubernetesEndpoints[id].Links.JiraURL) == 0 {
+			config.KubernetesEndpoints[id].Links.JiraURL = config.Links.JiraURL
+		}
 	}
 }
 
 func CheckConfig() error {
-	_, err := time.LoadLocation(*config.BatchSheduleTimezone)
-	if err != nil {
-		return errors.Wrap(err, "error in parsing timezone")
-	}
-
 	if len(*config.PodName) == 0 || len(*config.PodNamespace) == 0 {
 		return errors.New("pod name or namespace is empty")
 	}

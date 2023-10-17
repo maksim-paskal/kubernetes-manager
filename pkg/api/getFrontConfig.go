@@ -13,8 +13,6 @@ limitations under the License.
 package api
 
 import (
-	"fmt"
-
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 )
 
@@ -23,16 +21,9 @@ type GetFrontConfigItem struct {
 	Links       *config.Links
 }
 
-type GetFrontConfigBatch struct {
-	ScaleDownHourMinPeriod string
-	ScaleDownHourMaxPeriod string
-	BatchSheduleTimezone   string
-}
-
 type GetFrontConfigResult struct {
 	Version        string
 	Links          *config.Links
-	Batch          *GetFrontConfigBatch
 	Clusters       []*GetFrontConfigItem
 	DebugTemplates []*config.Template
 }
@@ -43,12 +34,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 
 	result := GetFrontConfigResult{
 		Version: config.GetVersion(),
-		Batch: &GetFrontConfigBatch{
-			ScaleDownHourMinPeriod: fmt.Sprintf("%02d", config.ScaleDownHourMinPeriod),
-			ScaleDownHourMaxPeriod: fmt.Sprintf("%02d", config.ScaleDownHourMaxPeriod),
-			BatchSheduleTimezone:   *config.Get().BatchSheduleTimezone,
-		},
-		Links: config.Get().Links,
+		Links:   config.Get().Links,
 	}
 
 	result.DebugTemplates = config.Get().DebugTemplates

@@ -41,6 +41,8 @@
           <b-button size="sm" variant="outline-primary" @click="showConfigDialog(row)">Settings</b-button>
           <b-button size="sm" variant="outline-primary" @click="delayAutopause(row)">Delay autopause for next 3
             hours</b-button>
+          <div v-if="row.item.Status == 'Running'">Server will work till <strong>{{ getScaleDownDelay(row) }}</strong>
+            your local time</div>
         </template>
       </b-table>
       <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run this commands in your local terminal"
@@ -92,6 +94,33 @@ export default {
     }
   },
   methods: {
+    getScaleDownDelay(row) {
+      const lang = navigator.language | window.navigator.language
+      let scaleDownDelay = Date.now();
+
+      if (row.item.Labels?.scaleDownDelay) {
+        const epoch = parseInt(row.item.Labels.scaleDownDelay);
+        let epochDate = new Date(0);
+        epochDate.setUTCSeconds(epoch);
+        scaleDownDelay = epochDate;
+      }
+
+      let scaleDownDelayDate = new Date(scaleDownDelay)
+
+      if (isNaN(scaleDownDelayDate) || scaleDownDelayDate < Date.now()) {
+        scaleDownDelayDate = Date.now()
+      }
+
+      const isToday = (new Date().toDateString() == new Date(scaleDownDelayDate).toDateString());
+
+      if (isToday) {
+        return `Today at ${new Intl.DateTimeFormat(lang, { timeStyle: 'medium' }).format(scaleDownDelayDate)}`
+      }
+
+      const options = { dateStyle: 'full', timeStyle: 'medium' };
+
+      return new Intl.DateTimeFormat(lang, options).format(scaleDownDelayDate)
+    },
     showConfigDialog(row) {
       this.links = []
       row.item.Links.forEach((item) => {
@@ -104,12 +133,22 @@ export default {
 
       this.$bvModal.show('bv-remote-servers-config-dialog')
     },
+    reload() {
+      this.callIsLoading = true;
+      // wait for 3 seconds to refresh data
+      setTimeout(() => {
+        this.$fetch()
+        this.callIsLoading = false;
+      }, 2000);
+    },
     async serverAction(row, action) {
       await this.callEndpoint('/api/make-remote-server-action', {
         Cloud: row.item.Cloud,
         ID: row.item.ID,
         Action: action
       }, true);
+
+      this.reload();
     },
     async delayAutopause(row) {
       await this.callEndpoint('/api/make-remote-server-delay', {
@@ -117,6 +156,8 @@ export default {
         ID: row.item.ID,
         Duration: '3h'
       }, true);
+
+      this.reload();
     }
   }
 }

@@ -8,7 +8,7 @@ platform=linux/amd64
 build:
 	git tag -d `git tag -l "helm-chart-*"`
 	git tag -d `git tag -l "kubernetes-manager-*"`
-	go run github.com/goreleaser/goreleaser@latest build --clean --snapshot --skip-validate
+	go run github.com/goreleaser/goreleaser@latest build --clean --snapshot --skip=validate
 	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager-amd64 .
 	mv ./dist/kubernetes-manager_linux_arm64/kubernetes-manager-arm64 .
 	docker buildx build --platform=$(platform) --pull --push --build-arg=APPVERSION=`git rev-parse --short HEAD` . -t $(image)

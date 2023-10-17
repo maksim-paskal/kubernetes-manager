@@ -8,6 +8,7 @@ links:
   metricsUrl: "5"
   tracingUrl: "6"
   logsPodUrl: "7"
+  jiraUrl: "8"
 
 kubernetesendpoints:
 - name: default

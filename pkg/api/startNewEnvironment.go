@@ -33,6 +33,25 @@ type StartNewEnvironmentInput struct {
 	Services string
 	User     string
 	Cluster  string
+	Name     string
+}
+
+func (input *StartNewEnvironmentInput) GetNamespace() (string, error) {
+	namespace, err := GetNamespaceByServices(input.GetProfile(), input.Services)
+	if err != nil {
+		return "", errors.Wrap(err, "error getting namespace")
+	}
+
+	return namespace, nil
+}
+
+func (input *StartNewEnvironmentInput) GetID() (string, error) {
+	namespace, err := input.GetNamespace()
+	if err != nil {
+		return "", errors.Wrap(err, "error getting namespace")
+	}
+
+	return fmt.Sprintf("%s:%s", input.Cluster, namespace), nil
 }
 
 func (input *StartNewEnvironmentInput) Validation() error {
@@ -133,14 +152,7 @@ func processCreateNewBranch(ctx context.Context, input *StartNewEnvironmentInput
 		return nil, errors.Wrap(err, "error validating")
 	}
 
-	namespace, err := GetNamespaceByServices(input.GetProfile(), input.Services)
-	if err != nil {
-		return nil, errors.Wrap(err, "error getting namespace")
-	}
-
-	ID := fmt.Sprintf("%s:%s", input.Cluster, namespace)
-
-	environment, err := NewEnvironment(ctx, ID, input.User)
+	environment, err := NewEnvironment(ctx, input)
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating namespace")
 	}
@@ -194,7 +206,12 @@ func GetNamespaceByServices(profile *config.ProjectProfile, services string) (st
 	), nil
 }
 
-func NewEnvironment(ctx context.Context, id string, creator string) (*Environment, error) {
+func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
+	id, err := input.GetID()
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting id")
+	}
+
 	idInfo, err := types.NewIDInfo(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing id")
@@ -215,13 +232,23 @@ func NewEnvironment(ctx context.Context, id string, creator string) (*Environmen
 		},
 	}
 
+	if namespace.ObjectMeta.Annotations == nil {
+		namespace.ObjectMeta.Annotations = make(map[string]string)
+	}
+
+	namespace.ObjectMeta.Annotations[config.LabelScaleDownDelay] = config.Get().GetDefaultDelay()
+
+	if len(input.Name) > 0 {
+		namespace.ObjectMeta.Annotations[config.LabelEnvironmentName] = input.Name
+	}
+
 	if namespace.ObjectMeta.Labels == nil {
 		namespace.ObjectMeta.Labels = make(map[string]string)
 	}
 
 	namespace.ObjectMeta.Labels[config.Namespace] = config.TrueValue
 
-	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, creator)
+	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.User)
 	namespace.ObjectMeta.Labels[creatorLabel] = config.TrueValue
 
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})

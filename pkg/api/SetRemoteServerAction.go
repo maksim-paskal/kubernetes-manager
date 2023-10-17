@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
@@ -70,6 +71,10 @@ func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput
 		return errors.Wrap(err, "can not get server")
 	}
 
+	labels := map[string]string{
+		fmt.Sprintf("last%sTime", string(input.Action)): utils.TimeToUnix(time.Now()),
+	}
+
 	if input.Action == SetRemoteServerStatusPowerOff {
 		_, _, err = hcloundClient.Server.Poweroff(ctx, server)
 		if err != nil {
@@ -82,10 +87,13 @@ func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput
 		if err != nil {
 			return errors.Wrap(err, "can power on server")
 		}
-	}
 
-	labels := map[string]string{
-		fmt.Sprintf("last%sTime", string(input.Action)): utils.TimeToUnix(time.Now()),
+		delayHours, err := time.ParseDuration(fmt.Sprintf("%dh", *config.Get().DelayHours))
+		if err != nil {
+			return errors.Wrap(err, "error parse delayHours")
+		}
+
+		labels[config.LabelScaleDownDelayShort] = utils.TimeToUnix(time.Now().Add(delayHours))
 	}
 
 	err = SetRemoteServerLabels(ctx, server, labels)

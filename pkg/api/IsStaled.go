@@ -26,7 +26,7 @@ const (
 )
 
 // simulate IsStaled if diff > 0.
-func (e *Environment) IsStaled(diff int) (StaledReason, string) {
+func (e *Environment) IsStaled(diffDays int) (StaledReason, string) {
 	reason := ""
 
 	// ignore system namespaces
@@ -40,7 +40,7 @@ func (e *Environment) IsStaled(diff int) (StaledReason, string) {
 	}
 
 	// if namespace was not scale up more than 10 days (by default) - it is staled
-	if e.NamespaceLastScaledDays > *config.Get().RemoveBranchLastScaleDate-diff {
+	if e.NamespaceLastScaledDays > *config.Get().RemoveBranchLastScaleDate-diffDays {
 		reason = fmt.Sprintf("NamespaceLastScaledDays=%d, RemoveBranchLastScaleDate=%d",
 			e.NamespaceLastScaledDays,
 			*config.Get().RemoveBranchLastScaleDate,
