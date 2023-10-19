@@ -171,6 +171,9 @@ func RunLeaderElection(ctx context.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 		Lock:            lock,
 		ReleaseOnCancel: true,
@@ -182,7 +185,7 @@ func RunLeaderElection(ctx context.Context) {
 				batch.Schedule(ctx)
 			},
 			OnStoppedLeading: func() {
-				batch.Stop()
+				cancel()
 			},
 		},
 	})

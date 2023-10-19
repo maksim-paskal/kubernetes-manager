@@ -6,18 +6,12 @@
     <b-spinner v-if="callIsLoading" variant="primary" />
     <div v-else>
       <b-card bg-variant="light" header="Pause branch" class="text-center">
-        <div v-if="config.Batch">
-          branch autopause
-          {{ config.Batch.ScaleDownHourMinPeriod }}:00 -
-          {{ config.Batch.ScaleDownHourMaxPeriod }}:00
-          {{ config.Batch.BatchSheduleTimezone }}
-        </div>
+        <ScaleDownDate />
         <br />
         <b-button @click="call('make-pause')"><em class="bi bi-pause-fill" />&nbsp;Pause
         </b-button>
         <b-button variant="success" @click="call('make-start')"><em class="bi bi-play-fill" />&nbsp;Start</b-button>
-        <b-button @click="call('make-scaledown-delay', { Delay: '3h' })">Delay autopause for next 3 hours
-        </b-button>
+        <b-button @click="scaledownDelay('3h')">Delay autopause for next 3 hours</b-button>
       </b-card>
       <br />
       <b-card bg-variant="light" header="Actions" class="text-center">
@@ -41,5 +35,11 @@ export default {
       title: this.pageTitle('Settings', true)
     }
   },
+  methods: {
+    async scaledownDelay(interval) {
+      await this.call('make-scaledown-delay', { Delay: interval });
+      this.loadEnvironment(this.environment.ID);
+    }
+  }
 };
 </script>

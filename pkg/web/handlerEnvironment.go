@@ -200,7 +200,9 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.Wrap(errBadFormat, "no projectID specified")
 		}
 
-		projectInfo, err := environment.GetGitlabProjectsInfo(ctx, projectID)
+		branch := r.Form.Get("branch")
+
+		projectInfo, err := environment.GetGitlabProjectsInfo(ctx, projectID, branch)
 		if err != nil {
 			return result, err
 		}

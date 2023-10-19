@@ -11,7 +11,7 @@
     </div>
     <b-table striped hover :fields="fields" :items="data" :filter="tableFilter">
       <template v-slot:cell(GitBranch)="data">
-        <pre>{{ getGitBranches(data.item) }}</pre>
+        <GitBranch :item="data.item" />
       </template>
       <template v-slot:cell(Status)="data">
         <EnvironmentStatus :item="data.item" />
@@ -69,21 +69,6 @@ export default {
       }
 
       return data.Namespace
-    },
-    getGitBranches(data) {
-      if (!data.NamespaceAnnotations) return;
-
-      let branches = [];
-      Object.keys(data.NamespaceAnnotations).forEach(item => {
-        if (item.startsWith("kubernetes-manager/project-")) {
-          const name = data.NamespaceAnnotations[item];
-          if (!branches.includes(name)) {
-            branches.push(name);
-          }
-        }
-      })
-
-      return branches.join("\n")
     }
   }
 }

@@ -24,21 +24,32 @@
                 ProjectID: `${data.item.ProjectID}`,
                 Ref: data.item.GitBranch,
               })
-              " variant="outline-danger"><em class="bi bi-trash3" /></b-button>&nbsp;
+              " variant="outline-danger"><em class="bi bi-trash3" /></b-button>
           <em v-if="data.item.Required" class="text-danger bi bi-asterisk" />
           <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}</a>
-          &nbsp;<span v-if="data.item.GitBranch" title="git tag" class="badge rounded-pill bg-primary">{{
-            data.item.GitBranch
-          }}</span>
-          <span v-else-if="data.item.AdditionalInfo" title="docker tag" class="badge rounded-pill bg-primary">{{
-            data.item.AdditionalInfo.PodRunning.Tag
-          }}</span>&nbsp;<a v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.PodRunning.GitHash"
-            target="_blank" :href="getGitlabCommitURL(data.item)"><span title="git short commit hash"
-              class="badge rounded-pill bg-success">{{ data.item.AdditionalInfo.PodRunning.GitHash }}</span></a>
-          <a v-if="data.item.AdditionalInfo &&
-            data.item.AdditionalInfo.Pipelines.LastSuccessPipeline
-            " :href="data.item.AdditionalInfo.Pipelines.LastSuccessPipeline" target="_blank"><span
-              title="deploy pipeline" class="badge rounded-pill bg-success">pipeline</span></a>
+          <span v-if="data.item.GitBranch" title="git tag"
+            @click="openInNewTab(`${data.item.WebURL}/-/tree/${data.item.GitBranch}`)"
+            class="hand badge-margin badge rounded-pill bg-primary">{{
+              data.item.GitBranch }}</span>
+          <span v-if="data.item.AdditionalInfo &&
+            data.item.AdditionalInfo.CommitsBehind > 0"
+            @click="openInNewTab(`${data.item.WebURL}/-/compare/${data.item.GitBranch}...${data.item.AdditionalInfo.DefaultBranch}`)"
+            title="branch behind default branch" class="hand badge-margin badge rounded-pill bg-danger">{{
+              data.item.AdditionalInfo.CommitsBehind }}
+            commits behind</span>
+          <span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.BranchNotFound"
+            title="badge-margin branch behind default branch" class="badge rounded-pill bg-danger">branch not found</span>
+          <span v-else-if="!data.item.GitBranch && data.item.AdditionalInfo" title="docker tag"
+            class="badge-margin badge rounded-pill bg-primary">{{
+              data.item.AdditionalInfo.PodRunning.Tag
+            }}</span><span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.PodRunning.GitHash"
+            @click="openInNewTab(getGitlabCommitURL(data.item))" title="git short commit hash"
+            class="hand badge-margin badge rounded-pill bg-success">{{ data.item.AdditionalInfo.PodRunning.GitHash
+            }}</span>
+          <span v-if="data.item.AdditionalInfo &&
+            data.item.AdditionalInfo.Pipelines.LastSuccessPipeline"
+            @click="openInNewTab(data.item.AdditionalInfo.Pipelines.LastSuccessPipeline)" title="deploy pipeline"
+            class="hand badge-margin badge rounded-pill bg-success">pipeline</span>
           <div v-if="data.item.TagsList.length > 0">
             <div style="margin-left: 5px" class="badge btn-secondary" v-bind:key="index"
               v-for="(item, index) in data.item.TagsList">
@@ -72,6 +83,15 @@
     </b-modal>
   </div>
 </template>
+<style scoped>
+.badge-margin {
+  margin-left: 2px;
+}
+
+.hand {
+  cursor: pointer;
+}
+</style>
 <script>
 export default {
   props: ["podInfo", "namespace", "projectProfile"],
@@ -157,15 +177,22 @@ export default {
 
       return gitBranch;
     },
-    getSelectedServices() {
+    getSelectedServicesRaw() {
       let selectedServices = [];
 
       this.data.forEach(async (row) => {
         if (row.Deploy) {
-          selectedServices[
-            selectedServices.length
-          ] = `${row.ProjectID}:${row.Deploy}`;
+          selectedServices[selectedServices.length] = row;
         }
+      });
+
+      return selectedServices;
+    },
+    getSelectedServices() {
+      let selectedServices = [];
+
+      this.getSelectedServicesRaw().forEach(async (row) => {
+        selectedServices[selectedServices.length] = `${row.ProjectID}:${row.Deploy}`;
       });
 
       return selectedServices.join(";");
@@ -189,6 +216,9 @@ export default {
       this.shareLink = `${window.location.origin}/create?${args.join("&")}`;
 
       this.$bvModal.show("bv-create-share-dialog");
+    },
+    openInNewTab(url) {
+      window.open(url, '_blank', 'noreferrer');
     },
   },
   async fetch() {
@@ -227,7 +257,7 @@ export default {
           el.GitBranch = this.getGitBranch(el.ProjectID);
 
           const projectInfo = await fetch(
-            `/api/${this.$route.params.environmentID}/project-info?projectID=${el.ProjectID}`
+            `/api/${this.$route.params.environmentID}/project-info?projectID=${encodeURI(el.ProjectID)}&branch=${encodeURI(el.GitBranch)}`
           );
           if (projectInfo.ok) {
             const dataProjectInfo = await projectInfo.json();

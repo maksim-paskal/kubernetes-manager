@@ -20,11 +20,14 @@ import (
 )
 
 type GetGitlabProjectsInfoItem struct {
-	PodRunning *GetPodByImageResult
-	Pipelines  *GetGitlabPipelinesStatusResults
+	PodRunning     *GetPodByImageResult
+	Pipelines      *GetGitlabPipelinesStatusResults
+	CommitsBehind  *int
+	DefaultBranch  *string
+	BranchNotFound bool
 }
 
-func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID string) (*GetGitlabProjectsInfoItem, error) {
+func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, branch string) (*GetGitlabProjectsInfoItem, error) { //nolint:lll
 	if e.gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}
@@ -38,7 +41,9 @@ func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID strin
 		return nil, errors.Wrap(err, "can not get project")
 	}
 
-	result := GetGitlabProjectsInfoItem{}
+	result := GetGitlabProjectsInfoItem{
+		DefaultBranch: &project.DefaultBranch,
+	}
 
 	result.Pipelines, err = e.GetGitlabPipelinesStatus(ctx, projectID)
 	if err != nil {
@@ -49,6 +54,14 @@ func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID strin
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get pod images")
 	}
+
+	getCommitsBehind, err := GetCommitsBehind(ctx, project, projectID, branch)
+	if err != nil {
+		return nil, errors.Wrap(err, "can not get commit behind")
+	}
+
+	result.BranchNotFound = getCommitsBehind.BranchNotFound
+	result.CommitsBehind = getCommitsBehind.CommitsBehind
 
 	return &result, nil
 }

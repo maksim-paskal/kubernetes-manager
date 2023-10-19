@@ -22,36 +22,18 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"go.uber.org/atomic"
 )
 
-const (
-	namespaceCreatedDelay    = 60 * time.Minute
-	namespaceLastScaledDelay = 60 * time.Minute
-	maxScaleDownDuration     = 5 * time.Minute
-)
-
-var isStoped = *atomic.NewBool(false)
+const maxScaleDownDuration = 5 * time.Minute
 
 func Schedule(ctx context.Context) {
 	log.Info("starting batch")
 
-	isStoped.Store(false)
-
 	tracer := opentracing.GlobalTracer()
-
-	_, err := time.LoadLocation(*config.Get().BatchSheduleTimezone)
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
 
 	ticker := time.NewTicker(config.Get().GetBatchShedulePeriod())
 
 	for ctx.Err() == nil {
-		if isStoped.Load() {
-			return
-		}
-
 		go func() {
 			ctx, cancel := context.WithTimeout(ctx, config.Get().GetBatchShedulePeriod())
 			defer cancel()
@@ -71,21 +53,11 @@ func Schedule(ctx context.Context) {
 	}
 }
 
-func Stop() {
-	isStoped.Store(true)
-}
-
 func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	tracer := opentracing.GlobalTracer()
 	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
 
 	defer span.Finish()
-
-	if !IsScaleDownActive(time.Now()) {
-		log.Debug("scaleDownALL not in period")
-
-		return nil
-	}
 
 	environments, err := api.GetEnvironments(ctx, "")
 	if err != nil {
@@ -110,10 +82,7 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 				return errors.Wrap(err, "error reload environment")
 			}
 
-			isScaledownDelay, err := IsScaledownDelay(time.Now(), environment)
-			if err != nil {
-				return errors.Wrap(err, "error check scaledown delay")
-			} else if isScaledownDelay {
+			if !environment.NeedToScaleDown(time.Now(), 0) {
 				return nil
 			}
 

@@ -26,8 +26,9 @@ type EnvironmentBadge struct {
 }
 
 const (
-	stalledDaysToSimmulate = 3
-	badgeLastStarted       = "Last started"
+	stalledDaysToSimmulate        = 3
+	needToScaleDownHoursSimmulate = 2
+	badgeLastStarted              = "Last started"
 )
 
 func (e *Environment) getBadges() []*EnvironmentBadge {
@@ -57,6 +58,14 @@ func (e *Environment) getBadges() []*EnvironmentBadge {
 			Key:         "staled",
 			Value:       "true",
 			Description: "environment will be removed",
+		})
+	}
+
+	if e.NeedToScaleDown(time.Now(), needToScaleDownHoursSimmulate) {
+		result = append(result, &EnvironmentBadge{
+			Key:         "scaledown",
+			Value:       "true",
+			Description: fmt.Sprintf("environment will be scaled down in %d hours", needToScaleDownHoursSimmulate),
 		})
 	}
 
