@@ -9,7 +9,7 @@
     <b-spinner v-if="$fetchState.pending || callIsLoading" variant="primary" />
     <div v-else>
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
-      <b-table striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
+      <b-table style="margin-top:5px" striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(ServiceHost)="row">
           <CopyIcon :text="row.item.ServiceHost" />
           {{ row.item.ServiceHost }}&nbsp;<span v-if="row.item.Labels" class="badge rounded-pill bg-primary">{{
@@ -17,20 +17,19 @@
           }}</span>
         </template>
         <template v-slot:cell(Actions)="row">
-          <b-button size="sm" variant="outline-danger"
-            @click="call('make-delete-pod', { PodName: row.item.ServiceHost })" v-if="row.item.Type == 'pod'">restart
+          <b-button size="sm" variant="outline-danger" @click="call('make-delete-pod', { PodName: row.item.ServiceHost })"
+            v-if="row.item.Type == 'pod'">restart
           </b-button>
           <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)" v-if="row.item.Ports">proxy
           </b-button>
           <b-button size="sm" variant="outline-primary" @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
             shell</b-button>
-          <b-button size="sm" target="_blank" v-if="environment.Links.LogsPodURL && row.item.Type == 'pod'"
-            variant="outline-primary" :href="getPodNameLink(row.item.Name)">logs</b-button>
-          <b-button v-if="
-            /.*mysql.*.svc.cluster.local$/.test(
-              row.item.ServiceHost
-            )
-          " size="sm" variant="outline-primary" target="_blank"
+          <b-button size="sm" variant="outline-primary" @click="showLogsDialog(row)" v-if="row.item.Type == 'pod'">
+            logs</b-button>
+          <b-button v-if="/.*mysql.*.svc.cluster.local$/.test(
+            row.item.ServiceHost
+          )
+            " size="sm" variant="outline-primary" target="_blank"
             :href="`${environment.Links.PhpMyAdminURL}?host=${row.item.ServiceHost}`">
             phpmyadmin</b-button>
         </template>
@@ -52,6 +51,9 @@
       <div style="margin-top:20px">
         <CopyTextbox :text="shellDialogText" />
       </div>
+    </b-modal>
+    <b-modal size="xl" centered id="bv-logs-dialog" title="Pod logs" ok-only>
+      <PodLogs v-if="this.selectedRow" :pod="this.selectedRow.item.Name" :logsPodURL="environment.Links.LogsPodURL" />
     </b-modal>
   </div>
 </template>
@@ -77,7 +79,8 @@ export default {
         { key: "Actions", label: "Actions" },
       ],
       proxyDialogText: "",
-      shellDialogText: ""
+      shellDialogText: "",
+      selectedRow: null,
     };
   },
   async fetch() {
@@ -120,6 +123,10 @@ export default {
       this.shellDialogText = `kubectl --kubeconfig=${this.kubeconfig} -n ${this.environment.Namespace} exec -it ${row.item.Name} -- sh`
 
       this.$bvModal.show('bv-shell-dialog')
+    },
+    showLogsDialog(row) {
+      this.selectedRow = row
+      this.$bvModal.show('bv-logs-dialog')
     },
   },
 };

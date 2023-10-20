@@ -694,6 +694,41 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = "Autotest started. Click Refresh button to see status."
+	case "pod-containers":
+		pod := r.Form.Get("pod")
+
+		if len(pod) == 0 {
+			return result, errors.Wrap(errBadFormat, "no pod specified")
+		}
+
+		podContainers, err := environment.GetPodContainers(ctx, pod)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = podContainers
+	case "pod-container-logs":
+		pod := r.Form.Get("pod")
+		container := r.Form.Get("container")
+
+		if len(pod) == 0 || len(container) == 0 {
+			return result, errors.Wrap(errBadFormat, "no pod or container specified")
+		}
+
+		logRequest := &api.GetPodContainerLogRequest{
+			Pod:       pod,
+			Container: container,
+		}
+
+		logRequest.SetTimestamps(r.Form.Get("timestamps"))
+
+		containerLog, err := environment.GetPodContainerLog(ctx, logRequest)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = containerLog
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}
