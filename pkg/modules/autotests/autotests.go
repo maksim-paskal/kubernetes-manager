@@ -15,9 +15,9 @@ package autotests
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -122,7 +122,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 		}
 
 		item := &Pipeline{
-			PipelineID:           fmt.Sprintf("%d", pipeline.ID),
+			PipelineID:           strconv.Itoa(pipeline.ID),
 			CommitShortSHA:       pipeline.SHA[:8],
 			Status:               PipelineStatus(pipeline.Status),
 			PipelineURL:          pipeline.WebURL,
