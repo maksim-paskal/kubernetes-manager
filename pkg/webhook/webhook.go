@@ -24,8 +24,8 @@ import (
 
 // provider interface to process events.
 type Provider interface {
-	Init(config.WebHook, types.WebhookMessage) error
-	Process(context.Context) error
+	Init(webhook config.WebHook, webhookMessage types.WebhookMessage) error
+	Process(ctx context.Context) error
 }
 
 // create new webbhok event.
