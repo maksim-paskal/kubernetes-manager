@@ -17,6 +17,9 @@
         <b-link class="nav-link" active-class="active" to="services">services</b-link>
       </li>
       <li class="nav-item">
+        <b-link class="nav-link" active-class="active" to="events">events</b-link>
+      </li>
+      <li class="nav-item">
         <b-link class="nav-link" active-class="active" to="settings">settings</b-link>
       </li>
       <li class="nav-item">

@@ -728,7 +728,13 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = containerLog
+	case "events":
+		events, err := environment.GetEvents(ctx)
+		if err != nil {
+			return result, err
+		}
 
+		result.Result = events
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

@@ -265,6 +265,19 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 			return result, err
 		}
 
+	case "cluster-info":
+		clusterName := r.Form.Get("cluster")
+		if len(clusterName) == 0 {
+			return result, errors.Wrap(errNoComandFound, "no cluster specified")
+		}
+
+		getClusterInfo, err := api.GetClusterInfo(ctx, clusterName)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = getClusterInfo.ToHuman()
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

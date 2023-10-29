@@ -12,7 +12,7 @@
       <li title="Summary" v-bind:class="stepClass(3, 'last', 'bi bi-check-lg')" />
     </ul>
 
-    <b-spinner v-if="callIsLoading || $fetchState.pending" variant="primary" />
+    <b-spinner v-if="!this.config?.Clusters || callIsLoading || $fetchState.pending" variant="primary" />
 
     <div v-bind:class="(callIsLoading || $fetchState.pending) ? 'hide' : ''">
       <div v-bind:class="(currentStep == 1) ? '' : 'hide'">
@@ -24,9 +24,8 @@
           <b-form-select class="form-select" v-model="projectProfile" :options="projectProfiles"
             :disabled="!GitlabProjectsLoaded" style="width:300px" />
           &nbsp;&nbsp;Cluster:&nbsp;
-          <select id="createClusterNameId" class="form-select" :disabled="!GitlabProjectsLoaded" style="width:300px">
-            <option :key="index" v-for="(item, index) in this.config.Clusters">{{ item.ClusterName }}</option>
-          </select>
+          <b-form-select class="form-select" v-model="clusterName" :options="clusters" :disabled="!GitlabProjectsLoaded"
+            style="width:300px" />
         </div>
 
         <div v-if="user.user && config && projectProfile">
@@ -42,6 +41,7 @@
             <BranchCommitsBehind :id="item.ProjectID + item.Deploy" :projectID="item.ProjectID" :branch="item.Deploy" />
           </li>
         </ul>
+        <ClusterCapacity v-if="clusterName" :cluster="clusterName" />
       </div>
 
       <div style="margin-top: 30px">
@@ -131,7 +131,20 @@ export default {
   computed: {
     GitlabProjectsLoaded() {
       return this.$store.state.componentLoaded.GitlabProjects;
-    }
+    },
+    clusters() {
+      let result = []
+
+      if (!this.config?.Clusters) {
+        return result;
+      }
+
+      this.config.Clusters.forEach((el) => {
+        result.push(el.ClusterName)
+      })
+
+      return result;
+    },
   },
   async fetch() {
     if (this.projectProfileLoaded) {
@@ -152,8 +165,8 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       const userSelectedProfile = urlParams.get('profile');
 
-      this.projectProfile = userSelectedProfile ? userSelectedProfile : this.data[0].Value;
-
+      this.projectProfile = userSelectedProfile || this.data[0].Value;
+      this.clusterName = this.clusters[0];
       this.projectProfileLoaded = true;
     } else {
       const text = await result.text();
@@ -164,6 +177,7 @@ export default {
     return {
       currentStep: 1,
       environmentName: "",
+      clusterName: "",
       data: [],
       projectProfileLoaded: false,
       projectProfile: "",
@@ -195,14 +209,12 @@ export default {
     },
 
     async createEnvironment() {
-      const cluster = document.getElementById("createClusterNameId").value;
-
       const services = this.$refs.createNewEnvironmentProjects.getSelectedServices();
 
       await this.callEndpoint('/api/make-create-environment', {
         Profile: this.projectProfile,
         Services: services,
-        Cluster: cluster,
+        Cluster: this.clusterName,
         Name: this.environmentName,
       });
 
