@@ -8,7 +8,7 @@
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
       <b-table style="margin-top:5px" striped hover :items="data.Result" :fields="dataFields" :filter="dataFilter">
         <template v-slot:cell(Created)="row">
-          <div :title="row.item.Created">{{ row.item.CreatedShort }} ago</div>
+          <div :title="row.item.Created">{{ row.item.CreatedShort }}&nbsp;ago</div>
         </template>
       </b-table>
     </div>

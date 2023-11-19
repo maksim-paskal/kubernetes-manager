@@ -204,6 +204,46 @@ type RemoteServer struct {
 	Links        []*OtherLink
 }
 
+type AutotestCustomActionEnvType string
+
+const (
+	AutotestCustomActionEnvList AutotestCustomActionEnvType = "list"
+	AutotestCustomActionEnvText AutotestCustomActionEnvType = "text"
+)
+
+type AutotestCustomActionEnv struct {
+	Name        string
+	Default     string
+	Description string
+	Type        AutotestCustomActionEnvType
+}
+
+type AutotestCustomAction struct {
+	ProjectID int
+	Tests     []string
+	Env       []*AutotestCustomActionEnv
+}
+
+func (d *AutotestCustomAction) DeepCopy() *AutotestCustomAction {
+	copyOfCustomAction := AutotestCustomAction{}
+
+	if d == nil {
+		return &copyOfCustomAction
+	}
+
+	typeJSON, err := json.Marshal(d)
+	if err != nil {
+		log.WithError(err).Fatal("error while json.Marshal")
+	}
+
+	err = json.Unmarshal(typeJSON, &copyOfCustomAction)
+	if err != nil {
+		log.WithError(err).Fatal("error while json.Unmarshal")
+	}
+
+	return &copyOfCustomAction
+}
+
 type AutotestAction struct {
 	Name    string
 	Test    string
@@ -215,6 +255,7 @@ type Autotest struct {
 	ProjectID         int
 	ReportURL         string
 	Actions           []*AutotestAction
+	CustomAction      *AutotestCustomAction
 	FilterByNamespace bool
 }
 

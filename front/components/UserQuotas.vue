@@ -25,12 +25,12 @@
           </template>
           <template v-slot:cell(Created)="row">
             <div v-if="row.item.NamespaceCreatedDays > 0" :title="row.item.NamespaceCreated">{{
-              row.item.NamespaceCreatedDays }} days ago</div>
+              row.item.NamespaceCreatedDays }}&nbsp;days&nbsp;ago</div>
             <div v-else>today</div>
           </template>
           <template v-slot:cell(LastScaled)="row">
             <div v-if="row.item.NamespaceLastScaledDays > 0" :title="row.item.NamespaceLastScaled">{{
-              row.item.NamespaceLastScaledDays }} days ago</div>
+              row.item.NamespaceLastScaledDays }}&nbsp;days&nbsp;ago</div>
             <div v-else>today</div>
           </template>
           <template v-slot:cell(Action)="row">
