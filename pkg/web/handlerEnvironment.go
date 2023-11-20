@@ -675,20 +675,19 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = autotestsResults
-	case "make-start-autotest":
-		type StartAutotest struct {
-			Test string
-			User string
+	case "make-start-autotest", "make-start-autotest-custom":
+		startAutotest := autotests.StartAutotestInput{
+			User: owner[0],
 		}
-
-		startAutotest := StartAutotest{}
 
 		err = json.Unmarshal(body, &startAutotest)
 		if err != nil {
 			return result, err
 		}
 
-		err = autotests.StartAutotest(ctx, environment, startAutotest.Test, startAutotest.User)
+		startAutotest.SetEnvironment(environment)
+
+		err = autotests.StartAutotest(ctx, &startAutotest)
 		if err != nil {
 			return result, err
 		}

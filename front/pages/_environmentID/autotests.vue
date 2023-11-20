@@ -11,6 +11,7 @@
         <b-button style="margin-right: 10px" v-bind:key="index" v-for="(item, index) in this.data.Result.Actions"
           target="_blank" @click="startAutotest(item)">&nbsp;{{ item.Name
           }}</b-button>
+        <b-button @click="showCustomDialog()">Custom autotest</b-button>
       </div>
       <b-card-group v-if="this.data.Result.LastPipelines" style="margin-bottom:15px">
         <b-card :title="getCardTitle(item)" v-bind:key="index" v-for="(item, index) in this.data.Result.LastPipelines">
@@ -27,14 +28,23 @@
             <small class="text-muted">&nbsp;{{ item.PipelineRelease }}</small>
           </template>
           <template #footer>
-            <small class="text-muted" :title="item.PipelineCreated">{{ item.PipelineCreatedHuman }} ago</small>
+            <small class="text-muted" :title="item.PipelineCreated">{{ item.PipelineCreatedHuman }}&nbsp;ago</small>
           </template>
         </b-card>
       </b-card-group>
       <b-form-input v-model="dataFilter" autocomplete="off" placeholder="Type to Search" />
-      <b-table striped hover :items="data.Result.Pipelines" :fields="dataFields" :filter="dataFilter">
+      <b-table style="margin-top:5px" striped hover :items="data.Result.Pipelines" :fields="dataFields"
+        :filter="dataFilter">
         <template v-slot:cell(Score)="row">
           <AllureScore v-if="row.item.Status === 'success'" :allureResults="row.item.ResultURL" />
+        </template>
+        <template v-slot:cell(Test)="row">
+          {{ row.item.Test }}
+          <span v-if="row.item.PipelineEnv?.CUSTOM_ACTION" class="badge rounded-pill bg-primary"
+            :title="JSON.stringify(row.item.PipelineEnv)">custom</span>
+        </template>
+        <template v-slot:cell(PipelineCreated)="row">
+          <div :title="row.item.PipelineCreated">{{ row.item.PipelineCreatedHuman }}&nbsp;ago</div>
         </template>
         <template v-slot:cell(Actions)="row">
           <b-button size="sm" variant="outline-primary" target="_blank" :href="row.item.PipelineURL">Open
@@ -46,6 +56,10 @@
       <b-button variant="light" title="Get more results" v-if="data.Result.HasMorePipelines" @click="getMoreResults()"><em
           class="bi bi-arrow-clockwise" /></b-button>
     </div>
+    <b-modal centered id="bv-custom-dialog" @ok="createCustomRun()" title="Create custom run">
+      <AutotestCustomAction ref="autotestCustomAction" v-if="this.data.Result?.CustomAction"
+        :customAction="this.data.Result.CustomAction" />
+    </b-modal>
   </div>
 </template>
 <script>
@@ -64,6 +78,7 @@ export default {
       dataFields: [
         { key: "PipelineID", label: "ID" },
         { key: "PipelineCreated", label: "Created" },
+        { key: "PipelineDuration", label: "Duration" },
         { key: "Status", label: "Status" },
         { key: "Test", label: "Test" },
         { key: "PipelineRelease", label: "Release" },
@@ -84,7 +99,7 @@ export default {
   },
   methods: {
     startAutotest(item) {
-      this.call('make-start-autotest', { Test: item.Test, User: this.user.user })
+      this.call('make-start-autotest', { Test: item.Test })
     },
     getCardTitle(item) {
       return `${item.Test}`
@@ -92,6 +107,12 @@ export default {
     getMoreResults() {
       this.size += 10;
       this.$router.app.refresh();
+    },
+    showCustomDialog() {
+      this.$bvModal.show('bv-custom-dialog')
+    },
+    createCustomRun() {
+      this.call('make-start-autotest-custom', this.$refs.autotestCustomAction.getCustomActionInput())
     }
   }
 }

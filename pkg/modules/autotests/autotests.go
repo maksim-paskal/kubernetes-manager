@@ -34,6 +34,7 @@ type (
 		Test string
 	}
 	Details struct {
+		CustomAction     *config.AutotestCustomAction
 		Actions          []*config.AutotestAction
 		Pipelines        []*Pipeline
 		LastPipelines    []*Pipeline
@@ -47,11 +48,13 @@ type (
 		PipelineCreatedHuman string
 		PipelineOwner        string
 		PipelineRelease      string
+		PipelineDuration     string
 		CommitShortSHA       string
 		ResultURL            string
 		Status               PipelineStatus
 		Test                 string
 		TestNamespace        string
+		PipelineEnv          map[string]string
 	}
 )
 
@@ -76,6 +79,14 @@ const (
 	defaultGetAutotestDetailsSize = 10
 )
 
+func (d *Details) Normalize(a *config.Autotest) error {
+	if d.CustomAction.ProjectID == 0 {
+		d.CustomAction.ProjectID = a.ProjectID
+	}
+
+	return nil
+}
+
 func GetAutotestDetails(ctx context.Context, environment *api.Environment, size int) (*Details, error) {
 	autotestConfig := config.Get().GetAutotestByID(environment.ID)
 
@@ -84,9 +95,15 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	}
 
 	result := Details{
+		CustomAction:  autotestConfig.CustomAction.DeepCopy(),
 		Actions:       autotestConfig.Actions,
 		Pipelines:     []*Pipeline{},
 		LastPipelines: []*Pipeline{},
+	}
+
+	// add defaults values if not set
+	if err := result.Normalize(autotestConfig); err != nil {
+		return nil, errors.Wrap(err, "error normalizing")
 	}
 
 	gitlabClient := client.GetGitlabClient()
@@ -121,6 +138,13 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			break
 		}
 
+		pipelineInfo, _, err := gitlabClient.Pipelines.GetPipeline(pipeline.ProjectID, pipeline.ID, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, errors.Wrap(err, "error getting pipeline info")
+		}
+
+		pipelineDuration := time.Duration(pipelineInfo.Duration) * time.Second
+
 		item := &Pipeline{
 			PipelineID:           strconv.Itoa(pipeline.ID),
 			CommitShortSHA:       pipeline.SHA[:8],
@@ -128,6 +152,8 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			PipelineURL:          pipeline.WebURL,
 			PipelineCreated:      utils.TimeToString(*pipeline.CreatedAt),
 			PipelineCreatedHuman: utils.HumanizeDuration(utils.HumanizeDurationShort, time.Since(*pipeline.CreatedAt)),
+			PipelineEnv:          make(map[string]string),
+			PipelineDuration:     utils.HumanizeDuration(utils.HumanizeDurationShort, pipelineDuration),
 		}
 
 		pipelineVariables, _, err := gitlabClient.Pipelines.GetPipelineVariables(
@@ -140,6 +166,8 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 		}
 
 		for _, pipelineVariable := range pipelineVariables {
+			item.PipelineEnv[pipelineVariable.Key] = pipelineVariable.Value
+
 			switch pipelineVariable.Key {
 			case envNameTest:
 				item.Test = pipelineVariable.Value
@@ -188,55 +216,79 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	return &result, nil
 }
 
-func StartAutotest(ctx context.Context, environment *api.Environment, test string, user string) error {
-	autotestConfig := config.Get().GetAutotestByID(environment.ID)
+type StartAutotestInput struct {
+	environment *api.Environment
+	Ref         string
+	Test        string
+	User        string
+	Force       bool
+	ExtraEnv    map[string]string
+}
+
+func (s *StartAutotestInput) Validate() error {
+	if len(s.Test) == 0 {
+		return errors.New("test type is empty")
+	}
+
+	if len(s.User) == 0 {
+		return errors.New("user is empty")
+	}
+
+	if s.environment == nil {
+		return errors.New("environment is empty")
+	}
+
+	return nil
+}
+
+func (s *StartAutotestInput) SetEnvironment(environment *api.Environment) {
+	s.environment = environment
+}
+
+func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
+	if err := input.Validate(); err != nil {
+		return errors.Wrap(err, "error validating input")
+	}
+
+	autotestConfig := config.Get().GetAutotestByID(input.environment.ID)
 
 	if autotestConfig == nil {
 		return errNotFound
 	}
 
-	action := autotestConfig.GetActionByTest(test)
+	action := autotestConfig.GetActionByTest(input.Test)
 
 	if action == nil {
 		return errNotFound
 	}
 
-	// check for pending pipelines
-	details, err := GetAutotestDetails(ctx, environment, defaultGetAutotestDetailsSize)
-	if err != nil {
-		return errors.Wrap(err, "error getting environment details")
+	if len(input.Ref) == 0 {
+		input.Ref = action.Ref
 	}
 
-	for _, pipeline := range details.Pipelines {
-		if pipeline.Test == test && (pipeline.Status == pipelineStatusRunning || pipeline.Status == pipelineStatusPending) {
-			return errPipelineIsRunning
+	// check for pending pipelines
+	if !input.Force {
+		details, err := GetAutotestDetails(ctx, input.environment, defaultGetAutotestDetailsSize)
+		if err != nil {
+			return errors.Wrap(err, "error getting environment details")
+		}
+
+		for _, pipeline := range details.Pipelines {
+			if pipeline.Test == input.Test &&
+				(pipeline.Status == pipelineStatusRunning || pipeline.Status == pipelineStatusPending) {
+				return errPipelineIsRunning
+			}
 		}
 	}
 
-	gitlabClient := client.GetGitlabClient()
-
-	variables := make([]*gitlab.PipelineVariableOptions, 0)
-
-	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(envNameTest),
-		Value:        gitlab.String(test),
-		VariableType: gitlab.String("env_var"),
-	})
-
-	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(envNameOwner),
-		Value:        gitlab.String(user),
-		VariableType: gitlab.String("env_var"),
-	})
-
-	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(envNameNamespace),
-		Value:        gitlab.String(environment.Namespace),
-		VariableType: gitlab.String("env_var"),
-	})
+	pipelineEnv := map[string]string{
+		envNameTest:      input.Test,
+		envNameOwner:     input.User,
+		envNameNamespace: input.environment.Namespace,
+	}
 
 	if len(action.Release) > 0 {
-		releaseURL, err := utils.GetTemplatedResult(action.Release, environment)
+		releaseURL, err := utils.GetTemplatedResult(action.Release, input.environment)
 		if err != nil {
 			return errors.Wrap(err, "error getting release url")
 		}
@@ -246,17 +298,34 @@ func StartAutotest(ctx context.Context, environment *api.Environment, test strin
 			return errors.Wrap(err, "error getting release name")
 		}
 
+		pipelineEnv[envNameRelease] = release
+	}
+
+	// add extra env
+	for key, value := range input.ExtraEnv {
+		pipelineEnv[key] = value
+	}
+
+	gitlabClient := client.GetGitlabClient()
+
+	variables := make([]*gitlab.PipelineVariableOptions, 0)
+
+	for key, value := range pipelineEnv {
+		if len(value) == 0 {
+			return errors.Errorf("env %s is empty", key)
+		}
+
 		variables = append(variables, &gitlab.PipelineVariableOptions{
-			Key:          gitlab.String(envNameRelease),
-			Value:        gitlab.String(release),
+			Key:          gitlab.String(key),
+			Value:        gitlab.String(value),
 			VariableType: gitlab.String("env_var"),
 		})
 	}
 
-	_, _, err = gitlabClient.Pipelines.CreatePipeline(
+	_, _, err := gitlabClient.Pipelines.CreatePipeline(
 		autotestConfig.ProjectID,
 		&gitlab.CreatePipelineOptions{
-			Ref:       &action.Ref,
+			Ref:       &input.Ref,
 			Variables: &variables,
 		},
 		gitlab.WithContext(ctx),
