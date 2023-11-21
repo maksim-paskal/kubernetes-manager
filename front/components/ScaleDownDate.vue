@@ -1,5 +1,5 @@
 <template>
-  <div>branch will be paused <strong>{{ getScaleDownDelay() }}</strong> your local time</div>
+  <div>The branch will be paused <strong>{{ getScaleDownDelay() }}</strong> your local time</div>
 </template>
 <script>
 export default {

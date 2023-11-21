@@ -157,8 +157,8 @@ Vue.mixin({
     },
     async call(op, data, onTop = true) {
       if (op == "make-delete" || op == "make-delete-service" || op == "make-start-autotest") {
-        const realy = await this.$bvModal.msgBoxConfirm("Realy?");
-        if (!realy) return;
+        const sure = await this.$bvModal.msgBoxConfirm("Are you sure?");
+        if (!sure) return;
       }
 
       return this.callEndpoint(`/api/${this.$route.params.environmentID}/${op}`, data, onTop)
