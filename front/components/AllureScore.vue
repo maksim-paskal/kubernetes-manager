@@ -3,6 +3,14 @@
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
       $fetchState.error.message
     }}</b-alert>
+    <b-alert v-else-if="reportNotFound" variant="warning" show>
+      <b-button class="bi bi-wrench-adjustable" variant="outline-primary"
+        @click="showReportNotFound = !showReportNotFound">&nbsp;report not found</b-button>
+      <ul v-if="showReportNotFound" style="padding-top: 10px">
+        <li>Some errors occurred while running autotests. Open the pipeline for details.</li>
+        <li>If the autotest was run a week ago, it has been deleted.</li>
+      </ul>
+    </b-alert>
     <div v-else-if="$fetchState.pending" class="text-center">
       <b-spinner variant="primary" />
     </div>
@@ -30,7 +38,9 @@ export default {
       results: 0,
       testStyle: "",
       failedTests: [],
-      buttonFailedTests: false
+      buttonFailedTests: false,
+      reportNotFound: false,
+      showReportNotFound: false
     }
   },
   computed: {
@@ -81,6 +91,11 @@ export default {
     }
 
     const result = await fetch(packageUrl);
+    if (result.status === 404) {
+      this.reportNotFound = true;
+      return;
+    }
+
     if (result.ok) {
       this.data = await result.json();
 
