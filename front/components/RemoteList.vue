@@ -41,11 +41,11 @@
           <b-button size="sm" variant="outline-primary" @click="showConfigDialog(row)">Settings</b-button>
           <b-button size="sm" variant="outline-primary" @click="delayAutopause(row)">Delay autopause for next 3
             hours</b-button>
-          <div v-if="row.item.Status == 'Running'">Server will work till <strong>{{ getScaleDownDelay(row) }}</strong>
+          <div v-if="row.item.Status == 'Running'">The server will work till <strong>{{ getScaleDownDelay(row) }}</strong>
             your local time</div>
         </template>
       </b-table>
-      <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run this commands in your local terminal"
+      <b-modal size="xl" centered id="bv-remote-servers-config-dialog" title="Run these commands in your local terminal"
         ok-only>
         <b-tabs content-class="mt-3">
           <b-tab :title="item.Name" v-for="(item, index) in this.links" :key="index">

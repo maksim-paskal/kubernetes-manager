@@ -10,9 +10,9 @@
       <b-spinner v-else size="sm" variant="primary" />
 
       <div v-if="GitlabProjectsLoaded">
-        <b-button title="full cycle of deploy process, build images and than deploy" size="lg"
+        <b-button title="Full cycle of deploy process, build images and then deploy" size="lg"
           @click="buildDeploySelected()">Build and Deploy selected</b-button>
-        <b-button title="reverts all changes on branch" style="margin-left:30px" @click="deploySelected()">Only Deploy
+        <b-button title="Reverts all changes on the feature branch" style="margin-left:30px" @click="deploySelected()">Only Deploy
           selected (without build)</b-button>
       </div>
     </div>

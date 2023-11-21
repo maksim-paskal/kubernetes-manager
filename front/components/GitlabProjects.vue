@@ -34,11 +34,10 @@
           <span v-if="data.item.AdditionalInfo &&
             data.item.AdditionalInfo.CommitsBehind > 0"
             @click="openInNewTab(`${data.item.WebURL}/-/compare/${data.item.GitBranch}...${data.item.AdditionalInfo.DefaultBranch}`)"
-            title="branch behind default branch" class="hand badge-margin badge rounded-pill bg-danger">{{
+            title="The branch is behind the default branch." class="hand badge-margin badge rounded-pill bg-danger">{{
               data.item.AdditionalInfo.CommitsBehind }}
             commits behind</span>
-          <span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.BranchNotFound"
-            title="badge-margin branch behind default branch" class="badge rounded-pill bg-danger">branch not found</span>
+          <span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.BranchNotFound" class="badge rounded-pill bg-danger">branch not found</span>
           <span v-else-if="!data.item.GitBranch && data.item.AdditionalInfo" title="docker tag"
             class="badge-margin badge rounded-pill bg-primary">{{
               data.item.AdditionalInfo.PodRunning.Tag

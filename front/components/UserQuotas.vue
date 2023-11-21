@@ -14,7 +14,7 @@
       </div>
       <div v-else>
         <div style="text-align: center;">
-          <h1>You already create <strong>{{ data.length }}</strong> environments, delete unused</h1>
+          <h1>You have already created <strong>{{ data.length }}</strong> environment. Please delete any unused ones.</h1>
         </div>
         <b-table striped hover :fields="fields" :items="data">
           <template #head(Action)="">
