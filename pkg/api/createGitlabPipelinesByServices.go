@@ -19,12 +19,16 @@ import (
 	"sync"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 )
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
 func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, projectProfile, services string, op GitlabPipelineOperation) error { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipelinesByServices")
+	defer span.End()
+
 	if len(services) == 0 {
 		return errors.New("no services was selected")
 	}

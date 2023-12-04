@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -29,6 +30,9 @@ type GetGitlabPipelinesStatusResults struct {
 const GetGitlabPipelinesStatusMaxLimit = 20
 
 func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID string) (*GetGitlabPipelinesStatusResults, error) { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.GetGitlabPipelinesStatus")
+	defer span.End()
+
 	if e.gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}

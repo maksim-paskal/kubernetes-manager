@@ -24,8 +24,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const (
@@ -112,18 +114,23 @@ func GetHandler() *mux.Router {
 	return mux
 }
 
-var backgroudContext context.Context
+var parentContext context.Context
 
 func StartServer(ctx context.Context) {
+	ctx, span := telemetry.Start(ctx, "web.StartServer")
+	defer span.End()
+
 	log.Info(fmt.Sprintf("Starting on %s...", *config.Get().WebListen))
 
-	backgroudContext = ctx
+	parentContext = ctx
 
 	timeoutMessage := fmt.Sprintf("Server timeout after %s", serverRequestTimeout)
 
+	traceHandler := otelhttp.NewHandler(GetHandler(), "/")
+
 	server := &http.Server{
 		Addr:         *config.Get().WebListen,
-		Handler:      http.TimeoutHandler(GetHandler(), serverRequestTimeout, timeoutMessage),
+		Handler:      http.TimeoutHandler(traceHandler, serverRequestTimeout, timeoutMessage),
 		ReadTimeout:  serverReadTimeout,
 		WriteTimeout: serverWriteTimeout,
 	}

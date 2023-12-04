@@ -17,6 +17,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,6 +49,9 @@ func (l *GetPodContainerLogRequest) GetTailLines() *int64 {
 }
 
 func (e *Environment) GetPodContainerLog(ctx context.Context, input *GetPodContainerLogRequest) (string, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetPodContainerLog")
+	defer span.End()
+
 	podLogOptions := corev1.PodLogOptions{
 		Container:  input.Container,
 		Follow:     false,

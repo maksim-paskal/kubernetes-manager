@@ -27,27 +27,23 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/jira"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
-	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
-	tracer := opentracing.GlobalTracer()
-	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("apiHandler", ext.RPCServerOption(spanCtx))
-
-	defer span.Finish()
+	ctx, span := telemetry.Start(r.Context(), "handlerAPI")
+	defer span.End()
 
 	vars := mux.Vars(r)
 
-	result, err := apiOperation(r.Context(), r, vars["operation"])
+	result, err := apiOperation(ctx, r, vars["operation"])
 
 	if err != nil {
+		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		if _, err := w.Write([]byte(err.Error())); err != nil {
@@ -56,7 +52,6 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 		log.
 			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 	} else {
@@ -73,6 +68,9 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) { //nolint:gocyclo,maintidx,lll
+	ctx, span := telemetry.Start(ctx, "web.apiOperation")
+	defer span.End()
+
 	metricsStarts := time.Now()
 	defer metrics.LogRequest(operation, metricsStarts)
 
@@ -86,6 +84,10 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 	if len(owner) > 0 {
 		log.Infof("user %s request %s", owner[0], operation)
+
+		telemetry.Attributes(span, map[string]string{
+			"owner": owner[0],
+		})
 	}
 
 	if err := r.ParseForm(); err != nil {

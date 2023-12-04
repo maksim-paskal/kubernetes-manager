@@ -1,7 +1,7 @@
 apiVersion: v2
 icon: https://helm.sh/img/helm.svg
 name: kubernetes-manager
-version: 1.1.0
+version: 1.1.1
 description: Kubernetes GUI for trunc development
 maintainers:
 - name: maksim-paskal  # Maksim Paskal

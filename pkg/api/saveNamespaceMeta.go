@@ -16,12 +16,16 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[string]string, labels map[string]string) error { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.SaveNamespaceMeta")
+	defer span.End()
+
 	type metadataStringValue struct {
 		Annotations map[string]string `json:"annotations"`
 		Labels      map[string]string `json:"labels"`

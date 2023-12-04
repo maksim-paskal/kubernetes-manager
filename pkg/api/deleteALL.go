@@ -16,6 +16,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 )
 
 type DeleteALLResultOperation struct {
@@ -38,6 +40,9 @@ func (t *DeleteALLResult) JSON() string {
 }
 
 func (e *Environment) DeleteALL(ctx context.Context) *DeleteALLResult {
+	ctx, span := telemetry.Start(ctx, "api.DeleteALL")
+	defer span.End()
+
 	deleteNamespace := make(chan error)
 	deleteClusterRolesAndBindings := make(chan error)
 

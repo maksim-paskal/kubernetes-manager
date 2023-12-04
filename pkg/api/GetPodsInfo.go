@@ -15,7 +15,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,12 +38,19 @@ type PodsInfo struct {
 }
 
 func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetPodsInfo")
+	defer span.End()
+
 	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
 		FieldSelector: "status.phase!=Succeeded",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pods")
 	}
+
+	telemetry.Event(span, "loaded pods", map[string]string{
+		"len": strconv.Itoa(len(pods.Items)),
+	})
 
 	result := PodsInfo{}
 
@@ -94,6 +103,10 @@ func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pvc")
 	}
+
+	telemetry.Event(span, "loaded pvc", map[string]string{
+		"len": strconv.Itoa(len(pvc.Items)),
+	})
 
 	for _, pvc := range pvc.Items {
 		result.storageRequests += pvc.Status.Capacity.Storage().AsApproximateFloat64()

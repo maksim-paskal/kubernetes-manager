@@ -24,7 +24,6 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -92,16 +91,6 @@ func StringInSlice(str string, list []string) bool {
 	}
 
 	return false
-}
-
-type JaegerLogs struct{}
-
-func (l JaegerLogs) Error(msg string) {
-	log.Errorf(msg)
-}
-
-func (l JaegerLogs) Infof(msg string, args ...interface{}) {
-	log.Debugf(msg, args...)
 }
 
 func GetTemplatedResult(text string, obj interface{}) ([]byte, error) {

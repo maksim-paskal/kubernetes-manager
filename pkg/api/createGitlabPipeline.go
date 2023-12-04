@@ -16,6 +16,7 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -55,6 +56,9 @@ const (
 )
 
 func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref string, op GitlabPipelineOperation) (string, error) { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipeline")
+	defer span.End()
+
 	if e.gitlabClient == nil {
 		return "", errNoGitlabClient
 	}

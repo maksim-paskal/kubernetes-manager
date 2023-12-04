@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +29,9 @@ type GetContainerInfoResult struct {
 }
 
 func (e *Environment) GetContainerInfo(ctx context.Context, container string) (*GetContainerInfoResult, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetContainerInfo")
+	defer span.End()
+
 	containerInfo, err := types.NewContainerInfo(container)
 	if err != nil {
 		return nil, err

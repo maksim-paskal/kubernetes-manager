@@ -7,13 +7,6 @@
   valueFrom:
     fieldRef:
       fieldPath: metadata.namespace
-{{ if .Values.jaeger.agentOnHost }}
-- name: JAEGER_AGENT_HOST
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: status.hostIP
-{{ end }}
 {{ if .Values.sentry.enabled }}
 - name: "SENTRY_DSN"
   value: {{ .Values.sentry.host }}

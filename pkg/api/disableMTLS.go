@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,6 +27,9 @@ const (
 )
 
 func (e *Environment) DisableMTLS(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.DisableMTLS")
+	defer span.End()
+
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -29,6 +30,9 @@ import (
 
 // ScaleNamespace scale deployments and statefullsets.
 func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error {
+	ctx, span := telemetry.Start(ctx, "api.ScaleNamespace")
+	defer span.End()
+
 	var wg sync.WaitGroup
 
 	var syncErrors sync.Map
@@ -95,6 +99,9 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 // deletes pods with grace-period=0.
 func (e *Environment) deletePodsNow(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.deletePodsNow")
+	defer span.End()
+
 	opt := metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	}
@@ -118,7 +125,10 @@ func (e *Environment) deletePodsNow(ctx context.Context) error {
 	return nil
 }
 
-func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) error { //nolint: dupl
+func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) error { //nolint:dupl
+	ctx, span := telemetry.Start(ctx, "api.scaleDeployments")
+	defer span.End()
+
 	ds, err := e.clientset.AppsV1().Deployments(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing deployments")
@@ -155,6 +165,9 @@ func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) erro
 }
 
 func (e *Environment) scaleStatefulSets(ctx context.Context, replicas int32) error { //nolint:dupl
+	ctx, span := telemetry.Start(ctx, "api.scaleStatefulSets")
+	defer span.End()
+
 	sf, err := e.clientset.AppsV1().StatefulSets(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing statefullsets")

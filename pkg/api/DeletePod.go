@@ -15,10 +15,14 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (e *Environment) DeletePod(ctx context.Context, podName string) error {
+	ctx, span := telemetry.Start(ctx, "api.DeletePod")
+	defer span.End()
+
 	err := e.clientset.CoreV1().Pods(e.Namespace).Delete(ctx, podName, metav1.DeleteOptions{})
 	if err != nil {
 		return err

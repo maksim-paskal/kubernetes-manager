@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -28,6 +29,9 @@ type GetGitlabProjectsInfoItem struct {
 }
 
 func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, branch string) (*GetGitlabProjectsInfoItem, error) { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjectsInfo")
+	defer span.End()
+
 	if e.gitlabClient == nil {
 		return nil, errNoGitlabClient
 	}

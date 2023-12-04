@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
 	"github.com/pkg/errors"
@@ -24,6 +25,9 @@ import (
 
 // ScaleALL scale namespace and process webhooks.
 func (e *Environment) ScaleALL(ctx context.Context, replicas int32) error {
+	ctx, span := telemetry.Start(ctx, "api.ScaleALL")
+	defer span.End()
+
 	processWebhook := make(chan error)
 	processScale := make(chan error)
 

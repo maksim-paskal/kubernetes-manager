@@ -22,6 +22,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -93,6 +94,9 @@ var errNoHetznerCloudToken = errors.New("no hetzner cloud token, please set it i
 
 // return all remote servers.
 func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetRemoteServers")
+	defer span.End()
+
 	if len(config.Get().RemoteServer.HetznerToken) == 0 {
 		return nil, errNoHetznerCloudToken
 	}

@@ -19,6 +19,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
@@ -31,6 +32,9 @@ type SetRemoteServerDelayInput struct {
 
 // set autopause date for remote server.
 func SetRemoteServerDelay(ctx context.Context, input SetRemoteServerDelayInput) error {
+	ctx, span := telemetry.Start(ctx, "api.SetRemoteServerDelay")
+	defer span.End()
+
 	if input.Cloud != "hcloud" {
 		return errors.New("cloud not supported")
 	}

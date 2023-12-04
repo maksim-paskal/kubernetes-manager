@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,6 +29,9 @@ type GetContainersItem struct {
 // returns list of containers
 // containerInLabels is pod label to store returned containers.
 func (e *Environment) GetContainers(ctx context.Context, filter string, containerInLabels string) (*GetContainersItem, error) { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.GetContainers")
+	defer span.End()
+
 	opt := metav1.ListOptions{
 		FieldSelector: runningPodSelector,
 	}

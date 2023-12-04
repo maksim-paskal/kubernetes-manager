@@ -28,13 +28,12 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/modules/autotests"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
-	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -44,16 +43,16 @@ const (
 )
 
 func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
-	tracer := opentracing.GlobalTracer()
-	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("environmentHandler", ext.RPCServerOption(spanCtx))
-
-	defer span.Finish()
+	ctx, span := telemetry.Start(r.Context(), "handlerEnvironment")
+	defer span.End()
 
 	vars := mux.Vars(r)
 
-	result, err := environmentOperation(r.Context(), r, vars["environmentID"], vars["operation"])
+	telemetry.Attributes(span, vars)
+
+	result, err := environmentOperation(ctx, r, vars["environmentID"], vars["operation"])
 	if err != nil {
+		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		if _, err := w.Write([]byte(err.Error())); err != nil {
@@ -62,7 +61,6 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 
 		log.
 			WithError(err).
-			WithField(logrushookopentracing.SpanKey, span).
 			WithFields(logrushooksentry.AddRequest(r)).
 			Error()
 
@@ -104,6 +102,9 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 }
 
 func environmentOperation(ctx context.Context, r *http.Request, environmentID string, operation string) (*HandlerResult, error) { //nolint:gocyclo,lll,maintidx
+	ctx, span := telemetry.Start(ctx, "web.environmentOperation")
+	defer span.End()
+
 	metricsStarts := time.Now()
 	defer metrics.LogRequest(operation, metricsStarts)
 
@@ -117,6 +118,10 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 	if len(owner) > 0 {
 		log.Infof("user %s request %s", owner[0], operation)
+
+		telemetry.Attributes(span, map[string]string{
+			"owner": owner[0],
+		})
 	}
 
 	body, err := io.ReadAll(r.Body)
@@ -301,8 +306,11 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		result.Result = kubeconfigFile
 	case "make-pause":
 		go func() {
-			ctx, cancel := context.WithTimeout(backgroudContext, scaleMaxTime)
+			ctx, cancel := context.WithTimeout(parentContext, scaleMaxTime)
 			defer cancel()
+
+			ctx, span := telemetry.Start(ctx, "web.make-pause", trace.WithNewRoot())
+			defer span.End()
 
 			if err := environment.ScaleALL(ctx, 0); err != nil {
 				log.WithError(err).Error()
@@ -312,8 +320,11 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		result.Result = fmt.Sprintf("All pods in namespace %s will be paused next %s", environment.Namespace, scaleMaxTime)
 	case "make-start":
 		go func() {
-			ctx, cancel := context.WithTimeout(backgroudContext, scaleMaxTime)
+			ctx, cancel := context.WithTimeout(parentContext, scaleMaxTime)
 			defer cancel()
+
+			ctx, span := telemetry.Start(ctx, "web.make-start", trace.WithNewRoot())
+			defer span.End()
 
 			if err := environment.ScaleALL(ctx, 1); err != nil {
 				log.WithError(err).Error()

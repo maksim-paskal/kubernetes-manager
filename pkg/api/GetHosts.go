@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +28,9 @@ const (
 )
 
 func (e *Environment) GetHosts(ctx context.Context) ([]string, []string, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetHosts")
+	defer span.End()
+
 	opt := metav1.ListOptions{
 		LabelSelector: config.FilterLabels,
 	}

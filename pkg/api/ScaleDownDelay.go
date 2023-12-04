@@ -17,10 +17,14 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
 func (e *Environment) ScaleDownDelay(ctx context.Context, durationTime time.Duration) error {
+	ctx, span := telemetry.Start(ctx, "api.ScaleDownDelay")
+	defer span.End()
+
 	annotation := e.NamespaceAnnotations
 	if annotation == nil {
 		annotation = make(map[string]string)

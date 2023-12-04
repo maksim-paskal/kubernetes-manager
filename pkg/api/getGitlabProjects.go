@@ -19,6 +19,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
@@ -39,6 +40,9 @@ type GetGitlabProjectsItem struct {
 
 // get gitlab project by profile or namespace.
 func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([]*GetGitlabProjectsItem, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjects")
+	defer span.End()
+
 	gitlabClient := client.GetGitlabClient()
 
 	if gitlabClient == nil {

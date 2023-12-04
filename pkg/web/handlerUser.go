@@ -15,17 +15,13 @@ package web
 import (
 	"net/http"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	log "github.com/sirupsen/logrus"
 )
 
 func handlerUser(w http.ResponseWriter, r *http.Request) {
-	tracer := opentracing.GlobalTracer()
-	spanCtx, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
-	span := tracer.StartSpan("userHandler", ext.RPCServerOption(spanCtx))
-
-	defer span.Finish()
+	_, span := telemetry.Start(r.Context(), "handlerUser")
+	defer span.End()
 
 	_, err := w.Write([]byte(`{"user":"kubernetes-manager.test.com","email":"kubernetes-manager@domain.com","groups":["kubernetes-manager-admin"]}`)) //nolint:lll
 	if err != nil {

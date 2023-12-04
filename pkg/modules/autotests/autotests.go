@@ -23,6 +23,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	gitlab "github.com/xanzy/go-gitlab"
@@ -88,6 +89,9 @@ func (d *Details) Normalize(a *config.Autotest) error {
 }
 
 func GetAutotestDetails(ctx context.Context, environment *api.Environment, size int) (*Details, error) {
+	ctx, span := telemetry.Start(ctx, "autotests.GetAutotestDetails")
+	defer span.End()
+
 	autotestConfig := config.Get().GetAutotestByID(environment.ID)
 
 	if autotestConfig == nil {
@@ -246,6 +250,9 @@ func (s *StartAutotestInput) SetEnvironment(environment *api.Environment) {
 }
 
 func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
+	ctx, span := telemetry.Start(ctx, "api.StartAutotest")
+	defer span.End()
+
 	if err := input.Validate(); err != nil {
 		return errors.Wrap(err, "error validating input")
 	}
@@ -338,6 +345,9 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 }
 
 func getReleaseName(ctx context.Context, url string) (string, error) {
+	ctx, span := telemetry.Start(ctx, "api.getReleaseName")
+	defer span.End()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "error creating request")
