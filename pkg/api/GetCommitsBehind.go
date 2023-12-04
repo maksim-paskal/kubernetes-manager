@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -28,6 +29,9 @@ type GetCommitsBehindResult struct {
 }
 
 func GetCommitsBehind(ctx context.Context, p *gitlab.Project, projectID, branch string) (*GetCommitsBehindResult, error) { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.GetCommitsBehind")
+	defer span.End()
+
 	gitlabClient := client.GetGitlabClient()
 
 	if gitlabClient == nil {

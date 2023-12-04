@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 )
 
@@ -45,6 +46,9 @@ type IssueInfo struct {
 }
 
 func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
+	ctx, span := telemetry.Start(ctx, "jira.GetIssueInfo")
+	defer span.End()
+
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 

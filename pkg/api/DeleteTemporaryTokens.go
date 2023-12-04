@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -23,6 +24,9 @@ import (
 )
 
 func (e *Environment) DeleteTemporaryTokens(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.DeleteTemporaryTokens")
+	defer span.End()
+
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
@@ -50,6 +54,9 @@ func (e *Environment) DeleteTemporaryTokens(ctx context.Context) error {
 }
 
 func (e *Environment) deleteTemporaryToken(ctx context.Context, name string) error {
+	ctx, span := telemetry.Start(ctx, "api.deleteTemporaryToken")
+	defer span.End()
+
 	err := e.clientset.RbacV1().RoleBindings(e.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		log.WithError(err).Errorf("error deleting role binding %s", name)

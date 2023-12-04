@@ -16,12 +16,16 @@ import (
 	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func GetEnvironmentByID(ctx context.Context, id string) (*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetEnvironmentByID")
+	defer span.End()
+
 	idInfo, err := types.NewIDInfo(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not parse id")

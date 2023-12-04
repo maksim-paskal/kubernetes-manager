@@ -18,6 +18,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +35,9 @@ type GetEventsResult struct {
 }
 
 func (e *Environment) GetEvents(ctx context.Context) ([]*GetEventsResult, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetEvents")
+	defer span.End()
+
 	events, err := e.clientset.CoreV1().Events(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get events")

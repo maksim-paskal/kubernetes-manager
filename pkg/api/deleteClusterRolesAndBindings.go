@@ -16,6 +16,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +24,9 @@ import (
 )
 
 func deleteClusterRoleAndBinding(ctx context.Context, clientset *kubernetes.Clientset, roleName string, roleBindingName string) error { //nolint:lll
+	ctx, span := telemetry.Start(ctx, "api.deleteClusterRoleAndBinding")
+	defer span.End()
+
 	if strings.HasPrefix(roleName, "system:") || strings.HasPrefix(roleBindingName, "system:") {
 		log.Warnf("role %s or binding %s can not be deleted", roleName, roleBindingName)
 
@@ -46,6 +50,9 @@ func deleteClusterRoleAndBinding(ctx context.Context, clientset *kubernetes.Clie
 
 // delete all cluster role and bindings linken to namespace.
 func (e *Environment) DeleteClusterRolesAndBindings(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.DeleteClusterRolesAndBindings")
+	defer span.End()
+
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}

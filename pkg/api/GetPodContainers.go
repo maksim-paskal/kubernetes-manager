@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,6 +24,9 @@ type PodContainer struct {
 }
 
 func (e *Environment) GetPodContainers(ctx context.Context, name string) ([]*PodContainer, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetPodContainers")
+	defer span.End()
+
 	pod, err := e.clientset.CoreV1().Pods(e.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

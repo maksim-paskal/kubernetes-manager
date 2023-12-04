@@ -18,6 +18,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -51,6 +52,9 @@ type Environment struct {
 
 // GetEnvironments list all kubernetes-manager environments.
 func GetEnvironments(ctx context.Context, filter string) ([]*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetEnvironments")
+	defer span.End()
+
 	result := make([]*Environment, 0)
 
 	for cluster := range client.GetAllClientsets() {
@@ -66,6 +70,9 @@ func GetEnvironments(ctx context.Context, filter string) ([]*Environment, error)
 }
 
 func getEnvironmentsFromCluster(ctx context.Context, cluster string, filter string) ([]*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.getEnvironmentsFromCluster")
+	defer span.End()
+
 	clientset, err := client.GetClientset(cluster)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get clientset")
@@ -104,6 +111,9 @@ func getEnvironmentsFromCluster(ctx context.Context, cluster string, filter stri
 }
 
 func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Namespace) error {
+	ctx, span := telemetry.Start(ctx, "api.loadFromNamespace")
+	defer span.End()
+
 	if namespace.Labels == nil || namespace.Labels[config.Namespace] != config.TrueValue {
 		return errors.New("namespace is not managed by kubernetes-manager")
 	}
@@ -177,6 +187,9 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 }
 
 func (e *Environment) ReloadFromNamespace(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.ReloadFromNamespace")
+	defer span.End()
+
 	namespace, err := e.clientset.CoreV1().Namespaces().Get(ctx, e.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "can not get namespace")

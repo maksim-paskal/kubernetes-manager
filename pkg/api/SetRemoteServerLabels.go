@@ -17,10 +17,14 @@ import (
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 )
 
 func SetRemoteServerLabels(ctx context.Context, server *hcloud.Server, newLabels map[string]string) error {
+	ctx, span := telemetry.Start(ctx, "api.SetRemoteServerLabels")
+	defer span.End()
+
 	labels := server.Labels
 	if labels == nil {
 		labels = make(map[string]string)

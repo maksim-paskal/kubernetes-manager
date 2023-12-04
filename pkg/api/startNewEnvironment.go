@@ -20,6 +20,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/sluglify"
@@ -135,6 +136,9 @@ func ParseEnvironmentServices(services string) ([]*EnvironmentServices, error) {
 }
 
 func StartNewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.StartNewEnvironment")
+	defer span.End()
+
 	if len(input.Cluster) == 0 {
 		input.Cluster = config.Get().GetKubernetesEndpoints()[0].Name
 	}
@@ -148,6 +152,9 @@ func StartNewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (
 }
 
 func processCreateNewBranch(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.processCreateNewBranch")
+	defer span.End()
+
 	if err := input.Validation(); err != nil {
 		return nil, errors.Wrap(err, "error validating")
 	}
@@ -207,6 +214,9 @@ func GetNamespaceByServices(profile *config.ProjectProfile, services string) (st
 }
 
 func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
+	ctx, span := telemetry.Start(ctx, "api.NewEnvironment")
+	defer span.End()
+
 	id, err := input.GetID()
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting id")

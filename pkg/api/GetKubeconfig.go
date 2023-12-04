@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +62,9 @@ users:
 }
 
 func (e *Environment) GetKubeconfig(ctx context.Context) (*GetClusterKubeconfigResult, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetKubeconfig")
+	defer span.End()
+
 	temporaryToken, err := e.createTemporaryToken(ctx)
 	if err != nil {
 		return nil, err
@@ -85,6 +89,9 @@ func (e *Environment) GetKubeconfig(ctx context.Context) (*GetClusterKubeconfigR
 // remove old tokens with
 // kubectl delete sa,role,rolebinding -A -lkubernetes-manager=true.
 func (e *Environment) createTemporaryToken(ctx context.Context) (*corev1.Secret, error) {
+	ctx, span := telemetry.Start(ctx, "api.createTemporaryToken")
+	defer span.End()
+
 	if e.IsSystemNamespace() {
 		return nil, errors.New("cannot create temporary token in system namespace")
 	}

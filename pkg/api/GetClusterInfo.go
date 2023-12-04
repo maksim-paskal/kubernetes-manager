@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,6 +57,9 @@ func (c *ClusterInfo) ToHuman() *ClusterInfoHuman {
 }
 
 func GetClusterInfo(ctx context.Context, name string) (*ClusterInfo, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetClusterInfo")
+	defer span.End()
+
 	clientset, err := client.GetClientset(name)
 	if err != nil {
 		return nil, errors.Wrap(err, "can get clientset")

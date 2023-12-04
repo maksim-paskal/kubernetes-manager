@@ -26,16 +26,11 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/web"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
-	logrushookopentracing "github.com/maksim-paskal/logrus-hook-opentracing"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
-	opentracing "github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/uber/jaeger-client-go"
-	jaegercfg "github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-lib/metrics"
 	"k8s.io/client-go/tools/leaderelection"
 )
 
@@ -93,12 +88,9 @@ func main() {
 
 	log.AddHook(hookSentry)
 
-	hookTracing, err := logrushookopentracing.NewHook(logrushookopentracing.Options{})
-	if err != nil {
+	if err := telemetry.Init(ctx); err != nil {
 		log.WithError(err).Fatal()
 	}
-
-	log.AddHook(hookTracing)
 
 	log.Infof("Starting %s %s...", config.Namespace, config.GetVersion())
 
@@ -106,31 +98,6 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
-
-	cfg, err := jaegercfg.FromEnv()
-	if err != nil {
-		log.WithError(err).Fatal("Could not parse Jaeger env vars")
-	}
-
-	cfg.ServiceName = config.Namespace
-	cfg.Sampler.Type = jaeger.SamplerTypeConst
-	cfg.Sampler.Param = 1
-	cfg.Reporter.LogSpans = true
-
-	jLogger := utils.JaegerLogs{}
-	jMetricsFactory := metrics.NullFactory
-
-	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(jLogger),
-		jaegercfg.Metrics(jMetricsFactory),
-	)
-
-	opentracing.SetGlobalTracer(tracer)
-
-	if err != nil {
-		log.WithError(err).Fatal("Could not initialize jaeger tracer")
-	}
-	defer closer.Close()
 
 	if *config.Get().BatchEnabled {
 		go RunLeaderElection(ctx)
@@ -164,6 +131,9 @@ func main() {
 }
 
 func RunLeaderElection(ctx context.Context) {
+	ctx, span := telemetry.Start(ctx, "api.RunLeaderElection")
+	defer span.End()
+
 	lock, err := api.GetLeaseLock(*config.Get().PodNamespace, *config.Get().PodName)
 	if err != nil {
 		log.WithError(err).Fatal()
@@ -182,6 +152,9 @@ func RunLeaderElection(ctx context.Context) {
 		RetryPeriod:     defaultRetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
+				ctx, span := telemetry.Start(ctx, "api.OnStartedLeading")
+				defer span.End()
+
 				batch.Schedule(ctx)
 			},
 			OnStoppedLeading: func() {

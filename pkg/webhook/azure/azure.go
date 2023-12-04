@@ -24,6 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/mysql/armmysqlflexibleservers"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -103,6 +104,9 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 }
 
 func (provider *Provider) Process(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "webhook.azure.Process")
+	defer span.End()
+
 	log.Info("process azure provider")
 
 	newClient, err := armresources.NewClient(provider.config.SubscriptionID, provider.cred, nil)

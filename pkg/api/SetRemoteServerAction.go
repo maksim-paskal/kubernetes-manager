@@ -20,6 +20,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
@@ -51,6 +52,9 @@ type SetRemoteServerActionInput struct {
 
 // return all remote servers.
 func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput) error {
+	ctx, span := telemetry.Start(ctx, "api.SetRemoteServerAction")
+	defer span.End()
+
 	if input.Cloud != "hcloud" {
 		return errors.New("cloud not supported")
 	}

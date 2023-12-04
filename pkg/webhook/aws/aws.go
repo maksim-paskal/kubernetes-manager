@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -83,6 +84,9 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 }
 
 func (provider *Provider) Process(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "webhook.aws.Process")
+	defer span.End()
+
 	processInstances := make(chan error)
 	processDatabases := make(chan error)
 
@@ -125,6 +129,9 @@ func (provider *Provider) Process(ctx context.Context) error {
 }
 
 func (provider *Provider) processInstances(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "webhook.aws.processInstances")
+	defer span.End()
+
 	svc := ec2.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	params := &ec2.DescribeInstancesInput{
@@ -199,6 +206,9 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 }
 
 func (provider *Provider) processDatabases(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "webhook.aws.processDatabases")
+	defer span.End()
+
 	resources := resourcegroupstaggingapi.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
 
 	// list databases by tags, rds.DescribeDBInstances do not use tags for filtering

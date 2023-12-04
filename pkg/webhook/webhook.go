@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/aws"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/azure"
@@ -30,6 +31,9 @@ type Provider interface {
 
 // create new webbhok event.
 func NewEvent(ctx context.Context, message types.WebhookMessage) error {
+	ctx, span := telemetry.Start(ctx, "webhook.NewEvent")
+	defer span.End()
+
 	for _, condition := range config.Get().WebHooks {
 		if condition.Cluster == message.Cluster && condition.Namespace == message.Namespace {
 			if err := processEvent(ctx, condition, message); err != nil {
@@ -62,6 +66,9 @@ func CheckConfig() error {
 
 // process event.
 func processEvent(ctx context.Context, condition config.WebHook, message types.WebhookMessage) error {
+	ctx, span := telemetry.Start(ctx, "api.processEvent")
+	defer span.End()
+
 	provider, err := NewProvider(condition.Provider)
 	if err != nil {
 		return errors.Wrap(err, "find valid provider")

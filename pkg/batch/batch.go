@@ -18,18 +18,18 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const maxScaleDownDuration = 5 * time.Minute
 
 func Schedule(ctx context.Context) {
-	log.Info("starting batch")
-
-	tracer := opentracing.GlobalTracer()
+	ctx, span := telemetry.Start(ctx, "batch.Schedule")
+	defer span.End()
 
 	ticker := time.NewTicker(config.Get().GetBatchShedulePeriod())
 
@@ -38,10 +38,10 @@ func Schedule(ctx context.Context) {
 			ctx, cancel := context.WithTimeout(ctx, config.Get().GetBatchShedulePeriod())
 			defer cancel()
 
-			span := tracer.StartSpan("scheduleBatch")
-			defer span.Finish()
+			ctx, span := telemetry.Start(ctx, "batch.scheduleBatch", trace.WithNewRoot())
+			defer span.End()
 
-			if err := Execute(ctx, span); err != nil {
+			if err := Execute(ctx); err != nil {
 				log.WithError(err).Error()
 			}
 		}()
@@ -53,11 +53,9 @@ func Schedule(ctx context.Context) {
 	}
 }
 
-func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
-	tracer := opentracing.GlobalTracer()
-	span := tracer.StartSpan("scaleDownALL", opentracing.ChildOf(rootSpan.Context()))
-
-	defer span.Finish()
+func scaleDownALL(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.scaleDownALL")
+	defer span.End()
 
 	environments, err := api.GetEnvironments(ctx, "")
 	if err != nil {
@@ -150,13 +148,11 @@ func scaleDownALL(ctx context.Context, rootSpan opentracing.Span) error {
 	return nil
 }
 
-func Execute(ctx context.Context, rootSpan opentracing.Span) error {
-	tracer := opentracing.GlobalTracer()
-	span := tracer.StartSpan("batch", opentracing.ChildOf(rootSpan.Context()))
+func Execute(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.batch")
+	defer span.End()
 
-	defer span.Finish()
-
-	if err := scaleDownALL(ctx, span); err != nil {
+	if err := scaleDownALL(ctx); err != nil {
 		log.WithError(err).Error()
 	}
 

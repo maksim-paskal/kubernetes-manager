@@ -17,9 +17,6 @@ resources:
     cpu: 100m
     memory: 200Mi
 
-jaeger:
-  agentOnHost: false
-
 sentry:
   enabled: false
   host: ""

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -31,6 +32,9 @@ type GetGitlabProjectBranchItem struct {
 }
 
 func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabProjectBranchItem, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjectRefs")
+	defer span.End()
+
 	gitlabClient := client.GetGitlabClient()
 
 	if gitlabClient == nil {

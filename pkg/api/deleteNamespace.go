@@ -15,12 +15,16 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteNamespace delete kubernetes namespace.
 func (e *Environment) DeleteNamespace(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.DeleteNamespace")
+	defer span.End()
+
 	if e.IsSystemNamespace() {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
