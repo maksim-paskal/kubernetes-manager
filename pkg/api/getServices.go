@@ -15,11 +15,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -117,7 +117,7 @@ func getFilteredLabels(labels map[string]string) string {
 	result := make([]string, 0)
 
 	for key, value := range labels {
-		if utils.StringInSlice(key, allowedServiceLabels) {
+		if slices.Contains(allowedServiceLabels, key) {
 			result = append(result, fmt.Sprintf("%s=%s", key, value))
 		}
 	}

@@ -83,9 +83,26 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	return nil
 }
 
+func (provider *Provider) validEvent() bool {
+	switch provider.message.Event { //nolint:exhaustive
+	case types.EventStart:
+		return true
+	case types.EventStop:
+		return true
+	default:
+		return false
+	}
+}
+
 func (provider *Provider) Process(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.aws.Process")
 	defer span.End()
+
+	if !provider.validEvent() {
+		log.Warn("this event not supported")
+
+		return nil
+	}
 
 	processInstances := make(chan error)
 	processDatabases := make(chan error)
@@ -198,6 +215,8 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 		}
 
 		log.Debug(result.String())
+	case types.EventPrestop:
+		return nil
 	default:
 		log.Warn("unknown event " + provider.message.Event)
 	}
@@ -275,7 +294,8 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 			}
 
 			log.Debug(result.String())
-
+		case types.EventPrestop:
+			return nil
 		default:
 			log.Warn("unknown event " + provider.message.Event)
 		}

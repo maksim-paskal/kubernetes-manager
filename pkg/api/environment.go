@@ -173,7 +173,7 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 
 	// namespace description
 	if description, ok := e.NamespaceAnnotations[config.LabelDescription]; ok {
-		namespaceDescription, err := utils.GetTemplatedResult(description, e)
+		namespaceDescription, err := utils.GetTemplatedResult(ctx, description, e)
 		if err != nil {
 			return errors.Wrap(err, "can not parse description")
 		}

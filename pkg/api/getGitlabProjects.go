@@ -14,13 +14,13 @@ package api
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"strconv"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
@@ -105,10 +105,10 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 			SelectedBranch: projectProfile.GetProjectSelectedBranch(project.ID),
 		}
 
-		exclude := utils.StringInSlice(strconv.Itoa(item.ProjectID), exludeProjects)
+		exclude := slices.Contains(exludeProjects, strconv.Itoa(item.ProjectID))
 
 		// if project in includes it must be always shown
-		if utils.StringInSlice(strconv.Itoa(item.ProjectID), includeProjects) {
+		if slices.Contains(includeProjects, strconv.Itoa(item.ProjectID)) {
 			exclude = false
 		}
 

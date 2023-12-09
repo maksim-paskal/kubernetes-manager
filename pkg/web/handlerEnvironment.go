@@ -110,18 +110,18 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 	result := NewHandlerResult()
 
-	if err := checkForMakeOperation(operation, r); err != nil {
-		return result, errors.Wrap(err, "check make operation")
-	}
-
-	owner := r.Header[config.HeaderOwner]
-
-	if len(owner) > 0 {
+	if owner := r.Header[config.HeaderOwner]; len(owner) > 0 {
 		log.Infof("user %s request %s", owner[0], operation)
+
+		ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{Owner: owner[0]})
 
 		telemetry.Attributes(span, map[string]string{
 			"owner": owner[0],
 		})
+	}
+
+	if err := checkForMakeOperation(ctx, operation, r); err != nil {
+		return result, errors.Wrap(err, "check make operation")
 	}
 
 	body, err := io.ReadAll(r.Body)
@@ -266,6 +266,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			labels = make(map[string]string)
 		}
 
+		owner := r.Header[config.HeaderOwner]
+
 		if len(owner) == 0 {
 			return result, errors.Wrap(errBadFormat, "no owner specified")
 		}
@@ -291,7 +293,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		kubeconfigFile, err := kubeconfig.GetRawFileContent()
+		kubeconfigFile, err := kubeconfig.GetRawFileContent(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -306,6 +308,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		result.Result = kubeconfigFile
 	case "make-pause":
 		go func() {
+			parentContext := copyContextSecurity(ctx, parentContext)
+
 			ctx, cancel := context.WithTimeout(parentContext, scaleMaxTime)
 			defer cancel()
 
@@ -320,6 +324,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		result.Result = fmt.Sprintf("All pods in namespace %s will be paused next %s", environment.Namespace, scaleMaxTime)
 	case "make-start":
 		go func() {
+			parentContext := copyContextSecurity(ctx, parentContext)
+
 			ctx, cancel := context.WithTimeout(parentContext, scaleMaxTime)
 			defer cancel()
 
@@ -687,9 +693,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		result.Result = autotestsResults
 	case "make-start-autotest", "make-start-autotest-custom":
-		startAutotest := autotests.StartAutotestInput{
-			User: owner[0],
-		}
+		startAutotest := autotests.StartAutotestInput{}
 
 		err = json.Unmarshal(body, &startAutotest)
 		if err != nil {
@@ -752,7 +756,10 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 	return result, nil
 }
 
-func checkForMakeOperation(operation string, r *http.Request) error {
+func checkForMakeOperation(ctx context.Context, operation string, r *http.Request) error {
+	ctx, span := telemetry.Start(ctx, "web.checkForMakeOperation")
+	defer span.End()
+
 	if !strings.HasPrefix(operation, "make-") {
 		return nil
 	}
@@ -761,9 +768,18 @@ func checkForMakeOperation(operation string, r *http.Request) error {
 		return errMustBePOST
 	}
 
-	if _, ok := r.Header[config.HeaderOwner]; !ok {
+	if _, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity); !ok {
 		return errMustHaveOwner
 	}
 
 	return nil
+}
+
+func copyContextSecurity(ctxSrc context.Context, ctxDesct context.Context) context.Context { //nolint:golint
+	security, ok := ctxSrc.Value(types.ContextSecurityKey).(types.ContextSecurity)
+	if ok {
+		return context.WithValue(ctxDesct, types.ContextSecurityKey, security)
+	}
+
+	return ctxDesct
 }

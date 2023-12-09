@@ -33,7 +33,10 @@ type GetClusterKubeconfigResult struct {
 	Token       string
 }
 
-func (r *GetClusterKubeconfigResult) GetRawFileContent() ([]byte, error) {
+func (r *GetClusterKubeconfigResult) GetRawFileContent(ctx context.Context) ([]byte, error) {
+	ctx, span := telemetry.Start(ctx, "api.GetRawFileContent")
+	defer span.End()
+
 	kubeConfig := `apiVersion: v1
 clusters:
 - cluster:
@@ -53,7 +56,7 @@ users:
   user:
     token: "{{ .Token }}"`
 
-	result, err := utils.GetTemplatedResult(kubeConfig, r)
+	result, err := utils.GetTemplatedResult(ctx, kubeConfig, r)
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting templated string")
 	}

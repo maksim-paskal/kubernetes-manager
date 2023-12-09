@@ -13,12 +13,14 @@ limitations under the License.
 package api_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 )
 
 func TestValidation(t *testing.T) {
@@ -33,19 +35,20 @@ func TestValidation(t *testing.T) {
 	valid = append(valid, api.StartNewEnvironmentInput{
 		Profile:  "test",
 		Services: "1:test;2:test2;3:test3",
-		User:     "test",
-		Cluster:  "test",
+
+		Cluster: "test",
 	})
 
 	valid = append(valid, api.StartNewEnvironmentInput{
 		Profile:  "test",
 		Services: "1:test",
-		User:     "test1",
 		Cluster:  "test2",
 	})
 
+	ctx := context.WithValue(context.Background(), types.ContextSecurityKey, types.ContextSecurity{Owner: "test"})
+
 	for _, input := range valid {
-		if err := input.Validation(); err != nil {
+		if err := input.Validation(ctx); err != nil {
 			t.Fatal(err)
 		}
 

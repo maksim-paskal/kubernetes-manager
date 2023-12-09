@@ -14,12 +14,14 @@ package webhook
 
 import (
 	"context"
+	"slices"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/aws"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/azure"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook/httpcall"
 	"github.com/pkg/errors"
 )
 
@@ -35,9 +37,13 @@ func NewEvent(ctx context.Context, message types.WebhookMessage) error {
 	defer span.End()
 
 	for _, condition := range config.Get().WebHooks {
-		if condition.Cluster == message.Cluster && condition.Namespace == message.Namespace {
-			if err := processEvent(ctx, condition, message); err != nil {
-				return errors.Wrap(err, "error while processing event")
+		id := message.Cluster + ":" + message.Namespace
+
+		if slices.Contains(condition.IDS, id) {
+			if len(condition.Events) == 0 || slices.Contains(condition.Events, message.Event) {
+				if err := processEvent(ctx, condition, message); err != nil {
+					return errors.Wrap(err, "error while processing event")
+				}
 			}
 		}
 	}
@@ -87,6 +93,8 @@ func NewProvider(provider string) (Provider, error) { //nolint:ireturn
 		return new(aws.Provider), nil
 	case "azure":
 		return new(azure.Provider), nil
+	case "httpcall":
+		return new(httpcall.Provider), nil
 	default:
 		return nil, errors.New("no provider was found " + provider)
 	}

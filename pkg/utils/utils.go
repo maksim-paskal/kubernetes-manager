@@ -14,6 +14,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -23,6 +24,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/sprig"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -79,22 +82,30 @@ func RandomString(l int) string {
 	return str[:l]
 }
 
-func StringInSlice(str string, list []string) bool {
-	if len(list) == 0 {
-		return false
-	}
+func getCustomFuncs(ctx context.Context) template.FuncMap {
+	ctx, span := telemetry.Start(ctx, "utils.getCustomFuncs")
+	defer span.End()
 
-	for _, v := range list {
-		if v == str {
-			return true
-		}
-	}
+	return template.FuncMap{
+		"Security": func() types.ContextSecurity {
+			security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
+			if ok {
+				return security
+			}
 
-	return false
+			return types.ContextSecurity{}
+		},
+	}
 }
 
-func GetTemplatedResult(text string, obj interface{}) ([]byte, error) {
-	t, err := template.New("getTemplatedString").Funcs(sprig.FuncMap()).Parse(text)
+func GetTemplatedResult(ctx context.Context, text string, obj interface{}) ([]byte, error) {
+	ctx, span := telemetry.Start(ctx, "utils.GetTemplatedResult")
+	defer span.End()
+
+	t, err := template.New("getTemplatedString").
+		Funcs(sprig.FuncMap()).
+		Funcs(getCustomFuncs(ctx)).
+		Parse(text)
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing template")
 	}

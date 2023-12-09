@@ -13,9 +13,11 @@ limitations under the License.
 package utils_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
@@ -92,14 +94,18 @@ func TestConvertStringToInt64(t *testing.T) {
 func TestGetTemplatedResult(t *testing.T) {
 	t.Parallel()
 
-	test := "my {{ .Value }}"
+	test := "my {{ .Value }} {{ Security.Owner }}"
 
-	result, err := utils.GetTemplatedResult(test, struct{ Value string }{Value: "test"})
+	ctx := context.WithValue(context.Background(), types.ContextSecurityKey, types.ContextSecurity{
+		Owner: "runFromTest",
+	})
+
+	result, err := utils.GetTemplatedResult(ctx, test, struct{ Value string }{Value: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if string(result) != "my test" {
-		t.Fatalf("expected 'my test', got %s", result)
+	if expected := "my test runFromTest"; string(result) != expected {
+		t.Fatalf("expected %s, got %s", expected, result)
 	}
 }
