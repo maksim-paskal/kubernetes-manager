@@ -14,11 +14,15 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
+	log "github.com/sirupsen/logrus"
 )
 
 func (e *Environment) ScaleDownDelay(ctx context.Context, durationTime time.Duration) error {
@@ -35,6 +39,19 @@ func (e *Environment) ScaleDownDelay(ctx context.Context, durationTime time.Dura
 	err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels)
 	if err != nil {
 		return err
+	}
+
+	err = webhook.NewEvent(ctx, types.WebhookMessage{
+		Event:     types.EventPrestop,
+		Namespace: e.Namespace,
+		Cluster:   e.Cluster,
+		Reason:    fmt.Sprintf("Delayed for %s ...", durationTime.String()),
+		Properties: map[string]string{
+			"slackEmoji": ":calendar:",
+		},
+	})
+	if err != nil {
+		log.WithError(err).Error("error while sending webhook")
 	}
 
 	return nil

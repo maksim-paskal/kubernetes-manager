@@ -28,6 +28,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/jira"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	"github.com/pkg/errors"
@@ -76,18 +77,18 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 	result := NewHandlerResult()
 
-	if err := checkForMakeOperation(operation, r); err != nil {
-		return result, errors.Wrap(err, "check make operation")
-	}
-
-	owner := r.Header[config.HeaderOwner]
-
-	if len(owner) > 0 {
+	if owner := r.Header[config.HeaderOwner]; len(owner) > 0 {
 		log.Infof("user %s request %s", owner[0], operation)
+
+		ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{Owner: owner[0]})
 
 		telemetry.Attributes(span, map[string]string{
 			"owner": owner[0],
 		})
+	}
+
+	if err := checkForMakeOperation(ctx, operation, r); err != nil {
+		return result, errors.Wrap(err, "check make operation")
 	}
 
 	if err := r.ParseForm(); err != nil {
@@ -167,13 +168,7 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = refsString
 	case "make-create-environment":
-		if len(owner) == 0 {
-			return result, errors.Wrap(errBadFormat, "no owner specified")
-		}
-
-		input := api.StartNewEnvironmentInput{
-			User: owner[0],
-		}
+		input := api.StartNewEnvironmentInput{}
 
 		err = json.Unmarshal(body, &input)
 		if err != nil {

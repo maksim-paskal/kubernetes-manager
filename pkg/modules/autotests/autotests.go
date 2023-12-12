@@ -24,6 +24,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	gitlab "github.com/xanzy/go-gitlab"
@@ -194,7 +195,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			continue
 		}
 
-		resultURL, err := utils.GetTemplatedResult(autotestConfig.ReportURL, item)
+		resultURL, err := utils.GetTemplatedResult(ctx, autotestConfig.ReportURL, item)
 		if err != nil {
 			return nil, errors.Wrap(err, "error getting result url")
 		}
@@ -224,17 +225,28 @@ type StartAutotestInput struct {
 	environment *api.Environment
 	Ref         string
 	Test        string
-	User        string
 	Force       bool
 	ExtraEnv    map[string]string
 }
 
-func (s *StartAutotestInput) Validate() error {
+func (s *StartAutotestInput) GetUser(ctx context.Context) string {
+	security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
+	if ok {
+		return security.Owner
+	}
+
+	return ""
+}
+
+func (s *StartAutotestInput) Validate(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "autotests.Validate")
+	defer span.End()
+
 	if len(s.Test) == 0 {
 		return errors.New("test type is empty")
 	}
 
-	if len(s.User) == 0 {
+	if len(s.GetUser(ctx)) == 0 {
 		return errors.New("user is empty")
 	}
 
@@ -253,7 +265,7 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 	ctx, span := telemetry.Start(ctx, "api.StartAutotest")
 	defer span.End()
 
-	if err := input.Validate(); err != nil {
+	if err := input.Validate(ctx); err != nil {
 		return errors.Wrap(err, "error validating input")
 	}
 
@@ -290,12 +302,12 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 
 	pipelineEnv := map[string]string{
 		envNameTest:      input.Test,
-		envNameOwner:     input.User,
+		envNameOwner:     input.GetUser(ctx),
 		envNameNamespace: input.environment.Namespace,
 	}
 
 	if len(action.Release) > 0 {
-		releaseURL, err := utils.GetTemplatedResult(action.Release, input.environment)
+		releaseURL, err := utils.GetTemplatedResult(ctx, action.Release, input.environment)
 		if err != nil {
 			return errors.Wrap(err, "error getting release url")
 		}

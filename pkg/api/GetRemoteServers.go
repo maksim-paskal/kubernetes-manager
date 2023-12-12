@@ -141,7 +141,7 @@ func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
 				Description: link.Description,
 			}
 
-			urlFormatted, err := utils.GetTemplatedResult(link.URL, item)
+			urlFormatted, err := utils.GetTemplatedResult(ctx, link.URL, item)
 			if err != nil {
 				log.WithError(err).Errorf("error parsing link %s", link.URL)
 				links[id].URL = link.URL

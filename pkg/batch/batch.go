@@ -19,7 +19,9 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
@@ -30,6 +32,10 @@ const maxScaleDownDuration = 5 * time.Minute
 func Schedule(ctx context.Context) {
 	ctx, span := telemetry.Start(ctx, "batch.Schedule")
 	defer span.End()
+
+	ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{
+		Owner: "BatchOperations",
+	})
 
 	ticker := time.NewTicker(config.Get().GetBatchShedulePeriod())
 
@@ -78,6 +84,22 @@ func scaleDownALL(ctx context.Context) error {
 			err := environment.ReloadFromNamespace(ctx)
 			if err != nil {
 				return errors.Wrap(err, "error reload environment")
+			}
+
+			if environment.NeedToScaleDown(time.Now(), 1) {
+				message := types.WebhookMessage{
+					Event:     types.EventPrestop,
+					Namespace: environment.Namespace,
+					Cluster:   environment.Cluster,
+					Reason:    "Will be scaled down soon...",
+					Properties: map[string]string{
+						"slackEmoji": ":warning:",
+					},
+				}
+
+				if err := webhook.NewEvent(ctx, message); err != nil {
+					log.WithError(err).Error()
+				}
 			}
 
 			if !environment.NeedToScaleDown(time.Now(), 0) {

@@ -28,22 +28,41 @@ func (e *Environment) ScaleALL(ctx context.Context, replicas int32) error {
 	ctx, span := telemetry.Start(ctx, "api.ScaleALL")
 	defer span.End()
 
+	// if scaleDown do nothing if environment have not pods
+	if replicas == 0 {
+		podInfo, err := e.GetPodsInfo(ctx)
+		if err != nil {
+			return errors.Wrap(err, "error while getting pods info")
+		}
+
+		if podInfo.PodsTotal == 0 {
+			return nil
+		}
+	}
+
 	processWebhook := make(chan error)
 	processScale := make(chan error)
 
 	go func() {
 		eventType := types.EventStart
+		eventReason := "Starting ..."
+		eventEmoji := ":white_check_mark:"
+
 		if replicas == 0 {
 			eventType = types.EventStop
+			eventReason = "Stopping ..."
+			eventEmoji = ":no_entry:"
 		}
 
-		processWebhook <- webhook.NewEvent(
-			ctx,
-			types.WebhookMessage{
-				Event:     eventType,
-				Namespace: e.Namespace,
-				Cluster:   e.Cluster,
-			})
+		processWebhook <- webhook.NewEvent(ctx, types.WebhookMessage{
+			Event:     eventType,
+			Namespace: e.Namespace,
+			Cluster:   e.Cluster,
+			Reason:    eventReason,
+			Properties: map[string]string{
+				"slackEmoji": eventEmoji,
+			},
+		})
 	}()
 
 	go func() {

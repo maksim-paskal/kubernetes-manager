@@ -29,17 +29,28 @@ const (
 	containerArraySplitter  = ":"
 )
 
+type ContextSecurityKeys string
+
+const ContextSecurityKey ContextSecurityKeys = "app.security"
+
+type ContextSecurity struct {
+	Owner string
+}
+
 type Event string
 
 const (
-	EventStart Event = "start"
-	EventStop  Event = "stop"
+	EventStart   Event = "start"
+	EventStop    Event = "stop"
+	EventPrestop Event = "prestop"
 )
 
 type WebhookMessage struct {
-	Event     Event
-	Cluster   string
-	Namespace string
+	Event      Event
+	Cluster    string
+	Namespace  string
+	Reason     string
+	Properties map[string]string
 }
 
 type IDInfo struct {

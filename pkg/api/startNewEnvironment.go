@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -32,9 +33,20 @@ import (
 type StartNewEnvironmentInput struct {
 	Profile  string
 	Services string
-	User     string
 	Cluster  string
 	Name     string
+}
+
+func (input *StartNewEnvironmentInput) GetUser(ctx context.Context) string {
+	ctx, span := telemetry.Start(ctx, "api.GetUser")
+	defer span.End()
+
+	security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
+	if ok {
+		return security.Owner
+	}
+
+	return ""
 }
 
 func (input *StartNewEnvironmentInput) GetNamespace() (string, error) {
@@ -55,7 +67,10 @@ func (input *StartNewEnvironmentInput) GetID() (string, error) {
 	return fmt.Sprintf("%s:%s", input.Cluster, namespace), nil
 }
 
-func (input *StartNewEnvironmentInput) Validation() error {
+func (input *StartNewEnvironmentInput) Validation(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.Validation")
+	defer span.End()
+
 	if len(input.Cluster) == 0 {
 		return errors.Wrap(errCreateNewBranchMissingInput, "cluster is required")
 	}
@@ -64,7 +79,7 @@ func (input *StartNewEnvironmentInput) Validation() error {
 		return errors.Wrap(errCreateNewBranchMissingInput, "services is required")
 	}
 
-	if len(input.User) == 0 {
+	if len(input.GetUser(ctx)) == 0 {
 		return errors.Wrap(errCreateNewBranchMissingInput, "user is required")
 	}
 
@@ -91,7 +106,7 @@ func (input *StartNewEnvironmentInput) Validation() error {
 	}
 
 	for _, required := range input.GetProfile().GetRequired() {
-		if !utils.StringInSlice(required, selectedProjectIDs) {
+		if !slices.Contains(selectedProjectIDs, required) {
 			return errors.Wrapf(errCreateNewBranchMissingInput, "required service is missing")
 		}
 	}
@@ -155,7 +170,7 @@ func processCreateNewBranch(ctx context.Context, input *StartNewEnvironmentInput
 	ctx, span := telemetry.Start(ctx, "api.processCreateNewBranch")
 	defer span.End()
 
-	if err := input.Validation(); err != nil {
+	if err := input.Validation(ctx); err != nil {
 		return nil, errors.Wrap(err, "error validating")
 	}
 
@@ -258,7 +273,7 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 
 	namespace.ObjectMeta.Labels[config.Namespace] = config.TrueValue
 
-	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.User)
+	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.GetUser(ctx))
 	namespace.ObjectMeta.Labels[creatorLabel] = config.TrueValue
 
 	_, err = clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})

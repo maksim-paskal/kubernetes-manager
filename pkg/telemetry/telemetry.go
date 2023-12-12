@@ -15,7 +15,6 @@ package telemetry
 import (
 	"context"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,6 +26,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const serviceName = "kubernetes-manager"
+
 func Init(ctx context.Context) error {
 	otelExporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
@@ -35,7 +36,7 @@ func Init(ctx context.Context) error {
 
 	traceResource, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceName(config.Namespace),
+			semconv.ServiceName(serviceName),
 		),
 	)
 	if err != nil {
@@ -55,7 +56,7 @@ func Init(ctx context.Context) error {
 	otel.SetTracerProvider(traceProvider)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
-	return nil //nolint:ireturn
+	return nil
 }
 
 func Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) { //nolint:ireturn,lll

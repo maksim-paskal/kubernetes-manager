@@ -103,9 +103,26 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	return nil
 }
 
+func (provider *Provider) validEvent() bool {
+	switch provider.message.Event { //nolint:exhaustive
+	case types.EventStart:
+		return true
+	case types.EventStop:
+		return true
+	default:
+		return false
+	}
+}
+
 func (provider *Provider) Process(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.azure.Process")
 	defer span.End()
+
+	if !provider.validEvent() {
+		log.Warn("this event not supported")
+
+		return nil
+	}
 
 	log.Info("process azure provider")
 
@@ -162,7 +179,7 @@ func (provider *Provider) Process(ctx context.Context) error {
 
 		log.Debugf("%s (%s)", name, resource.String())
 
-		switch provider.message.Event {
+		switch provider.message.Event { //nolint:exhaustive
 		case types.EventStart:
 			log.Infof("Starting resource %s", name)
 

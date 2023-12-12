@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -157,7 +159,7 @@ func (p *ProjectProfile) GetInclude() []string {
 }
 
 func (p *ProjectProfile) IsProjectRequired(projectID int) bool {
-	return utils.StringInSlice(strconv.Itoa(projectID), p.GetRequired())
+	return slices.Contains(p.GetRequired(), strconv.Itoa(projectID))
 }
 
 func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
@@ -188,10 +190,10 @@ type NamespaceMeta struct {
 }
 
 type WebHook struct {
-	Provider  string
-	Config    interface{}
-	Cluster   string
-	Namespace string
+	Provider string
+	Config   interface{}
+	IDS      []string
+	Events   []types.Event
 }
 
 type Snapshot struct {
