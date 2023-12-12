@@ -93,6 +93,7 @@ func TestNotify(t *testing.T) {
 	}
 	message := types.WebhookMessage{
 		Event:     "testEvent",
+		Name:      "testName",
 		Cluster:   "testCluster",
 		Namespace: "testNamespace",
 	}

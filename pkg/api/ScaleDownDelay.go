@@ -41,15 +41,11 @@ func (e *Environment) ScaleDownDelay(ctx context.Context, durationTime time.Dura
 		return err
 	}
 
-	err = webhook.NewEvent(ctx, types.WebhookMessage{
-		Event:     types.EventPrestop,
-		Namespace: e.Namespace,
-		Cluster:   e.Cluster,
-		Reason:    fmt.Sprintf("Delayed for %s ...", durationTime.String()),
-		Properties: map[string]string{
-			"slackEmoji": ":calendar:",
-		},
-	})
+	eventMessage := e.NewWebhookMessage(types.EventScaledownDelayed)
+	eventMessage.Reason = fmt.Sprintf("Scaledown delayed for %s ...", durationTime.String())
+	eventMessage.Properties["slackEmoji"] = ":calendar:"
+
+	err = webhook.NewEvent(ctx, eventMessage)
 	if err != nil {
 		log.WithError(err).Error("error while sending webhook")
 	}

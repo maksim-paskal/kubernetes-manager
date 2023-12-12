@@ -54,15 +54,11 @@ func (e *Environment) ScaleALL(ctx context.Context, replicas int32) error {
 			eventEmoji = ":no_entry:"
 		}
 
-		processWebhook <- webhook.NewEvent(ctx, types.WebhookMessage{
-			Event:     eventType,
-			Namespace: e.Namespace,
-			Cluster:   e.Cluster,
-			Reason:    eventReason,
-			Properties: map[string]string{
-				"slackEmoji": eventEmoji,
-			},
-		})
+		eventMessage := e.NewWebhookMessage(eventType)
+		eventMessage.Reason = eventReason
+		eventMessage.Properties["slackEmoji"] = eventEmoji
+
+		processWebhook <- webhook.NewEvent(ctx, eventMessage)
 	}()
 
 	go func() {
