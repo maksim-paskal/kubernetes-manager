@@ -194,7 +194,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 		return errors.New("instances not found")
 	}
 
-	switch provider.message.Event {
+	switch provider.message.Event { //nolint:exhaustive
 	case types.EventStart:
 		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{
 			DryRun:      aws.Bool(false),
@@ -215,8 +215,6 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 		}
 
 		log.Debug(result.String())
-	case types.EventPrestop:
-		return nil
 	default:
 		log.Warn("unknown event " + provider.message.Event)
 	}
@@ -260,7 +258,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 
 		status := database.DBInstances[0].DBInstanceStatus
 
-		switch provider.message.Event {
+		switch provider.message.Event { //nolint:exhaustive
 		case types.EventStart:
 			// start instance only if it is stopped or inaccessible-encryption-credentials-recoverable
 			if *status != "stopped" && *status != "inaccessible-encryption-credentials-recoverable" {
@@ -294,8 +292,6 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 			}
 
 			log.Debug(result.String())
-		case types.EventPrestop:
-			return nil
 		default:
 			log.Warn("unknown event " + provider.message.Event)
 		}

@@ -40,13 +40,19 @@ type ContextSecurity struct {
 type Event string
 
 const (
-	EventStart   Event = "start"
-	EventStop    Event = "stop"
+	// user start environment.
+	EventStart Event = "start"
+	// user stops environment.
+	EventStop Event = "stop"
+	// environment will be scaled down.
 	EventPrestop Event = "prestop"
+	// user reschedule scaledown environment.
+	EventScaledownDelayed Event = "scaledown-delayed"
 )
 
 type WebhookMessage struct {
 	Event      Event
+	Name       string
 	Cluster    string
 	Namespace  string
 	Reason     string

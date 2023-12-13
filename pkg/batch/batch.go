@@ -87,17 +87,11 @@ func scaleDownALL(ctx context.Context) error {
 			}
 
 			if environment.NeedToScaleDown(time.Now(), 1) {
-				message := types.WebhookMessage{
-					Event:     types.EventPrestop,
-					Namespace: environment.Namespace,
-					Cluster:   environment.Cluster,
-					Reason:    "Will be scaled down soon...",
-					Properties: map[string]string{
-						"slackEmoji": ":warning:",
-					},
-				}
+				eventMessage := environment.NewWebhookMessage(types.EventPrestop)
+				eventMessage.Reason = "Will be scaled down soon..."
+				eventMessage.Properties["slackEmoji"] = ":warning:"
 
-				if err := webhook.NewEvent(ctx, message); err != nil {
+				if err := webhook.NewEvent(ctx, eventMessage); err != nil {
 					log.WithError(err).Error()
 				}
 			}
