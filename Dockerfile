@@ -1,14 +1,3 @@
-FROM node:lts AS front
-
-ARG APPVERSION=dev
-
-# bug in node 16+
-ENV NODE_OPTIONS=--openssl-legacy-provider
-
-WORKDIR /app
-COPY front /app
-RUN yarn install && yarn generate
-
 FROM alpine:latest
 ARG TARGETARCH
 
@@ -23,7 +12,7 @@ RUN apk upgrade \
 && addgroup -g 30001 -S app \
 && adduser -u 30001 -D -S -G app app
 
-COPY --from=front /app/dist /app/dist
+COPY ./front/dist/ /app/dist/
 COPY ./kubernetes-manager-${TARGETARCH} /app/kubernetes-manager
 
 USER app

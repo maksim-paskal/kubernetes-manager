@@ -52,7 +52,7 @@ module.exports = {
   ** Build configuration
   */
   build: {
-    publicPath: "/_nuxt/" + process.env.APPVERSION + "/",
+    publicPath: "/_nuxt/" + (process.env.APPVERSION || 'dev') + "/",
   }
 }
 
