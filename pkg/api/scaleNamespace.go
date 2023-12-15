@@ -89,8 +89,34 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 	}
 
 	if replicas == 0 {
+		// sometimes jobs still running after scale down
+		if err := e.deleteJobs(ctx); err != nil {
+			return errors.Wrap(err, "error deleting jobs")
+		}
+
+		// sometimes frezzed in Terminating state
 		if err := e.deletePodsNow(ctx); err != nil {
 			return errors.Wrap(err, "error deleting pods")
+		}
+	}
+
+	return nil
+}
+
+// delete all jobs in namespace.
+func (e *Environment) deleteJobs(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "api.deleteJobs")
+	defer span.End()
+
+	jobs, err := e.clientset.BatchV1().Jobs(e.Namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "error listing jobs")
+	}
+
+	for _, job := range jobs.Items {
+		err = e.clientset.BatchV1().Jobs(e.Namespace).Delete(ctx, job.Name, metav1.DeleteOptions{})
+		if err != nil {
+			log.WithError(err).Warn("error deleting job")
 		}
 	}
 
