@@ -123,16 +123,12 @@ func (e *Environment) deleteJobs(ctx context.Context) error {
 	return nil
 }
 
-// deletes pods with grace-period=0.
+// deletes all pods with grace-period=0.
 func (e *Environment) deletePodsNow(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "api.deletePodsNow")
 	defer span.End()
 
-	opt := metav1.ListOptions{
-		FieldSelector: runningPodSelector,
-	}
-
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, opt)
+	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing pods")
 	}
