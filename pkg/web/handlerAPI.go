@@ -155,7 +155,10 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 			return result, errors.Wrap(errNoComandFound, "no id specified")
 		}
 
-		refs, err := api.GetGitlabProjectRefs(ctx, id)
+		refs, err := api.GetGitlabProjectRefs(ctx, &api.GetGitlabProjectRefsOpt{
+			ProjectID:   id,
+			MaxBranches: 30, //nolint:gomnd
+		})
 		if err != nil {
 			return result, err
 		}
