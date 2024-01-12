@@ -31,7 +31,13 @@ type GetGitlabProjectBranchItem struct {
 	updated *time.Time
 }
 
-func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabProjectBranchItem, error) {
+type GetGitlabProjectRefsOpt struct {
+	ProjectID   string
+	MaxBranches int
+	MaxTags     int
+}
+
+func GetGitlabProjectRefs(ctx context.Context, opts *GetGitlabProjectRefsOpt) ([]*GetGitlabProjectBranchItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjectRefs")
 	defer span.End()
 
@@ -47,8 +53,6 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 
 	const (
 		gitlabListPerPage = 100
-		maxBranches       = 30
-		maxTags           = 10
 	)
 
 	result := make([]*GetGitlabProjectBranchItem, 0)
@@ -63,7 +67,7 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 		currentPage++
 
 		gitBranches, _, err := gitlabClient.Branches.ListBranches(
-			projectID,
+			opts.ProjectID,
 			&gitlab.ListBranchesOptions{
 				ListOptions: gitlab.ListOptions{
 					Page:    currentPage,
@@ -95,19 +99,24 @@ func GetGitlabProjectRefs(ctx context.Context, projectID string) ([]*GetGitlabPr
 	})
 
 	// return only specified number of branches
-	if len(result) > maxBranches {
-		result = result[:maxBranches]
+	if len(result) > opts.MaxBranches {
+		result = result[:opts.MaxBranches]
+	}
+
+	// return result if no tags specified
+	if opts.MaxTags == 0 {
+		return result, nil
 	}
 
 	// add project tags
 	orderBy := "updated"
 
 	gitTags, _, err := gitlabClient.Tags.ListTags(
-		projectID,
+		opts.ProjectID,
 		&gitlab.ListTagsOptions{
 			ListOptions: gitlab.ListOptions{
 				Page:    0,
-				PerPage: maxTags,
+				PerPage: opts.MaxTags,
 			},
 			OrderBy: &orderBy,
 		},
