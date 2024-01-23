@@ -247,7 +247,7 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 		return nil, errors.Wrap(err, "can not get clientset")
 	}
 
-	namespaceMeta := config.GetNamespaceMeta(idInfo.Namespace)
+	namespaceMeta := config.GetNamespaceMeta(ctx, idInfo.Namespace)
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

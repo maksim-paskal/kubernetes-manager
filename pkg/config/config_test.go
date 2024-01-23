@@ -13,6 +13,7 @@ limitations under the License.
 package config_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -43,18 +44,42 @@ func TestConfig(t *testing.T) {
 		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksJSON))
 	}
 
-	test1 := config.GetNamespaceMeta("").Labels
+	ctx := context.TODO()
+
+	test1 := config.GetNamespaceMeta(ctx, "").Labels
 
 	test1["test1"] = "test1"
 	if test1["environment"] != "dev" {
 		t.Fatal("test1 must have environment variable")
 	}
 
-	test2 := config.GetNamespaceMeta("").Labels
+	test2 := config.GetNamespaceMeta(ctx, "").Labels
 
 	test2["test2"] = "test2"
 	if test2["test1"] == "test1" {
 		t.Fatal("test2 should not have values of test1")
+	}
+
+	meta := config.NamespaceMeta{
+		Labels: map[string]string{
+			"test1": "{{ .WebListen }}",
+			"aaa":   "bbb",
+		},
+		Annotations: map[string]string{
+			"test2":      "{{ .WebListen }}",
+			"vvv":        "aaaa",
+			"someRandom": `{{ RandomSliceElement (list "first" "second" "third" ) }}`,
+		},
+	}
+
+	metaFormated := meta.GetTemplatedValue(context.TODO())
+
+	if metaFormated.Labels["test1"] != *config.Get().WebListen {
+		t.Fatalf("annotation has wrong value %s", metaFormated.Labels["test1"])
+	}
+
+	if metaFormated.Annotations["test2"] != *config.Get().WebListen {
+		t.Fatalf("annotation has wrong value %s", metaFormated.Annotations["test2"])
 	}
 }
 

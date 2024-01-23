@@ -14,6 +14,7 @@ package config
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -187,6 +188,28 @@ type NamespaceMeta struct {
 	Pattern     string
 	Labels      map[string]string
 	Annotations map[string]string
+}
+
+func (n *NamespaceMeta) GetTemplatedValue(ctx context.Context) *NamespaceMeta {
+	newMeta := *n
+
+	for key, value := range n.Labels {
+		if templatedValue, err := utils.GetTemplatedResult(ctx, value, config); err == nil {
+			newMeta.Labels[key] = string(templatedValue)
+		} else {
+			log.WithError(err).Errorf("error while templating label %s", key)
+		}
+	}
+
+	for key, value := range n.Annotations {
+		if templatedValue, err := utils.GetTemplatedResult(ctx, value, config); err == nil {
+			newMeta.Annotations[key] = string(templatedValue)
+		} else {
+			log.WithError(err).Errorf("error while templating annotation %s", key)
+		}
+	}
+
+	return &newMeta
 }
 
 type WebHook struct {
@@ -543,12 +566,12 @@ func (t *Type) GetKubernetesEndpointByName(name string) *KubernetesEndpoint {
 	return nil
 }
 
-func GetNamespaceMeta(namespace string) *NamespaceMeta {
+func GetNamespaceMeta(ctx context.Context, namespace string) *NamespaceMeta {
 	for _, namespaceMeta := range config.DeepCopy().NamespaceMeta {
 		if len(namespaceMeta.Pattern) == 0 {
-			return namespaceMeta
+			return namespaceMeta.GetTemplatedValue(ctx)
 		} else if regexp.MustCompile(namespaceMeta.Pattern).Match([]byte(namespace)) {
-			return namespaceMeta
+			return namespaceMeta.GetTemplatedValue(ctx)
 		}
 	}
 
