@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	mathRand "math/rand"
 	"strconv"
 	"text/template"
 	"time"
@@ -94,6 +95,9 @@ func getCustomFuncs(ctx context.Context) template.FuncMap {
 			}
 
 			return types.ContextSecurity{}
+		},
+		"RandomSliceElement": func(slice []interface{}) interface{} {
+			return slice[mathRand.Intn(len(slice))] //nolint:gosec
 		},
 	}
 }
