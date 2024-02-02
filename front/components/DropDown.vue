@@ -28,6 +28,11 @@ export default {
   watch: {
     value: function () {
       this.selected = this.value;
+    },
+    search: function () {
+      if (this.default && this.search == "") {
+        this.reload();
+      }
     }
   },
   mounted() {
@@ -45,6 +50,9 @@ export default {
     // load default search value
     if (this.default) {
       this.search = this.default;
+      // don't load results if default is set
+      this.data = [this.default];
+      this.isLoaded = true;
     }
   },
   data() {
