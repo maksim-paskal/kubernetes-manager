@@ -1,0 +1,5 @@
+package-manager: "npm"
+test:
+- sh
+- -c
+- "yarn && yarn lint && yarn build"
