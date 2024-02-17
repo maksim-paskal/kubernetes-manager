@@ -76,7 +76,7 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 	syncErrorsResult := make([]error, 0)
 
-	syncErrors.Range(func(key, value any) bool {
+	syncErrors.Range(func(_, value any) bool {
 		if err, ok := value.(error); ok {
 			syncErrorsResult = append(syncErrorsResult, err)
 		}
@@ -166,6 +166,7 @@ func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) erro
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
 			_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(ctx, dps, metav1.UpdateOptions{})
+
 			switch {
 			case err == nil:
 				return true, nil
@@ -177,7 +178,6 @@ func (e *Environment) scaleDeployments(ctx context.Context, replicas int32) erro
 
 			return false, nil
 		})
-
 		if err != nil {
 			return errors.Wrap(err, "error updating deployment")
 		}
@@ -205,6 +205,7 @@ func (e *Environment) scaleStatefulSets(ctx context.Context, replicas int32) err
 
 		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (bool, error) {
 			_, err = e.clientset.AppsV1().StatefulSets(e.Namespace).Update(ctx, ss, metav1.UpdateOptions{})
+
 			switch {
 			case err == nil:
 				return true, nil
@@ -216,7 +217,6 @@ func (e *Environment) scaleStatefulSets(ctx context.Context, replicas int32) err
 
 			return false, nil
 		})
-
 		if err != nil {
 			return errors.Wrap(err, "error updating statefullset")
 		}

@@ -15,7 +15,6 @@ package web_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,7 @@ func TestVersion(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	url := fmt.Sprintf("%s/api/front-config", ts.URL)
+	url := ts.URL + "/api/front-config"
 	t.Log(url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -55,6 +54,7 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
+
 	t.Log(string(body))
 
 	frontConfig := api.GetFrontConfigResult{}

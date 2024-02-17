@@ -215,7 +215,7 @@ func (n *NamespaceMeta) GetTemplatedValue(ctx context.Context) *NamespaceMeta {
 type WebHook struct {
 	Provider string
 	Config   interface{}
-	IDS      []string
+	IDs      []string
 	Events   []types.Event
 }
 
@@ -423,7 +423,7 @@ func loadDefaults() {
 
 		defaultProfile := ProjectProfile{
 			Name:            "default",
-			NamespacePrefix: fmt.Sprintf("%s-", Namespace),
+			NamespacePrefix: Namespace + "-",
 		}
 
 		config.ProjectProfiles = []*ProjectProfile{&defaultProfile}

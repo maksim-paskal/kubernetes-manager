@@ -87,6 +87,7 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 		resultRAW, ok := result.Result.([]byte)
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
+
 			_, err := w.Write([]byte("can not convert result to []byte"))
 			if err != nil {
 				log.WithError(err).Error()
@@ -368,21 +369,21 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		result.Result = fmt.Sprintf("Delayed scaleDown on next %s", scaledownDelay.Delay)
+		result.Result = "Delayed scaleDown on next " + scaledownDelay.Delay
 	case "make-disable-hpa":
 		err := environment.DisableHPA(ctx)
 		if err != nil {
 			return result, err
 		}
 
-		result.Result = fmt.Sprintf("Disabled HPA in namespace %s", environment.Namespace)
+		result.Result = "Disabled HPA in namespace %s" + environment.Namespace
 	case "make-disable-mtls":
 		err := environment.DisableMTLS(ctx)
 		if err != nil {
 			return result, err
 		}
 
-		result.Result = fmt.Sprintf("Disabled mTLS in namespace %s", environment.Namespace)
+		result.Result = "Disabled mTLS in namespace " + environment.Namespace
 	case "git-sync":
 		container := r.Form.Get("container")
 		if len(container) == 0 {
@@ -586,7 +587,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		base64Config := b64.StdEncoding.EncodeToString([]byte(debugSaveConfig.PhpFpmSettings))
 
-		cmd := fmt.Sprintf("/kubernetes-manager/setPhpSettings %s", base64Config)
+		cmd := "/kubernetes-manager/setPhpSettings " + base64Config
 
 		debugSaveConfigExec, err := environment.ExecContainer(ctx, debugSaveConfig.Container, cmd)
 		if err != nil {
@@ -675,7 +676,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		result.Result = fmt.Sprintf("Pipeline created %s", url)
+		result.Result = "Pipeline created " + url
 	case "autotests":
 		size := 10
 

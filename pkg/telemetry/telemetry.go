@@ -60,7 +60,7 @@ func Init(ctx context.Context) error {
 }
 
 func Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) { //nolint:ireturn,lll
-	return otel.Tracer("").Start(ctx, spanName, opts...)
+	return otel.Tracer("").Start(ctx, spanName, opts...) //nolint:spancheck
 }
 
 func Attributes(span trace.Span, att map[string]string) {

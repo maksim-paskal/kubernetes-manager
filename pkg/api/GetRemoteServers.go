@@ -14,7 +14,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -179,7 +178,7 @@ func getRemoteServerLabels(labels map[string]string) []*GetRemoteServerLabel {
 
 		text := utils.HumanizeDuration(utils.HumanizeDurationShort, time.Since(d))
 
-		return fmt.Sprintf("%s ago", text), utils.TimeToString(d)
+		return text + " ago", utils.TimeToString(d)
 	}
 
 	for k, v := range labels {
