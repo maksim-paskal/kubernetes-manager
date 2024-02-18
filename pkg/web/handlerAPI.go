@@ -15,7 +15,6 @@ package web
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -235,7 +234,7 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 			return result, err
 		}
 
-		result.Result = fmt.Sprintf("Delayed scaleDown on next %s", input.Duration)
+		result.Result = "Delayed scaleDown on next " + input.Duration
 	case "jira-issue-info":
 		issue := r.Form.Get("issue")
 		if len(issue) == 0 {

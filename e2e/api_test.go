@@ -252,7 +252,7 @@ func TestDeleteNamespace(t *testing.T) {
 	for {
 		count := 0
 
-		counters.Range(func(key interface{}, value interface{}) bool {
+		counters.Range(func(_ interface{}, _ interface{}) bool {
 			count++
 
 			return true

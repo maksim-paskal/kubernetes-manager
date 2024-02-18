@@ -84,7 +84,6 @@ func (h HandlerSPA) serveStaticFiles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 
 	_, err = w.Write([]byte(newContents))
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.

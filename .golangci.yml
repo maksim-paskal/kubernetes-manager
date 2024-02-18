@@ -5,6 +5,17 @@ issues:
 linters:
   enable-all: true
   disable:
+  # deprecated
+  - deadcode
+  - maligned
+  - ifshort
+  - golint
+  - nosnakecase
+  - scopelint
+  - interfacer
+  - structcheck
+  - varcheck
+  ############
   - testpackage
   - nestif
   - gochecknoglobals

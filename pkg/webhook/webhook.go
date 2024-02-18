@@ -39,7 +39,7 @@ func NewEvent(ctx context.Context, message types.WebhookMessage) error {
 	for _, condition := range config.Get().WebHooks {
 		id := message.Cluster + ":" + message.Namespace
 
-		if slices.Contains(condition.IDS, id) {
+		if slices.Contains(condition.IDs, id) {
 			if len(condition.Events) == 0 || slices.Contains(condition.Events, message.Event) {
 				if err := processEvent(ctx, condition, message); err != nil {
 					return errors.Wrap(err, "error while processing event")

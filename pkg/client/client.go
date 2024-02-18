@@ -107,6 +107,7 @@ func Init() error {
 			}
 		} else {
 			log.Info("No kubeconfig file use incluster")
+
 			restconfig, err = rest.InClusterConfig()
 			if err != nil {
 				return err

@@ -15,7 +15,6 @@ package api
 import (
 	"context"
 	b64 "encoding/base64"
-	"fmt"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
@@ -99,7 +98,7 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*corev1.Secret,
 		return nil, errors.New("cannot create temporary token in system namespace")
 	}
 
-	tokenName := fmt.Sprintf("kubernetes-manager-%s", utils.RandomString(config.TemporaryTokenRandLength))
+	tokenName := "kubernetes-manager-" + utils.RandomString(config.TemporaryTokenRandLength)
 
 	labels := map[string]string{
 		"kubernetes-manager": "true",

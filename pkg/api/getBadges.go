@@ -48,7 +48,7 @@ func (e *Environment) getBadges() []*EnvironmentBadge {
 
 		result = append(result, &EnvironmentBadge{
 			Key:         badgeLastStarted,
-			Value:       fmt.Sprintf("%s ago", text),
+			Value:       text + " ago",
 			Description: e.NamespaceLastScaled,
 		})
 	}
