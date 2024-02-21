@@ -3,6 +3,7 @@
     <b-spinner v-if="$fetchState.pending" variant="primary" />
     <div v-else v-html="name" />
     <span v-if="status" class="badge rounded-pill bg-primary">{{ status.toUpperCase() }}</span>
+    <span v-if="$fetchState.error" :title="$fetchState.error.message" class="badge rounded-pill bg-danger">Jira error</span>
   </div>
 </template>
 <script>
@@ -44,6 +45,9 @@ export default {
       if (data.Result.fields.status.name) {
         this.status = data.Result.fields.status.name;
       }
+    } else {
+      const text = await result.text();
+      throw Error(text);
     }
   }
 }
