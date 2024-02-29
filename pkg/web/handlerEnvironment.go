@@ -227,7 +227,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(ctx, "", deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
+		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
 			return result, err
 		}
 
@@ -624,12 +624,11 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		// pipeline if succeeded, must delete namespace annotation:
 		// kubectl annotate namespace $NAMESPACE kubernetes-manager/project-${CI_PROJECT_ID}-
 
-		_, err := environment.CreateGitlabPipeline(
-			ctx,
-			deleteService.ProjectID,
-			deleteService.Ref,
-			api.GitlabPipelineOperationDelete,
-		)
+		_, err := environment.CreateGitlabPipeline(ctx, &api.CreateGitlabPipelineInput{
+			ProjectID: deleteService.ProjectID,
+			Ref:       deleteService.Ref,
+			Operation: api.GitlabPipelineOperationDelete,
+		})
 		if err != nil {
 			return result, err
 		}
@@ -666,12 +665,11 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, errors.Wrap(errBadFormat, "no ref for snapshoting specified")
 		}
 
-		url, err := environment.CreateGitlabPipeline(
-			ctx,
-			config.Get().Snapshots.ProjectID,
-			config.Get().Snapshots.Ref,
-			api.GitlabPipelineOperationSnapshot,
-		)
+		url, err := environment.CreateGitlabPipeline(ctx, &api.CreateGitlabPipelineInput{
+			ProjectID: config.Get().Snapshots.ProjectID,
+			Ref:       config.Get().Snapshots.Ref,
+			Operation: api.GitlabPipelineOperationSnapshot,
+		})
 		if err != nil {
 			return result, err
 		}

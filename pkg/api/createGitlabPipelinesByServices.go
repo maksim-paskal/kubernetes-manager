@@ -25,7 +25,7 @@ import (
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, projectProfile, services string, op GitlabPipelineOperation) error { //nolint:lll
+func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error { //nolint:lll
 	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipelinesByServices")
 	defer span.End()
 
@@ -37,7 +37,7 @@ func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, proje
 		return errors.Wrap(err, "operation error")
 	}
 
-	environmentServices, err := ParseEnvironmentServices(services)
+	environmentServices, err := ParseEnvironmentServices(services, nil)
 	if err != nil {
 		return errors.Wrap(err, "error parsing services")
 	}
@@ -45,10 +45,6 @@ func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, proje
 	annotations := e.NamespaceAnnotations
 	if annotations == nil {
 		annotations = make(map[string]string)
-	}
-
-	if len(projectProfile) > 0 {
-		annotations[config.LabelProjectProfile] = projectProfile
 	}
 
 	for _, environmentService := range environmentServices {
@@ -77,7 +73,11 @@ func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, proje
 
 			var resultText string
 
-			_, err := e.CreateGitlabPipeline(ctx, environmentService.GeProjectID(), environmentService.Ref, op)
+			_, err := e.CreateGitlabPipeline(ctx, &CreateGitlabPipelineInput{
+				ProjectID: environmentService.GeProjectID(),
+				Ref:       environmentService.Ref,
+				Operation: op,
+			})
 			if err != nil {
 				resultText = err.Error()
 

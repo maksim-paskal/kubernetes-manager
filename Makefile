@@ -1,4 +1,4 @@
-KUBECONFIG=$(HOME)/.kube/kubernetes-manager-kubeconfig
+KUBECONFIG=$(HOME)/.kube/dev
 test-namespace=test-kubernetes-manager
 tag=dev
 image=paskalmaksim/kubernetes-manager:$(tag)

@@ -57,7 +57,7 @@ func TestValidation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if need := "test-main-test-"; !strings.HasPrefix(namespace, need) {
+		if need := "test-main-test"; namespace != need {
 			t.Fatalf("namespace not correct need=%s;got=%s", need, namespace)
 		}
 	}
@@ -77,7 +77,7 @@ func TestParseEnvironmentServices(t *testing.T) {
 	notvalid["1:1,1:2"] = 0
 
 	for services, servicesLen := range valid {
-		environmentServices, err := api.ParseEnvironmentServices(services)
+		environmentServices, err := api.ParseEnvironmentServices(services, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,9 +94,58 @@ func TestParseEnvironmentServices(t *testing.T) {
 	}
 
 	for services := range notvalid {
-		_, err := api.ParseEnvironmentServices(services)
+		_, err := api.ParseEnvironmentServices(services, nil)
 		if err == nil {
 			t.Fatal("must return error")
+		}
+	}
+}
+
+func TestParseEnvironmentServicesSort(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		services         string
+		order            []int
+		sortByProjectIDs []string
+	}
+
+	tests := []test{
+		{
+			services: "1:test;2:test2;3:test3",
+			order:    []int{1, 2, 3},
+		},
+		{
+			services: "3:test3;1:test;2:test2",
+			order:    []int{3, 1, 2},
+		},
+		{
+			services:         "3:test3;1:test;2:test2",
+			order:            []int{2, 1, 3},
+			sortByProjectIDs: []string{"2", "1"},
+		},
+		{
+			services:         "1:test3;2:test;3:test2",
+			order:            []int{2, 1, 3},
+			sortByProjectIDs: []string{"2", "1"},
+		},
+		{
+			services:         "3:test3;2:test;1:test2",
+			order:            []int{1, 2, 3},
+			sortByProjectIDs: []string{"1", "2"},
+		},
+	}
+
+	for _, test := range tests {
+		environmentServices, err := api.ParseEnvironmentServices(test.services, test.sortByProjectIDs)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for i, o := range test.order {
+			if environmentServices[i].ProjectID != o {
+				t.Fatalf("wrong order for project %d", environmentServices[i].ProjectID)
+			}
 		}
 	}
 }
@@ -116,6 +165,45 @@ func TestGetNamespaceByServices(t *testing.T) {
 	}
 
 	if need := "my-test-test2"; !strings.HasPrefix(namespace, need) {
+		t.Fatalf("namespace not correct need=%s;got=%s", need, namespace)
+	}
+}
+
+func TestGetNamespaceByProfile(t *testing.T) {
+	t.Parallel()
+
+	profile := &config.ProjectProfile{
+		NamespacePrefix: "my-test-",
+	}
+
+	namespace := api.GetNamespaceByProfile(profile)
+	if need := "my-test-"; !strings.HasPrefix(namespace, need) {
+		t.Fatalf("namespace not correct need=%s;got=%s", need, namespace)
+	}
+
+	t.Log(namespace)
+
+	if reqLen := 13; len(namespace) != reqLen {
+		t.Fatalf("namespace length not correct need=%d;got=%d", reqLen, len(namespace))
+	}
+}
+
+func TestGetNamespaceByServicesJIRA(t *testing.T) {
+	t.Parallel()
+
+	services := "1:test;3:test3;2:TEST-123"
+	profile := &config.ProjectProfile{
+		NamespacePrefix: "my-test-",
+	}
+
+	namespace, err := api.GetNamespaceByServicesJIRA(profile, services)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(namespace)
+
+	if need := "my-test-TEST-123"; namespace != need {
 		t.Fatalf("namespace not correct need=%s;got=%s", need, namespace)
 	}
 }

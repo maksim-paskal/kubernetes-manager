@@ -119,20 +119,41 @@ type Template struct {
 }
 
 type KubernetesEndpoint struct {
-	Disabled         bool
-	Name             string
-	KubeConfigPath   string
-	KubeConfigServer string
-	Links            *Links
+	Disabled          bool
+	Name              string
+	KubeConfigPath    string
+	KubeConfigServer  string
+	Links             *Links
+	PipelineVariables map[string]string
 }
 
+type ProjectProfileNameType string
+
+const (
+	ProjectProfileNameTypeSimple    ProjectProfileNameType = "simple"
+	ProjectProfileNameTypeService   ProjectProfileNameType = "service-name"
+	ProjectProfileNameTypeJiraIssue ProjectProfileNameType = "jira-issue"
+)
+
 type ProjectProfile struct {
-	Name            string
-	NamespacePrefix string
-	DefaultBranch   string // use default branch for project (comma separated format projectId=main)
-	Required        string // project ids to be required (comma separated)
-	Exclude         string // project ids to exclude (comma separated)
-	Include         string // project ids to include (comma separated)
+	Name              string
+	NamespaceNameType ProjectProfileNameType
+	NamespacePrefix   string
+	DefaultBranch     string // use default branch for project (comma separated format projectId=main)
+	Required          string // project ids to be required (comma separated)
+	Exclude           string // project ids to exclude (comma separated)
+	Include           string // project ids to include (comma separated)
+	PipelineVariables map[string]string
+}
+
+func (p *ProjectProfile) Validate() error {
+	if p.NamespaceNameType != ProjectProfileNameTypeSimple &&
+		p.NamespaceNameType != ProjectProfileNameTypeService &&
+		p.NamespaceNameType != ProjectProfileNameTypeJiraIssue {
+		return errors.New("invalid NamespaceNameType: " + string(p.NamespaceNameType))
+	}
+
+	return nil
 }
 
 func (p *ProjectProfile) GetRequired() []string {
@@ -429,6 +450,12 @@ func loadDefaults() {
 		config.ProjectProfiles = []*ProjectProfile{&defaultProfile}
 	}
 
+	for id := range config.ProjectProfiles {
+		if len(config.ProjectProfiles[id].NamespaceNameType) == 0 {
+			config.ProjectProfiles[id].NamespaceNameType = ProjectProfileNameTypeJiraIssue
+		}
+	}
+
 	if config.Links == nil {
 		return
 	}
@@ -475,6 +502,12 @@ func loadDefaults() {
 func CheckConfig() error {
 	if len(*config.PodName) == 0 || len(*config.PodNamespace) == 0 {
 		return errors.New("pod name or namespace is empty")
+	}
+
+	for _, profile := range config.ProjectProfiles {
+		if err := profile.Validate(); err != nil {
+			return errors.Wrap(err, "error while validating profile: "+profile.Name)
+		}
 	}
 
 	return nil
