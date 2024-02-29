@@ -55,7 +55,14 @@ const (
 	GitlabPipelineOperationSnapshot GitlabPipelineOperation = "SNAPSHOT"
 )
 
-func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref string, op GitlabPipelineOperation) (string, error) { //nolint:lll
+type CreateGitlabPipelineInput struct {
+	ProjectID string
+	Ref       string
+	Operation GitlabPipelineOperation
+	Variables []*gitlab.PipelineVariableOptions
+}
+
+func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGitlabPipelineInput) (string, error) { //nolint:lll
 	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipeline")
 	defer span.End()
 
@@ -63,7 +70,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref s
 		return "", errNoGitlabClient
 	}
 
-	projectIDInt, err := strconv.Atoi(projectID)
+	projectIDInt, err := strconv.Atoi(input.ProjectID)
 	if err != nil {
 		return "", errors.Wrap(err, "can not convert to number")
 	}
@@ -71,7 +78,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref s
 	variables := make([]*gitlab.PipelineVariableOptions, 0)
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(string(op)),
+		Key:          gitlab.String(string(input.Operation)),
 		Value:        gitlab.String("true"),
 		VariableType: gitlab.String("env_var"),
 	})
@@ -88,10 +95,34 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, projectID, ref s
 		VariableType: gitlab.String("env_var"),
 	})
 
+	if projectProfile := e.getProjectProfile(); projectProfile != nil {
+		for key, value := range projectProfile.PipelineVariables {
+			variables = append(variables, &gitlab.PipelineVariableOptions{
+				Key:          gitlab.String(key),
+				Value:        gitlab.String(value),
+				VariableType: gitlab.String("env_var"),
+			})
+		}
+	}
+
+	if clusterProfile := e.getClusterProfile(); clusterProfile != nil {
+		for key, value := range clusterProfile.PipelineVariables {
+			variables = append(variables, &gitlab.PipelineVariableOptions{
+				Key:          gitlab.String(key),
+				Value:        gitlab.String(value),
+				VariableType: gitlab.String("env_var"),
+			})
+		}
+	}
+
+	if len(input.Variables) > 0 {
+		variables = append(variables, input.Variables...)
+	}
+
 	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline(
 		projectIDInt,
 		&gitlab.CreatePipelineOptions{
-			Ref:       &ref,
+			Ref:       &input.Ref,
 			Variables: &variables,
 		},
 		gitlab.WithContext(ctx),

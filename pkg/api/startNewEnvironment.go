@@ -15,9 +15,13 @@ package api
 import (
 	"context"
 	"fmt"
+	"math"
+	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -26,6 +30,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/sluglify"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -50,12 +55,34 @@ func (input *StartNewEnvironmentInput) GetUser(ctx context.Context) string {
 }
 
 func (input *StartNewEnvironmentInput) GetNamespace() (string, error) {
-	namespace, err := GetNamespaceByServices(input.GetProfile(), input.Services)
-	if err != nil {
-		return "", errors.Wrap(err, "error getting namespace")
+	namespace := ""
+
+	switch input.GetProfile().NamespaceNameType { //nolint:exhaustive
+	case config.ProjectProfileNameTypeService:
+		getNamespaceByServices, err := GetNamespaceByServices(input.GetProfile(), input.Services)
+		if err != nil {
+			return "", errors.Wrap(err, "error getting namespace")
+		}
+
+		namespace = getNamespaceByServices
+	case config.ProjectProfileNameTypeJiraIssue:
+		getNamespaceByServicesJIRA, err := GetNamespaceByServicesJIRA(input.GetProfile(), input.Services)
+		if err != nil {
+			return "", errors.Wrap(err, "error getting namespace")
+		}
+
+		namespace = getNamespaceByServicesJIRA
 	}
 
-	return namespace, nil
+	if len(namespace) == 0 {
+		namespace = GetNamespaceByProfile(input.GetProfile())
+	}
+
+	return sluglify.GetSlugString(
+		namespace,
+		maxNamespaceLength,
+		utils.RandomString(maxNamespaceTailLen),
+	), nil
 }
 
 func (input *StartNewEnvironmentInput) GetID() (string, error) {
@@ -95,7 +122,7 @@ func (input *StartNewEnvironmentInput) Validation(ctx context.Context) error {
 		return errors.Wrapf(errCreateNewBranchMissingInput, "cluster %s unknown", input.Cluster)
 	}
 
-	services, err := ParseEnvironmentServices(input.Services)
+	services, err := ParseEnvironmentServices(input.Services, nil)
 	if err != nil {
 		return errors.Wrap(errCreateNewBranchMissingInput, "can not get services")
 	}
@@ -127,7 +154,7 @@ func (services *EnvironmentServices) GeProjectID() string {
 	return strconv.Itoa(services.ProjectID)
 }
 
-func ParseEnvironmentServices(services string) ([]*EnvironmentServices, error) {
+func ParseEnvironmentServices(services string, sortByProjectIDs []string) ([]*EnvironmentServices, error) {
 	result := make([]*EnvironmentServices, 0)
 
 	for _, service := range strings.Split(services, ";") {
@@ -146,6 +173,25 @@ func ParseEnvironmentServices(services string) ([]*EnvironmentServices, error) {
 			Ref:       serviceData[1],
 		})
 	}
+
+	// result not need to be sorted
+	if len(sortByProjectIDs) == 0 {
+		return result, nil
+	}
+
+	getSortPos := func(projectID int) int {
+		for i, v := range sortByProjectIDs {
+			if strconv.Itoa(projectID) == v {
+				return i
+			}
+		}
+
+		return math.MaxInt
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return getSortPos(result[i].ProjectID) < getSortPos(result[j].ProjectID)
+	})
 
 	return result, nil
 }
@@ -179,7 +225,7 @@ func processCreateNewBranch(ctx context.Context, input *StartNewEnvironmentInput
 		return nil, errors.Wrap(err, "error creating namespace")
 	}
 
-	if err := environment.CreateGitlabPipelinesByServices(ctx, input.Profile, input.Services, GitlabPipelineOperationBuild); err != nil { //nolint:lll
+	if err := environment.CreateGitlabPipelinesByServices(ctx, input.Services, GitlabPipelineOperationBuild); err != nil { //nolint:lll
 		return nil, errors.Wrap(err, "error creating gitlab pipelines")
 	}
 
@@ -192,41 +238,61 @@ var (
 )
 
 const (
-	getSlugStringNamespaceLength  = 40
-	getNamespaceByServicesRandLen = 10
-	getNamespaceByServicesTailLen = 3
+	maxNamespaceLength  = 40
+	maxNamespaceTailLen = 3
+
+	getNamespaceByProfileRandLen = 5
 )
+
+// generate simple namespace by profile.
+func GetNamespaceByProfile(profile *config.ProjectProfile) string {
+	namespaceSuffix := utils.RandomString(getNamespaceByProfileRandLen)
+
+	return fmt.Sprintf("%s%s", profile.NamespacePrefix, namespaceSuffix)
+}
 
 // Return namespace by selected profile, if profile has required services,
 // namespace will have ref of first required service in namespace name.
 func GetNamespaceByServices(profile *config.ProjectProfile, services string) (string, error) {
-	namespaceSuffix := utils.RandomString(getNamespaceByServicesRandLen)
+	if len(profile.Required) == 0 {
+		return "", nil
+	}
 
-	if len(profile.Required) > 0 {
-		environmentServices, err := ParseEnvironmentServices(services)
-		if err != nil {
-			return "", errors.Wrapf(err, "error parsing services")
-		}
+	environmentServices, err := ParseEnvironmentServices(services, profile.GetRequired())
+	if err != nil {
+		return "", errors.Wrapf(err, "error parsing services")
+	}
 
-		projectForNamespace := profile.GetRequired()[0]
+	if len(environmentServices) == 0 {
+		return "", nil
+	}
 
-		for _, service := range environmentServices {
-			if projectForNamespace == service.GeProjectID() {
-				namespaceSuffix = fmt.Sprintf("%s-%s", service.Ref, namespaceSuffix)
+	return fmt.Sprintf("%s%s", profile.NamespacePrefix, environmentServices[0].Ref), nil
+}
 
-				break
-			}
+func GetNamespaceByServicesJIRA(profile *config.ProjectProfile, services string) (string, error) {
+	environmentServices, err := ParseEnvironmentServices(services, profile.GetRequired())
+	if err != nil {
+		return "", errors.Wrapf(err, "error parsing services")
+	}
+
+	jiraRe2 := regexp.MustCompile(`(\b[A-Z][A-Z0-9_]+-[1-9][0-9]*)`)
+
+	for _, service := range environmentServices {
+		// service ref has jira issue
+		if issue := jiraRe2.FindStringSubmatch(service.Ref); len(issue) == 2 { //nolint:gomnd
+			return fmt.Sprintf("%s%s", profile.NamespacePrefix, issue[1]), nil
 		}
 	}
 
-	namespace := fmt.Sprintf("%s%s", profile.NamespacePrefix, namespaceSuffix)
-
-	return sluglify.GetSlugString(
-		namespace,
-		getSlugStringNamespaceLength,
-		utils.RandomString(getNamespaceByServicesTailLen),
-	), nil
+	return "", nil
 }
+
+const (
+	newEnvironmentMaxRetry = 3
+	newEnvironmentRandLen  = 3
+	newEnvironmentDelay    = 2 * time.Second
+)
 
 func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Environment, error) {
 	ctx, span := telemetry.Start(ctx, "api.NewEnvironment")
@@ -261,6 +327,7 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 		namespace.ObjectMeta.Annotations = make(map[string]string)
 	}
 
+	namespace.ObjectMeta.Annotations[config.LabelProjectProfile] = input.GetProfile().Name
 	namespace.ObjectMeta.Annotations[config.LabelScaleDownDelay] = config.Get().GetDefaultDelay()
 
 	if len(input.Name) > 0 {
@@ -276,9 +343,30 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.GetUser(ctx))
 	namespace.ObjectMeta.Labels[creatorLabel] = config.TrueValue
 
-	_, err = clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "error creating namespace")
+	originalNamespaceName := namespace.ObjectMeta.Name
+	namespaceCreateTry := 0
+
+	// try to create namespace
+	for ctx.Err() == nil {
+		_, err := clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
+		if err != nil {
+			log.WithError(err).Errorf("error creating namespace %s", namespace.ObjectMeta.Name)
+		} else {
+			// set ID with namespace that was created
+			id = fmt.Sprintf("%s:%s", idInfo.Cluster, namespace.ObjectMeta.Name)
+
+			break
+		}
+
+		if namespaceCreateTry > newEnvironmentMaxRetry {
+			return nil, errors.Wrapf(err, "error creating namespace %s", namespace.ObjectMeta.Name)
+		}
+
+		namespaceCreateTry++
+		namespace.ObjectMeta.Name = fmt.Sprintf("%s-%s", originalNamespaceName, utils.RandomString(newEnvironmentRandLen))
+
+		// wait before next try
+		time.Sleep(newEnvironmentDelay)
 	}
 
 	environment, err := GetEnvironmentByID(ctx, id)
