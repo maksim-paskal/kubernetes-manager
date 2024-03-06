@@ -335,9 +335,9 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 		}
 
 		variables = append(variables, &gitlab.PipelineVariableOptions{
-			Key:          gitlab.String(key),
-			Value:        gitlab.String(value),
-			VariableType: gitlab.String("env_var"),
+			Key:          gitlab.Ptr(key),
+			Value:        gitlab.Ptr(value),
+			VariableType: gitlab.Ptr("env_var"),
 		})
 	}
 
