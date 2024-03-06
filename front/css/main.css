@@ -52,6 +52,7 @@ em {
   opacity: .5;
   font-size: 1em;
   font-weight: 700;
+  margin: calc(-.5* var(--bs-modal-header-padding-y)) calc(-.5* var(--bs-modal-header-padding-x)) calc(-.5* var(--bs-modal-header-padding-y)) auto;
 }
 
 .close:hover {
