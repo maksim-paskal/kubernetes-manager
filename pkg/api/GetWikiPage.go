@@ -79,7 +79,7 @@ func GetWikiPage(ctx context.Context, input *GetWikiPageInput) (*GetWikiPageItem
 		input.ProjectID,
 		input.Slug,
 		&gitlab.GetWikiPageOptions{
-			RenderHTML: gitlab.Bool(true),
+			RenderHTML: gitlab.Ptr(true),
 		},
 		gitlab.WithContext(ctx),
 	)

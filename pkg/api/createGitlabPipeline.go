@@ -78,29 +78,29 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	variables := make([]*gitlab.PipelineVariableOptions, 0)
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(string(input.Operation)),
-		Value:        gitlab.String("true"),
-		VariableType: gitlab.String("env_var"),
+		Key:          gitlab.Ptr(string(input.Operation)),
+		Value:        gitlab.Ptr("true"),
+		VariableType: gitlab.Ptr("env_var"),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(gitlabNamespaceKey),
-		Value:        gitlab.String(e.Namespace),
-		VariableType: gitlab.String("env_var"),
+		Key:          gitlab.Ptr(gitlabNamespaceKey),
+		Value:        gitlab.Ptr(e.Namespace),
+		VariableType: gitlab.Ptr("env_var"),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.String(gitlabClusterKey),
-		Value:        gitlab.String(e.Cluster),
-		VariableType: gitlab.String("env_var"),
+		Key:          gitlab.Ptr(gitlabClusterKey),
+		Value:        gitlab.Ptr(e.Cluster),
+		VariableType: gitlab.Ptr("env_var"),
 	})
 
 	if projectProfile := e.getProjectProfile(); projectProfile != nil {
 		for key, value := range projectProfile.PipelineVariables {
 			variables = append(variables, &gitlab.PipelineVariableOptions{
-				Key:          gitlab.String(key),
-				Value:        gitlab.String(value),
-				VariableType: gitlab.String("env_var"),
+				Key:          gitlab.Ptr(key),
+				Value:        gitlab.Ptr(value),
+				VariableType: gitlab.Ptr("env_var"),
 			})
 		}
 	}
@@ -108,9 +108,9 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	if clusterProfile := e.getClusterProfile(); clusterProfile != nil {
 		for key, value := range clusterProfile.PipelineVariables {
 			variables = append(variables, &gitlab.PipelineVariableOptions{
-				Key:          gitlab.String(key),
-				Value:        gitlab.String(value),
-				VariableType: gitlab.String("env_var"),
+				Key:          gitlab.Ptr(key),
+				Value:        gitlab.Ptr(value),
+				VariableType: gitlab.Ptr("env_var"),
 			})
 		}
 	}
