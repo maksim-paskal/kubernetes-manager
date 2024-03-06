@@ -26,6 +26,7 @@ type GetFrontConfigResult struct {
 	Links          *config.Links
 	Clusters       []*GetFrontConfigItem
 	DebugTemplates []*config.Template
+	WikiPages      []*config.WikiPage
 }
 
 // Get config for front pages.
@@ -38,6 +39,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 	}
 
 	result.DebugTemplates = config.Get().DebugTemplates
+	result.WikiPages = config.Get().WikiPages
 
 	result.Clusters = make([]*GetFrontConfigItem, 0)
 

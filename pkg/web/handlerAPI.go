@@ -277,6 +277,17 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = getClusterInfo.ToHuman()
 
+	case "wiki-page":
+		wikiResult, err := api.GetWikiPage(ctx, &api.GetWikiPageInput{
+			ProjectID: r.Form.Get("projectID"),
+			Slug:      r.Form.Get("slug"),
+		})
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = wikiResult
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

@@ -118,6 +118,13 @@ type Template struct {
 	Data             string
 }
 
+type WikiPage struct {
+	Title     string
+	ProjectID int
+	Slug      string
+	Size      int
+}
+
 type KubernetesEndpoint struct {
 	Disabled          bool
 	Name              string
@@ -388,6 +395,7 @@ type Type struct {
 	RemoteServer               RemoteServer
 	Autotests                  []*Autotest
 	DelayHours                 *int
+	WikiPages                  []*WikiPage
 }
 
 func (t *Type) DeepCopy() *Type {

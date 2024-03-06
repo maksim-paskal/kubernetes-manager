@@ -13,9 +13,13 @@
       <li class="nav-item">
         <b-link class="nav-link" active-class="active" to="/remote-servers">remote servers</b-link>
       </li>
+      <li class="nav-item">
+        <b-link class="nav-link" active-class="active" to="/wiki" exact-path>wiki</b-link>
+      </li>
     </ul>
   </div>
 </template>
+
 <script>
 export default {}
 </script>
