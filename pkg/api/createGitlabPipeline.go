@@ -15,15 +15,18 @@ package api
 import (
 	"context"
 	"strconv"
+	"strings"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
 
 const (
-	gitlabClusterKey   = "CLUSTER"
-	gitlabNamespaceKey = "NAMESPACE"
+	gitlabClusterKey     = "CLUSTER"
+	gitlabNamespaceKey   = "NAMESPACE"
+	gitlabVariablePrefix = "K8SMNG_"
 )
 
 type GitlabPipelineOperation string
@@ -117,6 +120,31 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 
 	if len(input.Variables) > 0 {
 		variables = append(variables, input.Variables...)
+	}
+
+	// add namespace annotations as pipeline variables
+	for key, value := range e.NamespaceAnnotations {
+		if !strings.HasPrefix(key, config.AnnotationPrefix) {
+			continue
+		}
+
+		keyFormatted := strings.ReplaceAll(key, config.AnnotationPrefix, gitlabVariablePrefix)
+		keyFormatted = strings.ToUpper(keyFormatted)
+		keyFormatted = strings.ReplaceAll(keyFormatted, "-", "_")
+
+		variables = append(variables, &gitlab.PipelineVariableOptions{
+			Key:          gitlab.Ptr(keyFormatted),
+			Value:        gitlab.Ptr(value),
+			VariableType: gitlab.Ptr("env_var"),
+		})
+	}
+
+	if user := e.GetUser(ctx); user != "" {
+		variables = append(variables, &gitlab.PipelineVariableOptions{
+			Key:          gitlab.Ptr(gitlabVariablePrefix + "USER"),
+			Value:        gitlab.Ptr(user),
+			VariableType: gitlab.Ptr("env_var"),
+		})
 	}
 
 	pipeline, _, err := e.gitlabClient.Pipelines.CreatePipeline(
