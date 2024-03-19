@@ -15,11 +15,13 @@ package api
 import (
 	"context"
 	b64 "encoding/base64"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,10 +177,19 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*corev1.Secret,
 		return nil, errors.Wrap(err, "error creating token")
 	}
 
-	secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(ctx, token.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "error getting secrets")
+	for ctx.Err() == nil {
+		secret, err := e.clientset.CoreV1().Secrets(e.Namespace).Get(ctx, token.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "error getting secrets")
+		}
+
+		if len(secret.Data["token"]) > 0 {
+			return secret, nil
+		}
+
+		log.Warn("waiting for token to be created... secret=%s/%s"+secret.GetNamespace(), secret.GetName())
+		time.Sleep(1 * time.Second)
 	}
 
-	return secret, nil
+	return nil, ctx.Err()
 }
