@@ -52,6 +52,7 @@ const (
 	LabelScaleDownDelayShort = "scaleDownDelay"
 
 	Namespace             = "kubernetes-manager"
+	AnnotationPrefix      = Namespace + "/"
 	FilterLabels          = Namespace + "=true"
 	LabelType             = Namespace + "/type"
 	LabelScaleDownDelay   = Namespace + "/" + LabelScaleDownDelayShort

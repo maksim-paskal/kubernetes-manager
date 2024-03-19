@@ -54,5 +54,14 @@ func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[stri
 		return err
 	}
 
+	// if OK - update labels and annotations in Environment
+	for key, value := range annotation {
+		e.NamespaceAnnotations[key] = value
+	}
+
+	for key, value := range labels {
+		e.NamespaceLabels[key] = value
+	}
+
 	return nil
 }
