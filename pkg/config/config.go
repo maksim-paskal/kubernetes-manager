@@ -135,6 +135,11 @@ type KubernetesEndpoint struct {
 	PipelineVariables map[string]string
 }
 
+type ProjectSetting struct {
+	ProjectID   string
+	ImagePrefix string
+}
+
 type ProjectProfileNameType string
 
 const (
@@ -147,9 +152,11 @@ type ProjectProfile struct {
 	Name              string
 	NamespaceNameType ProjectProfileNameType
 	NamespacePrefix   string
+	DefaultPriority   int
+	SortPriorities    string // sort priority (comma separated format projectId=number)
 	DefaultBranch     string // use default branch for project (comma separated format projectId=main)
 	Required          string // project ids to be required (comma separated)
-	Exclude           string // project ids to exclude (comma separated)
+	Exclude           string // project ids to exclude (comma separated) or * for all
 	Include           string // project ids to include (comma separated)
 	PipelineVariables map[string]string
 }
@@ -159,6 +166,26 @@ func (p *ProjectProfile) Validate() error {
 		p.NamespaceNameType != ProjectProfileNameTypeService &&
 		p.NamespaceNameType != ProjectProfileNameTypeJiraIssue {
 		return errors.New("invalid NamespaceNameType: " + string(p.NamespaceNameType))
+	}
+
+	if re := regexp.MustCompile(`^\d+(=|=-)\d+(,\d+(=|=-)\d+)*$`); len(p.SortPriorities) > 0 && !re.MatchString(p.SortPriorities) { //nolint:lll
+		return errors.Errorf("invalid SortPriorities, valid (%s) got (%s)", re.String(), p.SortPriorities)
+	}
+
+	if re := regexp.MustCompile(`^\d+=[0-9A-Za-z-_]+(,\d+=[0-9A-Za-z-_]+)*$`); len(p.DefaultBranch) > 0 && !re.MatchString(p.DefaultBranch) { //nolint:lll
+		return errors.Errorf("invalid DefaultBranch, valid (%s) got (%s)", re.String(), p.DefaultBranch)
+	}
+
+	if re := regexp.MustCompile(`^\d+(,\d+)*$`); len(p.Required) > 0 && !re.MatchString(p.Required) {
+		return errors.Errorf("invalid Required, valid (%s) got (%s)", re.String(), p.Required)
+	}
+
+	if re := regexp.MustCompile(`^(\d+(,\d+)*|\*)$`); len(p.Exclude) > 0 && !re.MatchString(p.Exclude) {
+		return errors.Errorf("invalid Exclude, valid (%s) got (%s)", re.String(), p.Exclude)
+	}
+
+	if re := regexp.MustCompile(`^\d+(,\d+)*$`); len(p.Include) > 0 && !re.MatchString(p.Include) {
+		return errors.Errorf("invalid Include, valid (%s) got (%s)", re.String(), p.Include)
 	}
 
 	return nil
@@ -211,6 +238,34 @@ func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
 	}
 
 	return ""
+}
+
+func (p *ProjectProfile) GetProjectSortPriority(projectID int) int {
+	if len(p.SortPriorities) == 0 {
+		return p.DefaultPriority
+	}
+
+	for _, sortPriority := range strings.Split(p.SortPriorities, ",") {
+		sortPriorityData := strings.Split(sortPriority, "=")
+		if len(sortPriorityData) != KeyValueLength {
+			log.Errorf("invalid sortPriority format %s", sortPriority)
+
+			continue
+		}
+
+		if sortPriorityData[0] == strconv.Itoa(projectID) {
+			sortPriorityInt, err := strconv.Atoi(sortPriorityData[1])
+			if err != nil {
+				log.WithError(err).Errorf("error while converting sortPriority %s to int", sortPriorityData[1])
+
+				continue
+			}
+
+			return sortPriorityInt
+		}
+	}
+
+	return p.DefaultPriority
 }
 
 type NamespaceMeta struct {
@@ -378,6 +433,7 @@ type Type struct {
 	NamespaceMeta              []*NamespaceMeta
 	DebugTemplates             []*Template
 	ProjectProfiles            []*ProjectProfile
+	ProjectSettings            []*ProjectSetting
 	KubernetesEndpoints        []*KubernetesEndpoint
 	WebListen                  *string
 	FrontDist                  *string
@@ -422,6 +478,16 @@ func (t *Type) GetDefaultDelay() string {
 	}
 
 	return utils.TimeToString(time.Now().Add(delayHours))
+}
+
+func (t *Type) GetProjectSetting(projectID string) *ProjectSetting {
+	for _, projectSetting := range t.ProjectSettings {
+		if projectSetting.ProjectID == projectID {
+			return projectSetting
+		}
+	}
+
+	return nil
 }
 
 func Load() error {
