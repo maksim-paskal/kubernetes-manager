@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
@@ -54,7 +55,14 @@ func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, bran
 		return nil, errors.Wrap(err, "can not get pipelines")
 	}
 
-	result.PodRunning, err = e.GetPodByImage(ctx, project.PathWithNamespace)
+	projectImagePrefix := project.PathWithNamespace
+	projectSetting := config.Get().GetProjectSetting(projectID)
+
+	if projectSetting != nil && len(projectSetting.ImagePrefix) > 0 {
+		projectImagePrefix = projectSetting.ImagePrefix
+	}
+
+	result.PodRunning, err = e.GetPodByImage(ctx, projectImagePrefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get pod images")
 	}

@@ -36,6 +36,7 @@ type GetGitlabProjectsItem struct {
 	Deploy         string                     // custom field for front end
 	Required       bool
 	SelectedBranch string
+	sortPriority   int
 }
 
 // get gitlab project by profile or namespace.
@@ -77,16 +78,14 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 		return nil, errors.Errorf("unknown project profile for %s %s", profile, namespace)
 	}
 
-	if projectProfile != nil {
-		if projectProfile.Exclude == "*" {
-			for _, project := range projects {
-				if !projectProfile.IsProjectRequired(project.ID) {
-					exludeProjects = append(exludeProjects, strconv.Itoa(project.ID))
-				}
+	if projectProfile.Exclude == "*" {
+		for _, project := range projects {
+			if !projectProfile.IsProjectRequired(project.ID) {
+				exludeProjects = append(exludeProjects, strconv.Itoa(project.ID))
 			}
-		} else {
-			exludeProjects = projectProfile.GetExclude()
 		}
+	} else {
+		exludeProjects = projectProfile.GetExclude()
 	}
 
 	includeProjects = projectProfile.GetInclude()
@@ -103,6 +102,7 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 			TagsList:       formatProjectTags(project.TagList),
 			Required:       projectProfile.IsProjectRequired(project.ID),
 			SelectedBranch: projectProfile.GetProjectSelectedBranch(project.ID),
+			sortPriority:   projectProfile.GetProjectSortPriority(project.ID),
 		}
 
 		exclude := slices.Contains(exludeProjects, strconv.Itoa(item.ProjectID))
@@ -117,7 +117,12 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 		}
 	}
 
+	// sort by sortPriority and Name
 	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].sortPriority != result[j].sortPriority {
+			return result[i].sortPriority < result[j].sortPriority
+		}
+
 		return result[i].Name < result[j].Name
 	})
 
