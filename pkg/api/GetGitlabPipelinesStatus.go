@@ -59,11 +59,7 @@ func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID st
 	}
 
 	for _, projectPipeline := range projectPipelines {
-		pipelineVars, _, err := e.gitlabClient.Pipelines.GetPipelineVariables(
-			projectID,
-			projectPipeline.ID,
-			gitlab.WithContext(ctx),
-		)
+		pipelineVars, err := GetCachedGitlabPipelineVariables(ctx, projectID, projectPipeline.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get project pipeline variables")
 		}

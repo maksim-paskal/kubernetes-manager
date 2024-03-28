@@ -59,7 +59,7 @@ func Init(ctx context.Context) error {
 	return nil
 }
 
-func Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) { //nolint:ireturn,lll
+func Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) { //nolint:lll
 	return otel.Tracer("").Start(ctx, spanName, opts...) //nolint:spancheck
 }
 

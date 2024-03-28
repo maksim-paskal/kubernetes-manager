@@ -18,7 +18,6 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
-	"github.com/xanzy/go-gitlab"
 )
 
 type GetGitlabProjectsInfoItem struct {
@@ -37,11 +36,7 @@ func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, bran
 		return nil, errNoGitlabClient
 	}
 
-	project, _, err := e.gitlabClient.Projects.GetProject(
-		projectID,
-		&gitlab.GetProjectOptions{},
-		gitlab.WithContext(ctx),
-	)
+	project, err := GetCachedGitlabProject(ctx, projectID)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get project")
 	}

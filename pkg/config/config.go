@@ -126,6 +126,11 @@ type WikiPage struct {
 	Size      int
 }
 
+type Cache struct {
+	Type   string
+	Config interface{}
+}
+
 type KubernetesEndpoint struct {
 	Disabled          bool
 	Name              string
@@ -421,6 +426,9 @@ var config = Type{
 	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"), //nolint:lll
 
 	DelayHours: flag.Int("delayHours", defaultDelayHours, "default delay hours"),
+	Cache: &Cache{
+		Type: "noop",
+	},
 }
 
 type Type struct {
@@ -453,6 +461,7 @@ type Type struct {
 	Autotests                  []*Autotest
 	DelayHours                 *int
 	WikiPages                  []*WikiPage
+	Cache                      *Cache
 }
 
 func (t *Type) DeepCopy() *Type {

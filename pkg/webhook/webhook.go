@@ -87,7 +87,7 @@ func processEvent(ctx context.Context, condition config.WebHook, message types.W
 	return errors.Wrap(provider.Process(ctx), "provider processing error")
 }
 
-func NewProvider(provider string) (Provider, error) { //nolint:ireturn
+func NewProvider(provider string) (Provider, error) {
 	switch provider {
 	case "aws":
 		return new(aws.Provider), nil

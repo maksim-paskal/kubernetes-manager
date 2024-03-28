@@ -18,7 +18,6 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type GetPodByImageResult struct {
@@ -31,14 +30,16 @@ func (e *Environment) GetPodByImage(ctx context.Context, imagePrefix string) (*G
 	ctx, span := telemetry.Start(ctx, "api.GetPodByImage")
 	defer span.End()
 
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: runningPodSelector,
-	})
+	pods, err := GetCachedKubernetesPodsByFieldSelector(ctx,
+		e.Cluster,
+		e.Namespace,
+		runningPodSelector,
+	)
 	if err != nil {
 		return &GetPodByImageResult{}, errors.Wrap(err, "can not list pods")
 	}
 
-	for _, pod := range pods.Items {
+	for _, pod := range pods {
 		for _, initContainer := range pod.Spec.InitContainers {
 			if strings.Contains(initContainer.Image, imagePrefix) {
 				return &GetPodByImageResult{
