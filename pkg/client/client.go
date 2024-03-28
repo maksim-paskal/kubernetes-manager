@@ -13,8 +13,11 @@ limitations under the License.
 package client
 
 import (
+	"net/http"
+
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
@@ -31,6 +34,16 @@ var (
 	clientsetCluster  map[string]*kubernetes.Clientset
 	restconfigCluster map[string]*rest.Config
 )
+
+var gitlabHTTPClient = &http.Client{
+	Jar:       nil,
+	Transport: metrics.NewInstrumenter("gitlab").InstrumentedRoundTripper(),
+}
+
+var hcloudHTTPClient = &http.Client{
+	Jar:       nil,
+	Transport: metrics.NewInstrumenter("hcloud").InstrumentedRoundTripper(),
+}
 
 var errNoCluster = errors.New("no cluster")
 
@@ -85,7 +98,11 @@ func Init() error {
 	)
 
 	if len(*config.Get().GitlabToken) > 0 || len(*config.Get().GitlabURL) > 0 {
-		gitlabClient, err = gitlab.NewClient(*config.Get().GitlabToken, gitlab.WithBaseURL(*config.Get().GitlabURL))
+		gitlabClient, err = gitlab.NewClient(
+			*config.Get().GitlabToken,
+			gitlab.WithBaseURL(*config.Get().GitlabURL),
+			gitlab.WithHTTPClient(gitlabHTTPClient),
+		)
 		if err != nil {
 			return errors.Wrap(err, "can not connect to Gitlab")
 		}
@@ -114,6 +131,17 @@ func Init() error {
 			}
 		}
 
+		inst := metrics.NewInstrumenter("k8s" + kubernetesEndpoints.Name)
+
+		// don't log all path
+		inst.PathDetectionFunc = func(_ *http.Request) string {
+			return ""
+		}
+
+		restconfig.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+			return inst.InstrumentedRoundTripperWithTransport(rt)
+		}
+
 		clientset, err := kubernetes.NewForConfig(restconfig)
 		if err != nil {
 			return errors.Wrap(err, "can not create connection")
@@ -123,7 +151,10 @@ func Init() error {
 		restconfigCluster[kubernetesEndpoints.Name] = restconfig
 	}
 
-	hcloudClient = hcloud.NewClient(hcloud.WithToken(config.Get().RemoteServer.HetznerToken))
+	hcloudClient = hcloud.NewClient(
+		hcloud.WithToken(config.Get().RemoteServer.HetznerToken),
+		hcloud.WithHTTPClient(hcloudHTTPClient),
+	)
 
 	return nil
 }

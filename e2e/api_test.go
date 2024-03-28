@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/cache"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 )
@@ -35,6 +36,11 @@ var counters sync.Map
 
 func init() { //nolint:gochecknoinits
 	err := config.Load()
+	if err != nil {
+		panic(err)
+	}
+
+	err = cache.Init(ctx, cache.NoopProvider, nil)
 	if err != nil {
 		panic(err)
 	}
