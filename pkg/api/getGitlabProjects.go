@@ -18,11 +18,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
-	"github.com/xanzy/go-gitlab"
 )
 
 type GetGitlabProjectsItem struct {
@@ -44,18 +42,7 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjects")
 	defer span.End()
 
-	gitlabClient := client.GetGitlabClient()
-
-	if gitlabClient == nil {
-		return nil, errNoGitlabClient
-	}
-
-	projects, _, err := gitlabClient.Projects.ListProjects(
-		&gitlab.ListProjectsOptions{
-			Topic: config.Get().ExternalServicesTopic,
-		},
-		gitlab.WithContext(ctx),
-	)
+	projects, err := GetCachedGitlabProjectsByTopic(ctx, *config.Get().ExternalServicesTopic)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not list projects")
 	}
