@@ -67,10 +67,7 @@ func GetWikiPage(ctx context.Context, input *GetWikiPageInput) (*GetWikiPageItem
 		return nil, errors.Wrap(err, "input.Validate")
 	}
 
-	project, _, err := gitlabClient.Projects.GetProject(
-		input.ProjectID,
-		&gitlab.GetProjectOptions{},
-		gitlab.WithContext(ctx))
+	project, err := GetCachedGitlabProject(ctx, input.ProjectID)
 	if err != nil {
 		return nil, errors.Wrap(err, "can not get project")
 	}

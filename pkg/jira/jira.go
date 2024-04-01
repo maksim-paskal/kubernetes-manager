@@ -20,6 +20,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/cache"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
@@ -48,6 +49,16 @@ type IssueInfo struct {
 func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
 	ctx, span := telemetry.Start(ctx, "jira.GetIssueInfo")
 	defer span.End()
+
+	cacheKey := "jira:issue:" + issue
+
+	var cacheValue IssueInfo
+
+	if err := cache.Client().Get(ctx, cacheKey, &cacheValue); err == nil {
+		metrics.CacheHits.WithLabelValues("GetIssueInfo").Inc()
+
+		return &cacheValue, nil
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
@@ -85,6 +96,8 @@ func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
 	if err := json.NewDecoder(res.Body).Decode(&jiraResult); err != nil {
 		return nil, errors.Wrap(err, "json.NewDecoder(res.Body).Decode")
 	}
+
+	_ = cache.Client().Set(ctx, cacheKey, jiraResult, cache.LowTTL)
 
 	return &jiraResult, nil
 }

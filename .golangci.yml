@@ -29,3 +29,4 @@ linters:
   - exhaustruct
   - musttag
   - depguard
+  - ireturn

@@ -161,10 +161,9 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			PipelineDuration:     utils.HumanizeDuration(utils.HumanizeDurationShort, pipelineDuration),
 		}
 
-		pipelineVariables, _, err := gitlabClient.Pipelines.GetPipelineVariables(
-			autotestConfig.ProjectID,
+		pipelineVariables, err := api.GetCachedGitlabPipelineVariables(ctx,
+			strconv.Itoa(autotestConfig.ProjectID),
 			pipeline.ID,
-			gitlab.WithContext(ctx),
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "error getting pipeline variables")

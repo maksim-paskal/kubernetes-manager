@@ -41,11 +41,7 @@ func GetCommitsBehind(ctx context.Context, p *gitlab.Project, projectID, branch 
 	gitlabProject := p
 
 	if gitlabProject == nil {
-		project, _, err := gitlabClient.Projects.GetProject(
-			projectID,
-			&gitlab.GetProjectOptions{},
-			gitlab.WithContext(ctx),
-		)
+		project, err := GetCachedGitlabProject(ctx, projectID)
 		if err != nil {
 			return nil, errors.Wrap(err, "can not get project")
 		}

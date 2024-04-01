@@ -24,6 +24,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/batch"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/cache"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
@@ -78,6 +79,10 @@ func main() {
 	}
 
 	log.Debugf("Using config:\n%s", config.Get().String())
+
+	if err := cache.Init(ctx, cache.ProviderName(config.Get().Cache.Type), config.Get().Cache.Config); err != nil {
+		log.WithError(err).Fatal()
+	}
 
 	hookSentry, err := logrushooksentry.NewHook(ctx, logrushooksentry.Options{
 		Release: config.GetVersion(),
