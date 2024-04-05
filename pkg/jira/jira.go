@@ -97,7 +97,7 @@ func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
 		return nil, errors.Wrap(err, "json.NewDecoder(res.Body).Decode")
 	}
 
-	_ = cache.Client().Set(ctx, cacheKey, jiraResult, cache.LowTTL)
+	_ = cache.Client().Set(ctx, cacheKey, jiraResult, cache.MiddleTTL)
 
 	return &jiraResult, nil
 }

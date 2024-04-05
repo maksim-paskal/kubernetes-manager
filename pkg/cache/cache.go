@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	MaxTTL  = 0
-	HighTTL = 24 * time.Hour
-	LowTTL  = 10 * time.Minute
+	MaxTTL    = 0
+	HighTTL   = 24 * time.Hour
+	MiddleTTL = 10 * time.Minute
+	LowTTL    = 10 * time.Second
 )
 
 type Provider interface {
