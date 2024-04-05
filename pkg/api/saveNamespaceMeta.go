@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[string]string, labels map[string]string) error { //nolint:lll
+func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[string]string, labels map[string]string) error {
 	ctx, span := telemetry.Start(ctx, "api.SaveNamespaceMeta")
 	defer span.End()
 

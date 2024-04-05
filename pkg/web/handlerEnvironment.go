@@ -102,7 +102,7 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func environmentOperation(ctx context.Context, r *http.Request, environmentID string, operation string) (*HandlerResult, error) { //nolint:gocyclo,lll,maintidx
+func environmentOperation(ctx context.Context, r *http.Request, environmentID string, operation string) (*HandlerResult, error) { //nolint:gocyclo,maintidx
 	ctx, span := telemetry.Start(ctx, "web.environmentOperation")
 	defer span.End()
 
@@ -227,7 +227,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil { //nolint:lll
+		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil {
 			return result, err
 		}
 

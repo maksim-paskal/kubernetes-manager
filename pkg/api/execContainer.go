@@ -33,7 +33,7 @@ type ExecContainerResults struct {
 
 // exec command in container
 // @container must contains <pod>:<container>.
-func (e *Environment) ExecContainer(ctx context.Context, container string, command string) (*ExecContainerResults, error) { //nolint:lll
+func (e *Environment) ExecContainer(ctx context.Context, container string, command string) (*ExecContainerResults, error) {
 	ctx, span := telemetry.Start(ctx, "api.ExecContainer")
 	defer span.End()
 

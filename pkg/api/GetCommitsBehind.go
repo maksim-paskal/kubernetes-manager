@@ -28,7 +28,7 @@ type GetCommitsBehindResult struct {
 	CommitsBehind  *int
 }
 
-func GetCommitsBehind(ctx context.Context, p *gitlab.Project, projectID, branch string) (*GetCommitsBehindResult, error) { //nolint:lll
+func GetCommitsBehind(ctx context.Context, p *gitlab.Project, projectID, branch string) (*GetCommitsBehindResult, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetCommitsBehind")
 	defer span.End()
 

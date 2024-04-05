@@ -89,7 +89,7 @@ func (i *Instrumenter) InstrumentedRoundTripperWithTransport(defaultTransport ht
 	)
 }
 
-func (i *Instrumenter) instrumentRoundTripperEndpoint(counter *prometheus.CounterVec, next http.RoundTripper) promhttp.RoundTripperFunc { //nolint:lll
+func (i *Instrumenter) instrumentRoundTripperEndpoint(counter *prometheus.CounterVec, next http.RoundTripper) promhttp.RoundTripperFunc {
 	return func(r *http.Request) (*http.Response, error) {
 		_, span := telemetry.Start(r.Context(), "http."+i.subsystemIdentifier)
 		defer span.End()

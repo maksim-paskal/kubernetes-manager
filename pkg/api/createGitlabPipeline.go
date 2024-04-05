@@ -65,7 +65,7 @@ type CreateGitlabPipelineInput struct {
 	Variables []*gitlab.PipelineVariableOptions
 }
 
-func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGitlabPipelineInput) (string, error) { //nolint:lll
+func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGitlabPipelineInput) (string, error) {
 	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipeline")
 	defer span.End()
 

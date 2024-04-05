@@ -28,7 +28,7 @@ type GetGitlabProjectsInfoItem struct {
 	BranchNotFound bool
 }
 
-func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, branch string) (*GetGitlabProjectsInfoItem, error) { //nolint:lll
+func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, branch string) (*GetGitlabProjectsInfoItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjectsInfo")
 	defer span.End()
 

@@ -53,7 +53,7 @@ func (e *Environment) DisableMTLS(ctx context.Context) error {
 
 	// update deployment only arguments not exists
 	if needUpdate {
-		controlPlane.Spec.Template.Spec.Containers[0].Args = append(controlPlane.Spec.Template.Spec.Containers[0].Args, envoyControlPlaneArg) //nolint:lll
+		controlPlane.Spec.Template.Spec.Containers[0].Args = append(controlPlane.Spec.Template.Spec.Containers[0].Args, envoyControlPlaneArg)
 
 		_, err = e.clientset.AppsV1().Deployments(e.Namespace).Update(ctx, controlPlane, metav1.UpdateOptions{})
 		if err != nil {

@@ -67,7 +67,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) { //nolint:gocyclo,maintidx,lll
+func apiOperation(ctx context.Context, r *http.Request, operation string) (*HandlerResult, error) { //nolint:gocyclo,maintidx
 	ctx, span := telemetry.Start(ctx, "web.apiOperation")
 	defer span.End()
 
