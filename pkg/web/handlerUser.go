@@ -23,7 +23,7 @@ func handlerUser(w http.ResponseWriter, r *http.Request) {
 	_, span := telemetry.Start(r.Context(), "handlerUser")
 	defer span.End()
 
-	_, err := w.Write([]byte(`{"user":"kubernetes-manager.test.com","email":"kubernetes-manager@domain.com","groups":["kubernetes-manager-admin"]}`)) //nolint:lll
+	_, err := w.Write([]byte(`{"user":"kubernetes-manager.test.com","email":"kubernetes-manager@domain.com","groups":["kubernetes-manager-admin"]}`))
 	if err != nil {
 		log.WithError(err).Error("Error writing response")
 	}

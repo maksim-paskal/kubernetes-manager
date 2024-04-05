@@ -25,7 +25,7 @@ import (
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
 
-func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error { //nolint:lll
+func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error {
 	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipelinesByServices")
 	defer span.End()
 

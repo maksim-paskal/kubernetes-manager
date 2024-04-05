@@ -209,7 +209,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	// search last pipelines for action types
 	for _, action := range autotestConfig.Actions {
 		for _, pipeline := range result.Pipelines {
-			if pipeline.Test == action.Test && (pipeline.Status == pipelineStatusSuccess || pipeline.Status == pipelineStatusRunning) { //nolint:lll
+			if pipeline.Test == action.Test && (pipeline.Status == pipelineStatusSuccess || pipeline.Status == pipelineStatusRunning) {
 				result.LastPipelines = append(result.LastPipelines, pipeline)
 
 				break

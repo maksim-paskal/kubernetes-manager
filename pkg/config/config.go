@@ -173,11 +173,11 @@ func (p *ProjectProfile) Validate() error {
 		return errors.New("invalid NamespaceNameType: " + string(p.NamespaceNameType))
 	}
 
-	if re := regexp.MustCompile(`^\d+(=|=-)\d+(,\d+(=|=-)\d+)*$`); len(p.SortPriorities) > 0 && !re.MatchString(p.SortPriorities) { //nolint:lll
+	if re := regexp.MustCompile(`^\d+(=|=-)\d+(,\d+(=|=-)\d+)*$`); len(p.SortPriorities) > 0 && !re.MatchString(p.SortPriorities) {
 		return errors.Errorf("invalid SortPriorities, valid (%s) got (%s)", re.String(), p.SortPriorities)
 	}
 
-	if re := regexp.MustCompile(`^\d+=[0-9A-Za-z-_]+(,\d+=[0-9A-Za-z-_]+)*$`); len(p.DefaultBranch) > 0 && !re.MatchString(p.DefaultBranch) { //nolint:lll
+	if re := regexp.MustCompile(`^\d+=[0-9A-Za-z-_]+(,\d+=[0-9A-Za-z-_]+)*$`); len(p.DefaultBranch) > 0 && !re.MatchString(p.DefaultBranch) {
 		return errors.Errorf("invalid DefaultBranch, valid (%s) got (%s)", re.String(), p.DefaultBranch)
 	}
 
@@ -413,17 +413,17 @@ var config = Type{
 	BatchShedulePeriodSeconds: flag.Int("batch.periodSeconds", defaultBatchShedulePeriodSeconds, "batch shedule period"),
 
 	GitlabToken:     flag.String("gitlab.token", os.Getenv("GITLAB_TOKEN"), ""),
-	GitlabTokenUser: flag.String("gitlab.token.user", os.Getenv("GITLAB_TOKEN_USER"), "username of token user (need to filter pipelines)"), //nolint:lll
+	GitlabTokenUser: flag.String("gitlab.token.user", os.Getenv("GITLAB_TOKEN_USER"), "username of token user (need to filter pipelines)"),
 	GitlabURL:       flag.String("gitlab.url", os.Getenv("GITLAB_URL"), ""),
 
 	IngressHostDefaultProtocol: flag.String("ingress.show-protocol", "https", ""),
 
 	RemoveBranchLastScaleDate: flag.Int("batch.removeBranchLastScaleDate", defaultRemoveBranchLastScaleDate, ""),
 
-	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""), //nolint:lll
+	ExternalServicesTopic: flag.String("externalServicesTopic", GetEnvDefault("EXTERNAL_SERVICES_TOPIC", "kubernetes-manager"), ""),
 	BatchEnabled:          flag.Bool("batch.enabled", true, "enable batch operations"),
 
-	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"), //nolint:lll
+	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"),
 
 	DelayHours: flag.Int("delayHours", defaultDelayHours, "default delay hours"),
 	Cache: &Cache{

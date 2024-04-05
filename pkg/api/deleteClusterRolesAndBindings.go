@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func deleteClusterRoleAndBinding(ctx context.Context, clientset *kubernetes.Clientset, roleName string, roleBindingName string) error { //nolint:lll
+func deleteClusterRoleAndBinding(ctx context.Context, clientset *kubernetes.Clientset, roleName string, roleBindingName string) error {
 	ctx, span := telemetry.Start(ctx, "api.deleteClusterRoleAndBinding")
 	defer span.End()
 

@@ -28,7 +28,7 @@ type GetContainersItem struct {
 
 // returns list of containers
 // containerInLabels is pod label to store returned containers.
-func (e *Environment) GetContainers(ctx context.Context, filter string, containerInLabels string) (*GetContainersItem, error) { //nolint:lll
+func (e *Environment) GetContainers(ctx context.Context, filter string, containerInLabels string) (*GetContainersItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetContainers")
 	defer span.End()
 

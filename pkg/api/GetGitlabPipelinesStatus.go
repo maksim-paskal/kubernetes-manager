@@ -29,7 +29,7 @@ type GetGitlabPipelinesStatusResults struct {
 
 const GetGitlabPipelinesStatusMaxLimit = 20
 
-func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID string) (*GetGitlabPipelinesStatusResults, error) { //nolint:lll
+func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID string) (*GetGitlabPipelinesStatusResults, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabPipelinesStatus")
 	defer span.End()
 

@@ -54,7 +54,7 @@ func GetCachedGitlabProject(ctx context.Context, projectID string) (*gitlab.Proj
 	return project, nil
 }
 
-func GetCachedGitlabPipelineVariables(ctx context.Context, projectID string, pipeline int) ([]*gitlab.PipelineVariable, error) { //nolint:lll
+func GetCachedGitlabPipelineVariables(ctx context.Context, projectID string, pipeline int) ([]*gitlab.PipelineVariable, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetCachedGitlabPipelineVariables")
 	defer span.End()
 
@@ -109,7 +109,7 @@ func GetCachedGitlabProjectsByTopic(ctx context.Context, topic string) ([]*gitla
 	return projects, nil
 }
 
-func GetCachedKubernetesPodsByFieldSelector(ctx context.Context, cluster, namespace, selector string) ([]corev1.Pod, error) { //nolint:lll
+func GetCachedKubernetesPodsByFieldSelector(ctx context.Context, cluster, namespace, selector string) ([]corev1.Pod, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetCachedKubernetesPodsByFieldSelector")
 	defer span.End()
 
