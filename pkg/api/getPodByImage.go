@@ -30,11 +30,7 @@ func (e *Environment) GetPodByImage(ctx context.Context, imagePrefix string) (*G
 	ctx, span := telemetry.Start(ctx, "api.GetPodByImage")
 	defer span.End()
 
-	pods, err := GetCachedKubernetesPodsByFieldSelector(ctx,
-		e.Cluster,
-		e.Namespace,
-		runningPodSelector,
-	)
+	pods, err := GetCachedKubernetesPodsStatus(ctx, e.Cluster, e.Namespace, PodIsRunning)
 	if err != nil {
 		return &GetPodByImageResult{}, errors.Wrap(err, "can not list pods")
 	}
