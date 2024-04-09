@@ -20,7 +20,6 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PodsInfo struct {
@@ -41,22 +40,20 @@ func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetPodsInfo")
 	defer span.End()
 
-	pods, err := e.clientset.CoreV1().Pods(e.Namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: "status.phase!=Succeeded",
-	})
+	pods, err := GetCachedKubernetesPodsStatus(ctx, e.Cluster, e.Namespace, PodIsNotSucceeded)
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pods")
 	}
 
 	telemetry.Event(span, "loaded pods", map[string]string{
-		"len": strconv.Itoa(len(pods.Items)),
+		"len": strconv.Itoa(len(pods)),
 	})
 
 	result := PodsInfo{}
 
 	result.PodsFailedName = make([]string, 0)
 
-	for _, pod := range pods.Items {
+	for _, pod := range pods {
 		result.PodsTotal++
 
 		isPodReady := false
@@ -99,16 +96,16 @@ func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
 		}
 	}
 
-	pvc, err := e.clientset.CoreV1().PersistentVolumeClaims(e.Namespace).List(ctx, metav1.ListOptions{})
+	pvcs, err := GetCachedPersistentVolumeClaims(ctx, e.Cluster, e.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pvc")
 	}
 
 	telemetry.Event(span, "loaded pvc", map[string]string{
-		"len": strconv.Itoa(len(pvc.Items)),
+		"len": strconv.Itoa(len(pvcs)),
 	})
 
-	for _, pvc := range pvc.Items {
+	for _, pvc := range pvcs {
 		result.storageRequests += pvc.Status.Capacity.Storage().AsApproximateFloat64()
 	}
 
