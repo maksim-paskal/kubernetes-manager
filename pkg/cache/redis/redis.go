@@ -16,6 +16,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
@@ -73,10 +74,18 @@ func (p *Provider) Get(ctx context.Context, key string, value any) error {
 	ctx, span := telemetry.Start(ctx, "cache.redis.Get")
 	defer span.End()
 
+	telemetry.Attributes(span, map[string]string{
+		"key": key,
+	})
+
 	val, err := p.client.Get(ctx, key).Bytes()
 	if err != nil {
 		return errors.Wrap(err, "p.client.Get")
 	}
+
+	telemetry.Attributes(span, map[string]string{
+		"len": strconv.Itoa(len(val)),
+	})
 
 	if len(val) == 0 {
 		return nil
@@ -94,16 +103,36 @@ func (p *Provider) Set(ctx context.Context, key string, value interface{}, ttl t
 	ctx, span := telemetry.Start(ctx, "cache.redis.Set")
 	defer span.End()
 
+	telemetry.Attributes(span, map[string]string{
+		"key": key,
+		"ttl": ttl.String(),
+	})
+
 	valueBytes, err := json.Marshal(value)
 	if err != nil {
 		return errors.Wrap(err, "json.Marshal")
 	}
+
+	telemetry.Attributes(span, map[string]string{
+		"len": strconv.Itoa(len(valueBytes)),
+	})
 
 	if err := p.client.Set(ctx, key, string(valueBytes), ttl).Err(); err != nil {
 		return errors.Wrap(err, "p.client.Set")
 	}
 
 	metrics.CacheAdd.Inc()
+
+	return nil
+}
+
+func (p *Provider) FlushALL(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "cache.redis.FlushALL")
+	defer span.End()
+
+	if err := p.client.FlushAll(ctx).Err(); err != nil {
+		return errors.Wrap(err, "p.client.FlushAll")
+	}
 
 	return nil
 }

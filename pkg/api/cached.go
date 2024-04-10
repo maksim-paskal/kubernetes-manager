@@ -59,7 +59,7 @@ func GetCachedGitlabPipelineVariables(ctx context.Context, projectID string, pip
 	ctx, span := telemetry.Start(ctx, "api.GetCachedGitlabPipelineVariables")
 	defer span.End()
 
-	cacheKey := fmt.Sprintf("gitlab::project::%s::pipeline::%d", projectID, pipeline)
+	cacheKey := fmt.Sprintf("gitlab::project::%s::pipeline::%d::variables", projectID, pipeline)
 	cacheValue := make([]*gitlab.PipelineVariable, 0)
 
 	if err := cache.Client().Get(ctx, cacheKey, &cacheValue); err == nil {
