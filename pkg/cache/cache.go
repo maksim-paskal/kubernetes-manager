@@ -31,6 +31,7 @@ const (
 type Provider interface {
 	Get(ctx context.Context, key string, value any) error
 	Set(ctx context.Context, key string, value any, ttl time.Duration) error
+	FlushALL(ctx context.Context) error
 }
 
 type ProviderName string

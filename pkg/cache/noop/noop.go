@@ -29,3 +29,7 @@ func (p *Provider) Get(_ context.Context, _ string, _ any) error {
 func (p *Provider) Set(_ context.Context, _ string, _ interface{}, _ time.Duration) error {
 	return errNotImplemented
 }
+
+func (p *Provider) FlushALL(_ context.Context) error {
+	return errNotImplemented
+}

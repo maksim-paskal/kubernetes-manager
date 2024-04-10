@@ -23,6 +23,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/cache"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/jira"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
@@ -287,6 +288,13 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		}
 
 		result.Result = wikiResult
+
+	case "cache.flush":
+		if err := cache.Client().FlushALL(ctx); err != nil {
+			return result, err
+		}
+
+		result.Result = "ok"
 
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
