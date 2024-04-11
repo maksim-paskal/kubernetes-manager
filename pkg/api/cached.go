@@ -95,14 +95,30 @@ func GetCachedGitlabProjectsByTopic(ctx context.Context, topic string) ([]*gitla
 		return cacheValue, nil
 	}
 
-	projects, _, err := client.GetGitlabClient().Projects.ListProjects(
-		&gitlab.ListProjectsOptions{
-			Topic: gitlab.Ptr(topic),
-		},
-		gitlab.WithContext(ctx),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "can not list projects")
+	projects := make([]*gitlab.Project, 0)
+	pageNumber := 1
+
+	for ctx.Err() == nil {
+		page, resp, err := client.GetGitlabClient().Projects.ListProjects(
+			&gitlab.ListProjectsOptions{
+				Topic: gitlab.Ptr(topic),
+				ListOptions: gitlab.ListOptions{
+					Page: pageNumber,
+				},
+			},
+			gitlab.WithContext(ctx),
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "can not list projects")
+		}
+
+		projects = append(projects, page...)
+
+		if resp.CurrentPage >= resp.TotalPages {
+			break
+		}
+
+		pageNumber++
 	}
 
 	_ = cache.Client().Set(ctx, cacheKey, projects, cache.HighTTL)
