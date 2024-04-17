@@ -32,6 +32,8 @@ type GetGitlabProjectsItem struct {
 	TagsList       []string
 	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
 	Deploy         string                     // custom field for front end
+	// custom field for front end
+	RowVariant     string `json:"_rowVariant"` //nolint:tagliatelle
 	Required       bool
 	SelectedBranch string
 	sortPriority   int

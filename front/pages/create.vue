@@ -2,7 +2,7 @@
   <div style="padding: 10px">
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
       $fetchState.error.message
-    }}</b-alert>
+      }}</b-alert>
     <b-alert v-if="errorText" variant="danger" show>{{ errorText }}</b-alert>
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
 
@@ -199,10 +199,16 @@ export default {
       return this.currentStep >= step ? `${activeClass} ${className}` : className;
     },
     stepNext() {
-      if (this.currentStep == 1) {
-        if (this.$refs.userQuotas.getSelectedEnvironments().length > 0) {
-          return this.$refs.userQuotas.showDeleteSelectedEnvironments()
-        }
+      switch (this.currentStep) {
+        case 1:
+          if (this.$refs.userQuotas.getSelectedEnvironments().length > 0) {
+            return this.$refs.userQuotas.showDeleteSelectedEnvironments()
+          }
+          break;
+        case 2:
+          if (this.$refs.createNewEnvironmentProjects.checkRequiredServices()) {
+            return false;
+          }
       }
 
       this.currentStep++;

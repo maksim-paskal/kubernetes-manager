@@ -2,18 +2,18 @@
   <div>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
       $fetchState.error.message
-    }}</b-alert>
+      }}</b-alert>
     <b-alert v-if="this.errorText" variant="danger" show>{{
       this.errorText
-    }}</b-alert>
+      }}</b-alert>
     <b-alert v-if="this.infoText" variant="info" show>{{
       this.infoText
-    }}</b-alert>
+      }}</b-alert>
     <b-spinner v-if="$fetchState.pending" variant="primary" />
     <div v-else>
       <div v-if="projectProfile">
         <b-button variant="outline-primary" @click="selectAllFromMain()">Select all services from main</b-button>
-        <b-button variant="outline-primary" @click="clearAllSelection()">Clear selection</b-button>
+        <b-button variant="outline-primary" @click="resetSelection()">Reset selection</b-button>
         <b-button variant="outline-primary" @click="showShareDialog()">Share settings</b-button>
       </div>
       <b-table striped hover :items="data" :fields="tableFields">
@@ -25,8 +25,9 @@
                 Ref: data.item.GitBranch,
               })
               " variant="outline-danger"><em class="bi bi-trash3" /></b-button>
-          <em v-if="data.item.Required" class="text-danger bi bi-asterisk" />
-          <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}</a>
+          <a target="_blank" :href="data.item.WebURL" style="text-decoration: none">{{ data.item.Description }}<em
+              v-if="data.item.Required" title="Required" style="margin-left:5px"
+              class="text-danger bi bi-asterisk" /></a>
           <span v-if="data.item.GitBranch" title="git tag"
             @click="openInNewTab(`${data.item.WebURL}/-/tree/${data.item.GitBranch}`)"
             class="hand badge-margin badge rounded-pill bg-primary">{{
@@ -37,7 +38,8 @@
             title="The branch is behind the default branch." class="hand badge-margin badge rounded-pill bg-danger">{{
               data.item.AdditionalInfo.CommitsBehind }}
             commits behind</span>
-          <span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.BranchNotFound" class="badge rounded-pill bg-danger">branch not found</span>
+          <span v-if="data.item.AdditionalInfo && data.item.AdditionalInfo.BranchNotFound"
+            class="badge rounded-pill bg-danger">branch not found</span>
           <span v-else-if="!data.item.GitBranch && data.item.AdditionalInfo" title="docker tag"
             class="badge-margin badge rounded-pill bg-primary">{{
               data.item.AdditionalInfo.PodRunning.Tag
@@ -61,13 +63,13 @@
             <b-spinner v-if="!data.item.AdditionalInfo" variant="primary" />
             <em v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.PodRunning.Found
-              " class="bi bi-check-circle-fill" style="font-size: 26px; color: green" />
+            " class="bi bi-check-circle-fill" style="font-size: 26px; color: green" />
             <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastErrorPipeline" v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.Pipelines.LastErrorPipeline
-              "><em class="bi bi-exclamation-circle-fill" style="font-size: 26px; color: #dc3545" /></a>
+            "><em class="bi bi-exclamation-circle-fill" style="font-size: 26px; color: #dc3545" /></a>
             <a target="_blank" :href="data.item.AdditionalInfo.Pipelines.LastRunningPipeline" v-if="data.item.AdditionalInfo &&
               data.item.AdditionalInfo.Pipelines.LastRunningPipeline
-              "><em class="bi bi-hourglass-split" style="font-size: 26px; color: #1f75cb" /></a>
+            "><em class="bi bi-hourglass-split" style="font-size: 26px; color: #1f75cb" /></a>
           </div>
         </template>
         <template #cell(Deploy)="data">
@@ -158,9 +160,9 @@ export default {
         row.Deploy = row.DefaultBranch
       });
     },
-    clearAllSelection() {
-      this.data.forEach(async (row) => {
-        row.Deploy = ""
+    resetSelection() {
+      this.data.forEach(async (el) => {
+        el.Deploy = el.SelectedBranch;
       });
     },
     getGitBranch(projectID) {
@@ -218,6 +220,22 @@ export default {
     },
     openInNewTab(url) {
       window.open(url, '_blank', 'noreferrer');
+    },
+    checkRequiredServices() {
+      let hasDanger = false;
+
+      this.data.forEach((row) => {
+        if (row.Required) {
+          if (!row.Deploy) {
+            row["_rowVariant"] = 'danger';
+            hasDanger = true;
+          } else {
+            row["_rowVariant"] = '';
+          }
+        }
+      });
+
+      return hasDanger;
     },
   },
   async fetch() {
