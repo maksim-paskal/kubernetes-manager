@@ -280,7 +280,7 @@ func GetNamespaceByServicesJIRA(profile *config.ProjectProfile, services string)
 
 	for _, service := range environmentServices {
 		// service ref has jira issue
-		if issue := jiraRe2.FindStringSubmatch(service.Ref); len(issue) == 2 { //nolint:gomnd
+		if issue := jiraRe2.FindStringSubmatch(service.Ref); len(issue) == 2 { //nolint:gomnd,mnd
 			return fmt.Sprintf("%s%s", profile.NamespacePrefix, issue[1]), nil
 		}
 	}

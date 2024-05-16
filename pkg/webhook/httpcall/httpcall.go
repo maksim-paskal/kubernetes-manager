@@ -59,7 +59,7 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	}
 
 	if provider.Config.Timeout == 0 {
-		provider.Config.Timeout = 30 * time.Second //nolint:gomnd
+		provider.Config.Timeout = 30 * time.Second //nolint:gomnd,mnd
 	}
 
 	if len(provider.Config.Method) == 0 {
