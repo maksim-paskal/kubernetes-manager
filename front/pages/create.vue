@@ -140,7 +140,9 @@ export default {
       }
 
       this.config.Clusters.forEach((el) => {
-        result.push(el.ClusterName)
+        if (!el.Maintenance) {
+          result.push(el.ClusterName)
+        }
       })
 
       return result;

@@ -132,7 +132,9 @@ type Cache struct {
 }
 
 type KubernetesEndpoint struct {
-	Disabled          bool
+	Disabled bool
+	// set maintenance mode if cluster has some problems
+	Maintenance       bool
 	Name              string
 	KubeConfigPath    string
 	KubeConfigServer  string
