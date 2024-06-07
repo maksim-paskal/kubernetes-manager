@@ -8,23 +8,12 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-  # deprecated
-  - deadcode
-  - maligned
-  - ifshort
-  - golint
-  - nosnakecase
-  - scopelint
-  - interfacer
-  - structcheck
-  - varcheck
-  ############
+  - gomnd
   - testpackage
   - nestif
   - gochecknoglobals
   - funlen
   - gocognit
-  - exhaustivestruct
   - cyclop
   - wrapcheck
   - varnamelen
