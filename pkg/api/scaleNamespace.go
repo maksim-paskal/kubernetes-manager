@@ -37,7 +37,7 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 	var syncErrors sync.Map
 
-	wg.Add(3) //nolint:gomnd,mnd
+	wg.Add(3) //nolint:mnd
 
 	go func() {
 		defer wg.Done()
