@@ -748,6 +748,13 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = events
+	case "issues":
+		issues, err := environment.GetIssues(ctx)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = issues
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}
