@@ -18,6 +18,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/sentry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
@@ -30,6 +31,7 @@ import (
 var (
 	gitlabClient *gitlab.Client
 	hcloudClient *hcloud.Client
+	sentryClient *sentry.Client
 
 	clientsetCluster  map[string]*kubernetes.Clientset
 	restconfigCluster map[string]*rest.Config
@@ -45,10 +47,19 @@ var hcloudHTTPClient = &http.Client{
 	Transport: metrics.NewInstrumenter("hcloud").InstrumentedRoundTripper(),
 }
 
+var sentryHTTPClient = &http.Client{
+	Jar:       nil,
+	Transport: metrics.NewInstrumenter("sentry").InstrumentedRoundTripper(),
+}
+
 var errNoCluster = errors.New("no cluster")
 
 func GetGitlabClient() *gitlab.Client {
 	return gitlabClient
+}
+
+func GetSentryClient() *sentry.Client {
+	return sentryClient
 }
 
 func GetAllClientsets() map[string]*kubernetes.Clientset {
@@ -106,6 +117,14 @@ func Init() error {
 		if err != nil {
 			return errors.Wrap(err, "can not connect to Gitlab")
 		}
+	}
+
+	if config.Get().Sentry != nil {
+		sentryClient = sentry.NewClient(config.Get().Sentry.Endpoint)
+
+		sentryClient.Token = config.Get().Sentry.Token
+		sentryClient.Organization = config.Get().Sentry.Organization
+		sentryClient.HTTPClient = sentryHTTPClient
 	}
 
 	k8sMetrics.Register(k8sMetrics.RegisterOpts{

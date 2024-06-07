@@ -464,6 +464,7 @@ type Type struct {
 	DelayHours                 *int
 	WikiPages                  []*WikiPage
 	Cache                      *Cache
+	Sentry                     *Sentry
 }
 
 func (t *Type) DeepCopy() *Type {
@@ -699,4 +700,10 @@ func GetNamespaceMeta(ctx context.Context, namespace string) *NamespaceMeta {
 		Labels:      map[string]string{},
 		Annotations: map[string]string{},
 	}
+}
+
+type Sentry struct {
+	Endpoint     string
+	Token        string
+	Organization string
 }
