@@ -18,6 +18,7 @@ import (
 
 type GetFrontConfigItem struct {
 	ClusterName string
+	Maintenance bool
 	Links       *config.Links
 }
 
@@ -46,6 +47,7 @@ func GetFrontConfig() *GetFrontConfigResult {
 	for _, cluster := range appConfig.GetKubernetesEndpoints() {
 		result.Clusters = append(result.Clusters, &GetFrontConfigItem{
 			ClusterName: cluster.Name,
+			Maintenance: cluster.Maintenance,
 			Links:       cluster.Links,
 		})
 	}
