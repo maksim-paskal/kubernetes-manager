@@ -371,12 +371,19 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		result.Result = "Delayed scaleDown on next " + scaledownDelay.Delay
 	case "make-disable-hpa":
-		err := environment.DisableHPA(ctx)
+		err := environment.DisableHPA(ctx, true)
 		if err != nil {
 			return result, err
 		}
 
-		result.Result = "Disabled HPA in namespace %s" + environment.Namespace
+		result.Result = "Disabled autoscaling in namespace " + environment.Namespace
+	case "make-restore-hpa":
+		err := environment.DisableHPA(ctx, false)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = "Restored autoscaling in namespace " + environment.Namespace
 	case "make-disable-mtls":
 		err := environment.DisableMTLS(ctx)
 		if err != nil {

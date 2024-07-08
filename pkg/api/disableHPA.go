@@ -14,13 +14,16 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-func (e *Environment) DisableHPA(ctx context.Context) error {
+func (e *Environment) DisableHPA(ctx context.Context, disable bool) error {
 	ctx, span := telemetry.Start(ctx, "api.DisableHPA")
 	defer span.End()
 
@@ -28,24 +31,41 @@ func (e *Environment) DisableHPA(ctx context.Context) error {
 		return errors.Wrap(errIsSystemNamespace, e.Namespace)
 	}
 
-	hpa := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace)
-
-	hpas, err := hpa.List(ctx, metav1.ListOptions{})
+	hpas, err := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "error listing hpa")
 	}
 
-	GracePeriodSeconds := int64(0)
-
-	opt := &metav1.DeleteOptions{
-		GracePeriodSeconds: &GracePeriodSeconds,
-	}
+	const disabledPrefix = "disabled-"
 
 	for _, hpa := range hpas.Items {
-		err := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace).Delete(ctx, hpa.Name, *opt)
+		scaleTargetRefKind := strings.TrimPrefix(hpa.Spec.ScaleTargetRef.Kind, disabledPrefix)
+
+		if disable {
+			// if already disabled - skip
+			if strings.HasPrefix(hpa.Spec.ScaleTargetRef.Kind, disabledPrefix) {
+				continue
+			}
+
+			scaleTargetRefKind = disabledPrefix + hpa.Spec.ScaleTargetRef.Kind
+		}
+
+		payload := fmt.Sprintf(`{"spec":{"scaleTargetRef":{"kind": "%s" }}}`, scaleTargetRefKind)
+
+		_, err := e.clientset.AutoscalingV1().HorizontalPodAutoscalers(e.Namespace).Patch(ctx,
+			hpa.Name,
+			types.StrategicMergePatchType,
+			[]byte(payload),
+			metav1.PatchOptions{},
+		)
 		if err != nil {
 			return errors.Wrap(err, "error deleting hpa")
 		}
+	}
+
+	// if we restoring original values - do nothing
+	if !disable {
+		return nil
 	}
 
 	err = e.ScaleNamespace(ctx, 1)
