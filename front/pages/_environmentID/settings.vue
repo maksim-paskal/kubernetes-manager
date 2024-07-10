@@ -16,6 +16,7 @@
       <br />
       <b-card bg-variant="light" header="Actions" class="text-center">
         <b-button @click="call('make-disable-hpa')">Disable autoscaling</b-button>
+        <b-button @click="call('make-restore-hpa')">Restore autoscaling</b-button>
         <b-button @click="call('make-disable-mtls')">Disable mTLS verification</b-button>
         <b-button @click="call('make-snapshot')">Make environment snapshot</b-button>
       </b-card>

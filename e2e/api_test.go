@@ -135,7 +135,7 @@ func TestPods(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = environment.DisableHPA(ctx)
+	err = environment.DisableHPA(ctx, true)
 	if err != nil {
 		t.Fatal(err)
 	}
