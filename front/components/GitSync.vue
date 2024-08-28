@@ -1,5 +1,5 @@
 <template>
-  <div class="detail-tab">
+  <div>
     <b-alert v-if="errorText" variant="danger" show>{{ errorText }}</b-alert>
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
     <b-spinner v-if="callIsLoading" variant="primary" />

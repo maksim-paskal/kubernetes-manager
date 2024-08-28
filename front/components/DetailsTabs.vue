@@ -28,13 +28,7 @@
         <b-link class="nav-link" active-class="active" to="settings">settings</b-link>
       </li>
       <li class="nav-item">
-        <b-link class="nav-link" active-class="active" to="debug">debug</b-link>
-      </li>
-      <li class="nav-item">
-        <b-link class="nav-link" active-class="active" to="git-sync">git-sync</b-link>
-      </li>
-      <li class="nav-item">
-        <b-link class="nav-link" active-class="active" to="kubectl">kubectl</b-link>
+        <b-link class="nav-link" active-class="active" to="tools">tools</b-link>
       </li>
       <li class="nav-item">
         <b-link class="nav-link" active-class="active" to="autotests">autotests</b-link>
