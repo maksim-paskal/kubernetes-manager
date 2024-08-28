@@ -1,5 +1,5 @@
 <template>
-  <div class="detail-tab">
+  <div>
     <h2>Install</h2>
     Install requred application
     <a target="_blank"
@@ -17,7 +17,6 @@
   </div>
 </template>
 <script>
-import CopyTextbox from '../../components/CopyTextbox.vue';
 export default {
   layout: "details",
   head() {
@@ -33,6 +32,5 @@ export default {
       return `/tmp/kubeconfig-${this.environment.Cluster}-${this.environment.Namespace}`;
     },
   },
-  components: { CopyTextbox }
 }
 </script>
