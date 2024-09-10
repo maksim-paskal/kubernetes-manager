@@ -73,6 +73,10 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 		return "", errNoGitlabClient
 	}
 
+	if e.IsSystemNamespace() {
+		return "", errors.New("can not create pipeline in system namespace")
+	}
+
 	projectIDInt, err := strconv.Atoi(input.ProjectID)
 	if err != nil {
 		return "", errors.Wrap(err, "can not convert to number")
