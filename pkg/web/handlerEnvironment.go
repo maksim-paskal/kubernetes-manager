@@ -762,6 +762,14 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = issues
+
+	case "local-proxy-templates":
+		if config.Get().LocalProxy == nil {
+			return result, errors.New("no local proxy config")
+		}
+
+		result.Result = config.Get().LocalProxy.Templates
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}

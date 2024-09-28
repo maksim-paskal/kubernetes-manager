@@ -465,6 +465,7 @@ type Type struct {
 	WikiPages                  []*WikiPage
 	Cache                      *Cache
 	Sentry                     *Sentry
+	LocalProxy                 *LocalProxy
 }
 
 func (t *Type) DeepCopy() *Type {
@@ -706,4 +707,13 @@ type Sentry struct {
 	Endpoint     string
 	Token        string
 	Organization string
+}
+
+type LocalProxyTemplate struct {
+	Title    string
+	Template string
+}
+
+type LocalProxy struct {
+	Templates []*LocalProxyTemplate
 }
