@@ -16,17 +16,21 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
+const podPendingDuration = 2 * time.Minute
+
 type PodsInfo struct {
 	PodsTotal       int64
 	PodsReady       int64
 	PodsFailed      int64
 	PodsFailedName  []string
+	PodsPendingName []string
 	cpuRequests     float64
 	memoryRequests  float64
 	storageRequests float64
@@ -84,6 +88,13 @@ func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
 		if isPodReady {
 			result.PodsReady++
 		} else {
+			// check if pod is still starting
+			if time.Since(pod.CreationTimestamp.Time) < podPendingDuration {
+				result.PodsPendingName = append(result.PodsPendingName, pod.Name)
+
+				continue
+			}
+
 			result.PodsFailed++
 
 			if podReason == string(corev1.PodRunning) {
