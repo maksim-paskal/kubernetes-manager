@@ -1,14 +1,21 @@
+<style scoped>
+.autotest-asterisk {
+  font-size: 12px;
+  margin-left: 5px;
+}
+</style>
 <template>
   <div>
     <DropDown ref="autotestBranch" id="autotestBranch" text="Select branch"
       :endpoint="`/api/project-refs?id=${this.customAction.ProjectID}`" />
     <ul style="list-style-type: none;padding-left: 0px;">
       <li style="margin-top: 10px">
-        <pre style="margin-bottom: 0px">Autotest type</pre>
+        <pre style="margin-bottom: 0px">Autotest type<em class="autotest-asterisk text-danger bi bi-asterisk" /></pre>
         <b-form-select v-model="test" class="form-select" :options="this.customAction.Tests" />
       </li>
       <li style="margin-top: 10px" v-bind:key="index" v-for="(env, index) in this.customAction.Env">
-        <pre style="margin-bottom: 0px">{{ env.Description }}</pre>
+        <pre
+          style="margin-bottom: 0px">{{ env.Description }}<em class="autotest-asterisk text-danger bi bi-asterisk" /></pre>
         <b-form-input class="autotest-env" :name="env.Name" :value="env.Default" />
       </li>
     </ul>

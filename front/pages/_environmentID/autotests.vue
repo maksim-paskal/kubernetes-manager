@@ -40,8 +40,8 @@
         </template>
         <template v-slot:cell(Test)="row">
           {{ row.item.Test }}
-          <span v-if="row.item.PipelineEnv?.CUSTOM_ACTION" class="badge rounded-pill bg-primary"
-            :title="JSON.stringify(row.item.PipelineEnv)">custom</span>
+          <b-button v-if="row.item.PipelineEnv?.CUSTOM_ACTION" @click="showJSON(row.item.PipelineEnv)"
+            class="badge rounded-pill bg-primary" :title="JSON.stringify(row.item.PipelineEnv)">custom</b-button>
         </template>
         <template v-slot:cell(PipelineCreated)="row">
           <div :title="row.item.PipelineCreated">{{ row.item.PipelineCreatedHuman }}&nbsp;ago</div>
@@ -53,12 +53,15 @@
             :href="row.item.ResultURL">Open Report</b-button>
         </template>
       </b-table>
-      <b-button variant="light" title="Get more results" v-if="data.Result.HasMorePipelines" @click="getMoreResults()"><em
-          class="bi bi-arrow-clockwise" /></b-button>
+      <b-button variant="light" title="Get more results" v-if="data.Result.HasMorePipelines"
+        @click="getMoreResults()"><em class="bi bi-arrow-clockwise" /></b-button>
     </div>
     <b-modal centered id="bv-custom-dialog" @ok="createCustomRun()" title="Create custom run">
       <AutotestCustomAction ref="autotestCustomAction" v-if="this.data.Result?.CustomAction"
         :customAction="this.data.Result.CustomAction" />
+    </b-modal>
+    <b-modal id="bv-show-json-dialog" title="Custom report information">
+      <pre>{{ jsonObject }}</pre>
     </b-modal>
   </div>
 </template>
@@ -74,6 +77,7 @@ export default {
     return {
       data: {},
       size: 10,
+      jsonObject: {},
       dataFilter: null,
       dataFields: [
         { key: "PipelineID", label: "ID" },
@@ -110,6 +114,10 @@ export default {
     },
     showCustomDialog() {
       this.$bvModal.show('bv-custom-dialog')
+    },
+    showJSON(obj) {
+      this.jsonObject = obj
+      this.$bvModal.show('bv-show-json-dialog')
     },
     createCustomRun() {
       this.call('make-start-autotest-custom', this.$refs.autotestCustomAction.getCustomActionInput())
