@@ -165,6 +165,7 @@ type ProjectProfile struct {
 	Required          string // project ids to be required (comma separated)
 	Exclude           string // project ids to exclude (comma separated) or * for all
 	Include           string // project ids to include (comma separated)
+	IncludeNamespaced string // project ids to include (comma separated) for namespaced
 	PipelineVariables map[string]string
 }
 
@@ -220,6 +221,14 @@ func (p *ProjectProfile) GetInclude() []string {
 	}
 
 	return strings.Split(p.Include, ",")
+}
+
+func (p *ProjectProfile) GetIncludeNamespaced() []string {
+	if len(p.IncludeNamespaced) == 0 {
+		return []string{}
+	}
+
+	return strings.Split(p.IncludeNamespaced, ",")
 }
 
 func (p *ProjectProfile) IsProjectRequired(projectID int) bool {

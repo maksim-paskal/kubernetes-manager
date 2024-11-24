@@ -39,8 +39,21 @@ type GetGitlabProjectsItem struct {
 	sortPriority   int
 }
 
+type GetGitlabProjectsInput struct {
+	Profile   string
+	Namespace string
+}
+
+func (i *GetGitlabProjectsInput) HasProfile() bool {
+	return len(i.Profile) > 0
+}
+
+func (i *GetGitlabProjectsInput) HasNamespace() bool {
+	return len(i.Namespace) > 0
+}
+
 // get gitlab project by profile or namespace.
-func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([]*GetGitlabProjectsItem, error) {
+func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*GetGitlabProjectsItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjects")
 	defer span.End()
 
@@ -50,21 +63,20 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 	}
 
 	var (
-		exludeProjects  []string
-		includeProjects []string
-		projectProfile  *config.ProjectProfile
+		exludeProjects []string
+		projectProfile *config.ProjectProfile
 	)
 
-	if len(profile) > 0 { //nolint:gocritic
-		projectProfile = config.GetProjectProfileByName(profile)
-	} else if len(namespace) > 0 {
-		projectProfile = config.GetProjectProfileByNamespace(namespace)
+	if input.HasProfile() { //nolint:gocritic
+		projectProfile = config.GetProjectProfileByName(input.Profile)
+	} else if input.HasNamespace() {
+		projectProfile = config.GetProjectProfileByNamespace(input.Namespace)
 	} else {
 		return nil, errors.Wrap(err, "need profile or namespace")
 	}
 
 	if projectProfile == nil {
-		return nil, errors.Errorf("unknown project profile for %s %s", profile, namespace)
+		return nil, errors.Errorf("unknown project profile for %+v", input)
 	}
 
 	if projectProfile.Exclude == "*" {
@@ -76,8 +88,6 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 	} else {
 		exludeProjects = projectProfile.GetExclude()
 	}
-
-	includeProjects = projectProfile.GetInclude()
 
 	result := make([]*GetGitlabProjectsItem, 0)
 
@@ -97,7 +107,12 @@ func GetGitlabProjects(ctx context.Context, profile string, namespace string) ([
 		exclude := slices.Contains(exludeProjects, strconv.Itoa(item.ProjectID))
 
 		// if project in includes it must be always shown
-		if slices.Contains(includeProjects, strconv.Itoa(item.ProjectID)) {
+		if slices.Contains(projectProfile.GetInclude(), strconv.Itoa(item.ProjectID)) {
+			exclude = false
+		}
+
+		// for namespaced include specific projects
+		if input.HasNamespace() && slices.Contains(projectProfile.GetIncludeNamespaced(), strconv.Itoa(item.ProjectID)) {
 			exclude = false
 		}
 
