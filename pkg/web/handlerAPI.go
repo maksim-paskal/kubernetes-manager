@@ -140,10 +140,12 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = environments
 	case "external-services":
-		profile := r.Form.Get("profile")
-		namespace := r.Form.Get("namespace")
+		input := &api.GetGitlabProjectsInput{
+			Profile:   r.Form.Get("profile"),
+			Namespace: r.Form.Get("namespace"),
+		}
 
-		projects, err := api.GetGitlabProjects(ctx, profile, namespace)
+		projects, err := api.GetGitlabProjects(ctx, input)
 		if err != nil {
 			return result, err
 		}
