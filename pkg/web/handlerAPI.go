@@ -160,6 +160,7 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		refs, err := api.GetGitlabProjectRefs(ctx, &api.GetGitlabProjectRefsOpt{
 			ProjectID:   id,
 			MaxBranches: 30, //nolint:mnd
+			MaxTags:     10, //nolint:mnd
 		})
 		if err != nil {
 			return result, err

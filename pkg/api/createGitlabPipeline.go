@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -80,6 +81,12 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	projectIDInt, err := strconv.Atoi(input.ProjectID)
 	if err != nil {
 		return "", errors.Wrap(err, "can not convert to number")
+	}
+
+	// ensure that pipeline can be created only for branches
+	_, tagResp, _ := e.gitlabClient.Tags.GetTag(projectIDInt, input.Ref, gitlab.WithContext(ctx))
+	if tagResp.StatusCode != http.StatusNotFound {
+		return "", errors.New("pipeline can not be created for tag")
 	}
 
 	variables := make([]*gitlab.PipelineVariableOptions, 0)
