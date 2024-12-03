@@ -15,15 +15,48 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/xanzy/go-gitlab"
 )
 
 var errCreateGitlabPipelinesByServicesError = errors.New("error creating pipelines")
+
+// return branch name if tag exists.
+func (e *Environment) createBranchIfTag(ctx context.Context, pid int, ref string) (string, error) {
+	ctx, span := telemetry.Start(ctx, "api.createBranchIfTag")
+	defer span.End()
+
+	tag, tagResp, err := e.gitlabClient.Tags.GetTag(pid, ref, gitlab.WithContext(ctx))
+
+	if tagResp.StatusCode == http.StatusNotFound {
+		return ref, nil
+	}
+
+	if err != nil {
+		return "", errors.Wrap(err, "can not get tag")
+	}
+
+	gitlabBranch, _, err := e.gitlabClient.Branches.CreateBranch(
+		pid,
+		&gitlab.CreateBranchOptions{
+			Branch: gitlab.Ptr("tagfork-" + ref + "-" + utils.RandomString(config.TemporaryTokenRandLength)),
+			Ref:    gitlab.Ptr(tag.Commit.ID),
+		},
+		gitlab.WithContext(ctx),
+	)
+	if err != nil {
+		return "", errors.Wrap(err, "can not create branch")
+	}
+
+	return gitlabBranch.Name, nil
+}
 
 func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, services string, op GitlabPipelineOperation) error {
 	ctx, span := telemetry.Start(ctx, "api.CreateGitlabPipelinesByServices")
@@ -40,6 +73,16 @@ func (e *Environment) CreateGitlabPipelinesByServices(ctx context.Context, servi
 	environmentServices, err := ParseEnvironmentServices(services, nil)
 	if err != nil {
 		return errors.Wrap(err, "error parsing services")
+	}
+
+	// create branches for tags
+	for i, environmentService := range environmentServices {
+		ref, err := e.createBranchIfTag(ctx, environmentService.ProjectID, environmentService.Ref)
+		if err != nil {
+			return errors.Wrap(err, "error creating branch")
+		}
+
+		environmentServices[i].Ref = ref
 	}
 
 	annotations := e.NamespaceAnnotations
