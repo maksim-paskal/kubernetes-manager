@@ -53,6 +53,7 @@ type (
 		PipelineDuration     string
 		CommitShortSHA       string
 		ResultURL            string
+		ProgressURL          string
 		Status               PipelineStatus
 		Test                 string
 		TestNamespace        string
@@ -200,6 +201,13 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 		}
 
 		item.ResultURL = string(resultURL)
+
+		progressURL, err := utils.GetTemplatedResult(ctx, autotestConfig.ProgressURL, item)
+		if err != nil {
+			return nil, errors.Wrap(err, "error getting progress url")
+		}
+
+		item.ProgressURL = string(progressURL)
 
 		result.Pipelines = append(result.Pipelines, item)
 	}

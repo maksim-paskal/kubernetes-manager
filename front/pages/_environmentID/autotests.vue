@@ -51,6 +51,8 @@
             Pipeline</b-button>&nbsp;
           <b-button size="sm" v-if="row.item.Status === 'success'" variant="outline-primary" target="_blank"
             :href="row.item.ResultURL">Open Report</b-button>
+          <b-button size="sm" v-if="row.item.ProgressURL && row.item.Status === 'running'" variant="outline-primary"
+            target="_blank" :href="row.item.ProgressURL">Progress</b-button>
         </template>
       </b-table>
       <b-button variant="light" title="Get more results" v-if="data.Result.HasMorePipelines"

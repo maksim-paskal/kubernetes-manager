@@ -379,6 +379,7 @@ type Autotest struct {
 	Pattern           string
 	ProjectID         int
 	ReportURL         string
+	ProgressURL       string
 	Actions           []*AutotestAction
 	CustomAction      *AutotestCustomAction
 	FilterByNamespace bool
