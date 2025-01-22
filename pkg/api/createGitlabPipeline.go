@@ -21,7 +21,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 const (
@@ -94,19 +94,19 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	variables = append(variables, &gitlab.PipelineVariableOptions{
 		Key:          gitlab.Ptr(string(input.Operation)),
 		Value:        gitlab.Ptr("true"),
-		VariableType: gitlab.Ptr("env_var"),
+		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
 		Key:          gitlab.Ptr(gitlabNamespaceKey),
 		Value:        gitlab.Ptr(e.Namespace),
-		VariableType: gitlab.Ptr("env_var"),
+		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
 		Key:          gitlab.Ptr(gitlabClusterKey),
 		Value:        gitlab.Ptr(e.Cluster),
-		VariableType: gitlab.Ptr("env_var"),
+		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	if projectProfile := e.getProjectProfile(); projectProfile != nil {
@@ -114,7 +114,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 			variables = append(variables, &gitlab.PipelineVariableOptions{
 				Key:          gitlab.Ptr(key),
 				Value:        gitlab.Ptr(value),
-				VariableType: gitlab.Ptr("env_var"),
+				VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 			})
 		}
 	}
@@ -124,7 +124,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 			variables = append(variables, &gitlab.PipelineVariableOptions{
 				Key:          gitlab.Ptr(key),
 				Value:        gitlab.Ptr(value),
-				VariableType: gitlab.Ptr("env_var"),
+				VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 			})
 		}
 	}
@@ -146,7 +146,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 		variables = append(variables, &gitlab.PipelineVariableOptions{
 			Key:          gitlab.Ptr(keyFormatted),
 			Value:        gitlab.Ptr(value),
-			VariableType: gitlab.Ptr("env_var"),
+			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		})
 	}
 
@@ -154,7 +154,7 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 		variables = append(variables, &gitlab.PipelineVariableOptions{
 			Key:          gitlab.Ptr(gitlabVariablePrefix + "USER"),
 			Value:        gitlab.Ptr(user),
-			VariableType: gitlab.Ptr("env_var"),
+			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		})
 	}
 

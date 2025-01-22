@@ -27,7 +27,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
-	gitlab "github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type (
@@ -344,7 +344,7 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 		variables = append(variables, &gitlab.PipelineVariableOptions{
 			Key:          gitlab.Ptr(key),
 			Value:        gitlab.Ptr(value),
-			VariableType: gitlab.Ptr("env_var"),
+			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		})
 	}
 
