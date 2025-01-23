@@ -21,7 +21,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/sentry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
