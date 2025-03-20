@@ -19,7 +19,7 @@ require (
 	github.com/maksim-paskal/sluglify v0.0.8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/sirupsen/logrus v1.9.3
 	gitlab.com/gitlab-org/api/client-go v0.120.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0
