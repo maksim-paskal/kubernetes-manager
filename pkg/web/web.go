@@ -122,7 +122,7 @@ func StartServer(ctx context.Context) {
 
 	log.Info(fmt.Sprintf("Starting on %s...", *config.Get().WebListen))
 
-	parentContext = ctx
+	parentContext = ctx //nolint:fatcontext
 
 	timeoutMessage := fmt.Sprintf("Server timeout after %s", serverRequestTimeout)
 
