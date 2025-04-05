@@ -63,7 +63,7 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 		if replicas > 0 {
 			annotation := map[string]string{config.LabelLastScaleDate: utils.TimeToString(time.Now())}
 
-			annotation[config.LabelScaleDownDelay] = config.Get().GetDefaultDelay()
+			annotation[config.LabelScaleDownDelay] = config.Get().GetScaleDownDelay().TimeToString()
 
 			if err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels); err != nil {
 				syncErrors.Store("saveNamespaceMeta", err)

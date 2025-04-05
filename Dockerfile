@@ -8,7 +8,7 @@ ENV GITLAB_TOKEN=some-token
 ENV FRONT_SENTRY_DSN="https://id@sentry/1"
 
 RUN apk upgrade \
-&& apk add --no-cache ca-certificates \
+&& apk add --no-cache ca-certificates tzdata \
 && addgroup -g 30001 -S app \
 && adduser -u 30001 -D -S -G app app
 
