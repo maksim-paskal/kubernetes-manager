@@ -37,7 +37,6 @@ const (
 	defaultRemoveBranchLastScaleDate = 10
 	defaultBatchShedulePeriodSeconds = 30 * 60 // 30 minutes
 	defaultGracefulShutdownSeconds   = 5
-	defaultDelayHours                = 10
 
 	TemporaryTokenRandLength    = 5
 	TemporaryTokenDurationHours = 10
@@ -437,7 +436,8 @@ var config = Type{
 
 	GracefulShutdownSeconds: flag.Int("gracefulShutdownSeconds", defaultGracefulShutdownSeconds, "graceful shutdown timeout"),
 
-	DelayHours: flag.Int("delayHours", defaultDelayHours, "default delay hours"),
+	ScaleDownDelay: NewScaleDownDelayOpts(),
+
 	Cache: &Cache{
 		Type: "noop",
 	},
@@ -471,7 +471,7 @@ type Type struct {
 	Snapshots                  Snapshot
 	RemoteServer               RemoteServer
 	Autotests                  []*Autotest
-	DelayHours                 *int
+	ScaleDownDelay             *ScaleDownDelayOpts
 	WikiPages                  []*WikiPage
 	Cache                      *Cache
 	Sentry                     *Sentry
@@ -494,13 +494,15 @@ func (t *Type) DeepCopy() *Type {
 	return &copyOfType
 }
 
-func (t *Type) GetDefaultDelay() string {
-	delayHours, err := time.ParseDuration(fmt.Sprintf("%dh", *t.DelayHours))
+func (t *Type) GetScaleDownDelay() *ScaleDownDelay {
+	scaleDownDelay, err := NewScaleDownDelay(time.Now(), config.ScaleDownDelay)
 	if err != nil {
-		return utils.TimeToString(time.Now())
+		log.WithError(err).Error("error while creating scale down delay")
+
+		return nil
 	}
 
-	return utils.TimeToString(time.Now().Add(delayHours))
+	return scaleDownDelay
 }
 
 func (t *Type) GetProjectSetting(projectID string) *ProjectSetting {
@@ -606,6 +608,10 @@ func CheckConfig() error {
 		if err := profile.Validate(); err != nil {
 			return errors.Wrap(err, "error while validating profile: "+profile.Name)
 		}
+	}
+
+	if scaleDownDelay := config.GetScaleDownDelay(); scaleDownDelay == nil {
+		return errors.New("invalid scale down delay")
 	}
 
 	return nil
