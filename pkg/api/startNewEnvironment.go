@@ -328,7 +328,7 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 	}
 
 	namespace.ObjectMeta.Annotations[config.LabelProjectProfile] = input.GetProfile().Name
-	namespace.ObjectMeta.Annotations[config.LabelScaleDownDelay] = config.Get().GetDefaultDelay()
+	namespace.ObjectMeta.Annotations[config.LabelScaleDownDelay] = config.Get().GetScaleDownDelay().TimeToString()
 
 	if len(input.Name) > 0 {
 		namespace.ObjectMeta.Annotations[config.LabelEnvironmentName] = input.Name

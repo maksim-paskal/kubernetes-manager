@@ -92,12 +92,7 @@ func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput
 			return errors.Wrap(err, "can power on server")
 		}
 
-		delayHours, err := time.ParseDuration(fmt.Sprintf("%dh", *config.Get().DelayHours))
-		if err != nil {
-			return errors.Wrap(err, "error parse delayHours")
-		}
-
-		labels[config.LabelScaleDownDelayShort] = utils.TimeToUnix(time.Now().Add(delayHours))
+		labels[config.LabelScaleDownDelayShort] = config.Get().GetScaleDownDelay().TimeToUnix()
 	}
 
 	err = SetRemoteServerLabels(ctx, server, labels)
