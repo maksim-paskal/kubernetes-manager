@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const podPendingDuration = 2 * time.Minute
+const podPendingDuration = 5 * time.Minute
 
 type PodsInfo struct {
 	PodsTotal       int64
