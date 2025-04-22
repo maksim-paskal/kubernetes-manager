@@ -16,10 +16,11 @@
     </div>
     <div v-else>
       <div v-if="this.results > 0" :style="this.testStyle">{{ this.results.toFixed(2) }}%</div>
-      <div v-if="this.showFailedTests">
-        <b-button v-if="failedTestsFormated.length > 0" size="sm" variant="warning"
-          @click="buttonFailedTests = !buttonFailedTests">{{ buttonFailedTests ? "Hide" : "Show" }} failed
+      <div v-if="this.showFailedTests && failedTestsFormated.length > 0">
+        <b-button size="sm" variant="warning" @click="buttonFailedTests = !buttonFailedTests">{{ buttonFailedTests ?
+          "Hide" : "Show" }} failed
           tests</b-button>
+        <b-button size="sm" @click="showFailedTestDialog">Rerun failed tests</b-button>
         <div v-if="buttonFailedTests">
           <div v-for="item in failedTestsFormated" :key="item">{{ item }}</div>
         </div>
@@ -29,7 +30,7 @@
 </template>
 <script>
 export default {
-  props: ["allureResults", "variant", "showFailedTests"],
+  props: ["item", "variant", "showFailedTests"],
   data() {
     return {
       data: [],
@@ -59,12 +60,34 @@ export default {
       return formated;
     }
   },
+  methods: {
+    showFailedTestDialog() {
+      this.$parent.showFailedTestDialog({
+        Ref: this.item.PipelineRef,
+        Type: this.item.Test,
+        Description: "Rerun failed tests for report " + this.item.ResultURL,
+        failedTests: this.failedTestsFormated,
+      });
+    },
+  },
   async fetch() {
-    const packageUrl = this.allureResults.replace(/\/index.html$/, '') + '/data/packages.json';
+    const packageUrl = this.item.ResultURL.replace(/\/index.html$/, '') + '/data/packages.json';
 
     const getTestResults = (parent, item) => {
       if (!item || !item.children) {
         return;
+      }
+
+      const calc = (item) => {
+        if (item.status === 'unknown') {
+          return;
+        }
+        this.total++;
+        if (item.status === 'passed') {
+          this.success++;
+        } else {
+          this.failedTests.push(parent + ";" + item.name);
+        }
       }
 
       if (Array.isArray(item.children)) {
@@ -72,21 +95,11 @@ export default {
           if (Array.isArray(item.children)) {
             getTestResults(parent + ";" + item.name, item);
           } else {
-            this.total++;
-            if (item.status === 'passed') {
-              this.success++;
-            } else {
-              this.failedTests.push(parent + ";" + item.name);
-            }
+            calc(item);
           }
         });
       } else {
-        this.total++;
-        if (item.status === 'passed') {
-          this.success++;
-        } else {
-          this.failedTests.push(parent + ";" + item.name);
-        }
+        calc(item);
       }
     }
 

@@ -4,7 +4,7 @@
     <b-alert v-if="infoText" variant="info" show>{{ infoText }}</b-alert>
     <b-alert v-if="$fetchState.error" variant="danger" show>{{
       $fetchState.error.message
-    }}</b-alert>
+      }}</b-alert>
     <b-spinner v-else-if="$fetchState.pending || callIsLoading" variant="primary" />
     <div v-else>
       <div style="margin-bottom: 15px" v-if="this.user.user">
@@ -16,7 +16,7 @@
       <b-card-group v-if="this.data.Result.LastPipelines" style="margin-bottom:15px">
         <b-card :title="getCardTitle(item)" v-bind:key="index" v-for="(item, index) in this.data.Result.LastPipelines">
           <b-card-text>
-            <AllureScore v-if="item.Status === 'success'" :allureResults="item.ResultURL" variant="large"
+            <AllureScore v-if="item.Status === 'success'" :item="item" variant="large"
               showFailedTests="true" />
             <div v-else>In progress</div><br />
             <b-button style="margin-top:5px" size="sm" v-if="item.Status === 'success'" variant="outline-primary"
@@ -36,7 +36,7 @@
       <b-table style="margin-top:5px" striped hover :items="data.Result.Pipelines" :fields="dataFields"
         :filter="dataFilter">
         <template v-slot:cell(Score)="row">
-          <AllureScore v-if="row.item.Status === 'success'" :allureResults="row.item.ResultURL" />
+          <AllureScore v-if="row.item.Status === 'success'" :item="row.item" />
         </template>
         <template v-slot:cell(Test)="row">
           {{ row.item.Test }}
@@ -62,8 +62,13 @@
       <AutotestCustomAction ref="autotestCustomAction" v-if="this.data.Result?.CustomAction"
         :customAction="this.data.Result.CustomAction" />
     </b-modal>
-    <b-modal id="bv-show-json-dialog" title="Custom report information">
+    <b-modal id="bv-show-json-dialog" title="Custom report information" ok-only>
       <pre>{{ jsonObject }}</pre>
+    </b-modal>
+    <b-modal @ok="handleFailedTest" id="bv-show-failed-tests" size="xl" centered title="Rerun failed tests" ok-only
+      ok-title="Create custom pipeline">
+      <RerunFailedTests ref="rerunFailedTests" v-if="this.data.Result?.CustomAction"
+        :customAction="this.data.Result.CustomAction" :params="this.failedTestParams" />
     </b-modal>
   </div>
 </template>
@@ -80,6 +85,7 @@ export default {
       data: {},
       size: 10,
       jsonObject: {},
+      failedTestParams: {},
       dataFilter: null,
       dataFields: [
         { key: "PipelineID", label: "ID" },
@@ -120,6 +126,24 @@ export default {
     showJSON(obj) {
       this.jsonObject = obj
       this.$bvModal.show('bv-show-json-dialog')
+    },
+    handleFailedTest(bvModalEvent) {
+      bvModalEvent.preventDefault()
+
+      const args = this.$refs.rerunFailedTests.getArgs()
+
+      if (!args) {
+        return;
+      }
+
+      this.call('make-start-autotest-custom', args)
+      this.$nextTick(() => {
+        this.$bvModal.hide('bv-show-failed-tests')
+      })
+    },
+    showFailedTestDialog(params) {
+      this.failedTestParams = params
+      this.$bvModal.show('bv-show-failed-tests')
     },
     createCustomRun() {
       this.call('make-start-autotest-custom', this.$refs.autotestCustomAction.getCustomActionInput())
