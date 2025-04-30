@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/api"
@@ -45,6 +46,7 @@ type (
 	PipelineStatus string
 	Pipeline       struct {
 		PipelineID           string
+		PipelineRef          string
 		PipelineURL          string
 		PipelineCreated      string
 		PipelineCreatedHuman string
@@ -70,6 +72,8 @@ const (
 	pipelineStatusSuccess PipelineStatus = "success"
 	pipelineStatusRunning PipelineStatus = "running"
 	pipelineStatusPending PipelineStatus = "pending"
+
+	pipelineEnvSuffixFile string = "@FILE"
 )
 
 var (
@@ -156,6 +160,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			CommitShortSHA:       pipeline.SHA[:8],
 			Status:               PipelineStatus(pipeline.Status),
 			PipelineURL:          pipeline.WebURL,
+			PipelineRef:          pipeline.Ref,
 			PipelineCreated:      utils.TimeToString(*pipeline.CreatedAt),
 			PipelineCreatedHuman: utils.HumanizeDuration(utils.HumanizeDurationShort, time.Since(*pipeline.CreatedAt)),
 			PipelineEnv:          make(map[string]string),
@@ -217,6 +222,11 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	// search last pipelines for action types
 	for _, action := range autotestConfig.Actions {
 		for _, pipeline := range result.Pipelines {
+			// Igore custom pipelines from total score
+			if pipeline.PipelineEnv["CUSTOM_ACTION"] == "true" {
+				continue
+			}
+
 			if pipeline.Test == action.Test && (pipeline.Status == pipelineStatusSuccess || pipeline.Status == pipelineStatusRunning) {
 				result.LastPipelines = append(result.LastPipelines, pipeline)
 
@@ -341,11 +351,24 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 			return errors.Errorf("env %s is empty", key)
 		}
 
-		variables = append(variables, &gitlab.PipelineVariableOptions{
+		variable := &gitlab.PipelineVariableOptions{
 			Key:          gitlab.Ptr(key),
 			Value:        gitlab.Ptr(value),
 			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
-		})
+		}
+
+		// for scenarios with @FILE in the end of key
+		// we need to set the variable type to file
+		// and remove @FILE from the key
+		// example: TEST@FILE
+		// will be converted to TEST
+		// and variable type will be set to file
+		if strings.HasSuffix(key, pipelineEnvSuffixFile) {
+			variable.Key = gitlab.Ptr(strings.TrimSuffix(key, pipelineEnvSuffixFile))
+			variable.VariableType = gitlab.Ptr(gitlab.FileVariableType)
+		}
+
+		variables = append(variables, variable)
 	}
 
 	_, _, err := gitlabClient.Pipelines.CreatePipeline(
