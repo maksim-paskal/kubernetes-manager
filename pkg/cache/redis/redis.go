@@ -31,7 +31,7 @@ type Provider struct {
 
 type ProviderConfig struct {
 	URL       string
-	TLSConfig tls.Config
+	TLSConfig *tls.Config
 }
 
 func NewProvider(ctx context.Context, config interface{}) (*Provider, error) {
@@ -57,7 +57,7 @@ func NewProvider(ctx context.Context, config interface{}) (*Provider, error) {
 		return nil, errors.Wrap(err, "redis.ParseURL")
 	}
 
-	opt.TLSConfig = &providerConfig.TLSConfig
+	opt.TLSConfig = providerConfig.TLSConfig
 
 	provider := &Provider{
 		client: redis.NewClient(opt),
