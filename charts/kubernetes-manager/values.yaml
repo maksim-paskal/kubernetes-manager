@@ -70,5 +70,6 @@ args: []
 
 ingress:
   enabled: false
+  secretName: ""
   host: "test.com"
   annotations: {}
