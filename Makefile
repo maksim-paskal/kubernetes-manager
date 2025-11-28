@@ -16,7 +16,7 @@ build:
 	mv ./dist/kubernetes-manager_linux_arm64/kubernetes-manager-arm64 .
 	docker buildx build --platform=$(platform) --pull --push . -t $(image)
 promote-to-beta:
-	make build platform=linux/amd64,linux/arm64 tag=beta
+	make build platform=linux/amd64,linux/arm64 tag=$(shell git rev-parse --short HEAD)
 security-scan:
 	go run github.com/aquasecurity/trivy/cmd/trivy@latest fs --ignore-unfixed .
 security-check:
