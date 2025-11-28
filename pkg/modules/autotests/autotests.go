@@ -148,12 +148,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 			break
 		}
 
-		pipelineInfo, _, err := gitlabClient.Pipelines.GetPipeline(pipeline.ProjectID, pipeline.ID, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, errors.Wrap(err, "error getting pipeline info")
-		}
-
-		pipelineDuration := time.Duration(pipelineInfo.Duration) * time.Second
+		pipelineDuration := pipeline.UpdatedAt.Sub(*pipeline.CreatedAt)
 
 		item := &Pipeline{
 			PipelineID:           strconv.Itoa(pipeline.ID),
