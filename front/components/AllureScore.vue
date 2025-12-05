@@ -104,7 +104,7 @@ export default {
     }
 
     const result = await fetch(packageUrl);
-    if (result.status === 404) {
+    if (result.status >= 400) {
       this.reportNotFound = true;
       return;
     }
