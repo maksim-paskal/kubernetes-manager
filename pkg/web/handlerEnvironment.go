@@ -714,6 +714,22 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 		}
 
 		result.Result = "Autotest started. Click Refresh button to see status."
+	case "make-stop-autotest":
+		stopAutotest := autotests.StopAutotestInput{}
+
+		err = json.Unmarshal(body, &stopAutotest)
+		if err != nil {
+			return result, err
+		}
+
+		stopAutotest.SetEnvironment(environment)
+
+		err = autotests.StopAutotest(ctx, &stopAutotest)
+		if err != nil {
+			return result, err
+		}
+
+		result.Result = "Autotest stopped. Click Refresh button to see status."
 	case "pod-containers":
 		pod := r.Form.Get("pod")
 

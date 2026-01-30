@@ -416,3 +416,82 @@ func getReleaseName(ctx context.Context, url string) (string, error) {
 
 	return string(b), nil
 }
+
+type StopAutotestInput struct {
+	environment *api.Environment
+	PipelineID  string
+}
+
+func (s *StopAutotestInput) SetEnvironment(environment *api.Environment) {
+	s.environment = environment
+}
+
+func (s *StopAutotestInput) Validate() error {
+	if s.environment == nil {
+		return errors.New("environment is empty")
+	}
+
+	if len(s.PipelineID) == 0 {
+		return errors.New("pipeline id is empty")
+	}
+
+	return nil
+}
+
+func StopAutotest(ctx context.Context, input *StopAutotestInput) error {
+	if err := input.Validate(); err != nil {
+		return errors.Wrap(err, "error validating input")
+	}
+
+	autotestConfig := config.Get().GetAutotestByID(input.environment.ID)
+
+	if autotestConfig == nil {
+		return errNotFound
+	}
+
+	gitlabClient := client.GetGitlabClient()
+
+	pipelineID, err := strconv.Atoi(input.PipelineID)
+	if err != nil {
+		return errors.Wrap(err, "error converting pipeline id to int")
+	}
+
+	_, _, err = gitlabClient.Pipelines.CancelPipelineBuild(
+		autotestConfig.ProjectID,
+		pipelineID,
+		gitlab.WithContext(ctx),
+	)
+	if err != nil {
+		return errors.Wrap(err, "error cancelling pipeline")
+	}
+
+	jobs, _, err := gitlabClient.Jobs.ListPipelineJobs(
+		autotestConfig.ProjectID,
+		pipelineID,
+		&gitlab.ListJobsOptions{
+			ListOptions: gitlab.ListOptions{
+				PerPage: gitlabListPerPage,
+			},
+		},
+		gitlab.WithContext(ctx),
+	)
+	if err != nil {
+		return errors.Wrap(err, "error getting pipeline jobs")
+	}
+
+	for _, job := range jobs {
+		if job.Name == config.GetEnvDefault("AUTOTEST_POST_STOP_JOB_NAME", "scaledown_hard") {
+			_, _, err = gitlabClient.Jobs.PlayJob(
+				autotestConfig.ProjectID,
+				job.ID,
+				&gitlab.PlayJobOptions{},
+				gitlab.WithContext(ctx),
+			)
+			if err != nil {
+				return errors.Wrap(err, "error playing pipeline job")
+			}
+		}
+	}
+
+	return nil
+}
