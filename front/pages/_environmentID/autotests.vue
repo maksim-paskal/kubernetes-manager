@@ -47,6 +47,7 @@
           <div :title="row.item.PipelineCreated">{{ row.item.PipelineCreatedHuman }}&nbsp;ago</div>
         </template>
         <template v-slot:cell(Actions)="row">
+          <b-button size="sm" v-if="row.item.Status === 'running'" variant="danger" @click="stopAutotest(row.item)">Stop</b-button>
           <b-button size="sm" variant="outline-primary" target="_blank" :href="row.item.PipelineURL">Open
             Pipeline</b-button>&nbsp;
           <b-button size="sm" v-if="row.item.Status === 'success'" variant="outline-primary" target="_blank"
@@ -112,6 +113,9 @@ export default {
   methods: {
     startAutotest(item) {
       this.call('make-start-autotest', { Test: item.Test })
+    },
+    stopAutotest(item) {
+      this.call('make-stop-autotest', { PipelineID: item.PipelineID })
     },
     getCardTitle(item) {
       return `${item.Test}`

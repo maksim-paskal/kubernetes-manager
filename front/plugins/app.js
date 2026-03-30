@@ -156,7 +156,7 @@ Vue.mixin({
       }
     },
     async call(op, data, onTop = true) {
-      if (op == "make-delete" || op == "make-delete-service" || op == "make-start-autotest") {
+      if (op == "make-delete" || op == "make-delete-service" || op == "make-start-autotest" || op == "make-stop-autotest") {
         const sure = await this.$bvModal.msgBoxConfirm("Are you sure?");
         if (!sure) return;
       }
