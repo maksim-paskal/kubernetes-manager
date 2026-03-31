@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"maps"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
@@ -30,9 +31,7 @@ func SetRemoteServerLabels(ctx context.Context, server *hcloud.Server, newLabels
 		labels = make(map[string]string)
 	}
 
-	for k, v := range newLabels {
-		labels[k] = v
-	}
+	maps.Copy(labels, newLabels)
 
 	opts := hcloud.ServerUpdateOpts{
 		Labels: labels,

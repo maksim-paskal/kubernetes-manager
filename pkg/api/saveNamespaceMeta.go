@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"maps"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
@@ -55,13 +56,9 @@ func (e *Environment) SaveNamespaceMeta(ctx context.Context, annotation map[stri
 	}
 
 	// if OK - update labels and annotations in Environment
-	for key, value := range annotation {
-		e.NamespaceAnnotations[key] = value
-	}
+	maps.Copy(e.NamespaceAnnotations, annotation)
 
-	for key, value := range labels {
-		e.NamespaceLabels[key] = value
-	}
+	maps.Copy(e.NamespaceLabels, labels)
 
 	return nil
 }

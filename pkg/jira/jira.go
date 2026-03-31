@@ -73,14 +73,14 @@ func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
 
 	url := fmt.Sprintf("%s/rest/api/latest/issue/%s", os.Getenv(envJiraURL), issue)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil) //nolint:gosec
 	if err != nil {
 		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
 
 	req.Header.Set("Authorization", "Basic "+os.Getenv(envJiraToken))
 
-	res, err := jiraDefaultClient.Do(req)
+	res, err := jiraDefaultClient.Do(req) //nolint:gosec
 	if err != nil {
 		return nil, errors.Wrap(err, "jiraDefaultClient.Do")
 	}

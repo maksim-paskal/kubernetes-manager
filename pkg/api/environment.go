@@ -100,7 +100,8 @@ func getEnvironmentsFromCluster(ctx context.Context, cluster string, filter stri
 			Cluster:   cluster,
 		}
 
-		if err := item.loadFromNamespace(ctx, namespace); err != nil {
+		err := item.loadFromNamespace(ctx, namespace)
+		if err != nil {
 			return nil, errors.Wrap(err, "can not load namespace")
 		}
 

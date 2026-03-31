@@ -34,7 +34,7 @@ type ProviderConfig struct {
 	TLSConfig *tls.Config
 }
 
-func NewProvider(ctx context.Context, config interface{}) (*Provider, error) {
+func NewProvider(ctx context.Context, config any) (*Provider, error) {
 	providerConfig := ProviderConfig{}
 
 	if config != nil {
@@ -99,7 +99,7 @@ func (p *Provider) Get(ctx context.Context, key string, value any) error {
 	return nil
 }
 
-func (p *Provider) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (p *Provider) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	ctx, span := telemetry.Start(ctx, "cache.redis.Set")
 	defer span.End()
 
@@ -130,7 +130,8 @@ func (p *Provider) FlushALL(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "cache.redis.FlushALL")
 	defer span.End()
 
-	if err := p.client.FlushAll(ctx).Err(); err != nil {
+	err := p.client.FlushAll(ctx).Err()
+	if err != nil {
 		return errors.Wrap(err, "p.client.FlushAll")
 	}
 

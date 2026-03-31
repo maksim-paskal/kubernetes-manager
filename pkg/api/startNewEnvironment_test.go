@@ -26,11 +26,12 @@ import (
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	if err := config.Load(); err != nil {
+	err := config.Load()
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	valid := make([]api.StartNewEnvironmentInput, 0)
+	valid := make([]api.StartNewEnvironmentInput, 0, 2)
 
 	valid = append(valid, api.StartNewEnvironmentInput{
 		Profile:  "test",
@@ -45,7 +46,7 @@ func TestValidation(t *testing.T) {
 		Cluster:  "test2",
 	})
 
-	ctx := context.WithValue(context.Background(), types.ContextSecurityKey, types.ContextSecurity{Owner: "test"})
+	ctx := context.WithValue(t.Context(), types.ContextSecurityKey, types.ContextSecurity{Owner: "test"})
 
 	for _, input := range valid {
 		if err := input.Validation(ctx); err != nil {

@@ -157,7 +157,7 @@ func (services *EnvironmentServices) GeProjectID() string {
 func ParseEnvironmentServices(services string, sortByProjectIDs []string) ([]*EnvironmentServices, error) {
 	result := make([]*EnvironmentServices, 0)
 
-	for _, service := range strings.Split(services, ";") {
+	for service := range strings.SplitSeq(services, ";") {
 		serviceData := strings.Split(service, ":")
 		if len(serviceData) != config.KeyValueLength {
 			return nil, errors.Wrap(errCreateNewBranchWrongFormat, service)
@@ -323,47 +323,47 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 		},
 	}
 
-	if namespace.ObjectMeta.Annotations == nil {
-		namespace.ObjectMeta.Annotations = make(map[string]string)
+	if namespace.Annotations == nil {
+		namespace.Annotations = make(map[string]string)
 	}
 
-	namespace.ObjectMeta.Annotations[config.LabelProjectProfile] = input.GetProfile().Name
-	namespace.ObjectMeta.Annotations[config.LabelScaleDownDelay] = config.Get().GetScaleDownDelay().TimeToString()
+	namespace.Annotations[config.LabelProjectProfile] = input.GetProfile().Name
+	namespace.Annotations[config.LabelScaleDownDelay] = config.Get().GetScaleDownDelay().TimeToString()
 
 	if len(input.Name) > 0 {
-		namespace.ObjectMeta.Annotations[config.LabelEnvironmentName] = input.Name
+		namespace.Annotations[config.LabelEnvironmentName] = input.Name
 	}
 
-	if namespace.ObjectMeta.Labels == nil {
-		namespace.ObjectMeta.Labels = make(map[string]string)
+	if namespace.Labels == nil {
+		namespace.Labels = make(map[string]string)
 	}
 
-	namespace.ObjectMeta.Labels[config.Namespace] = config.TrueValue
+	namespace.Labels[config.Namespace] = config.TrueValue
 
 	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.GetUser(ctx))
-	namespace.ObjectMeta.Labels[creatorLabel] = config.TrueValue
+	namespace.Labels[creatorLabel] = config.TrueValue
 
-	originalNamespaceName := namespace.ObjectMeta.Name
+	originalNamespaceName := namespace.Name
 	namespaceCreateTry := 0
 
 	// try to create namespace
 	for ctx.Err() == nil {
 		_, err := clientset.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
 		if err != nil {
-			log.WithError(err).Errorf("error creating namespace %s", namespace.ObjectMeta.Name)
+			log.WithError(err).Errorf("error creating namespace %s", namespace.Name)
 		} else {
 			// set ID with namespace that was created
-			id = fmt.Sprintf("%s:%s", idInfo.Cluster, namespace.ObjectMeta.Name)
+			id = fmt.Sprintf("%s:%s", idInfo.Cluster, namespace.Name)
 
 			break
 		}
 
 		if namespaceCreateTry > newEnvironmentMaxRetry {
-			return nil, errors.Wrapf(err, "error creating namespace %s", namespace.ObjectMeta.Name)
+			return nil, errors.Wrapf(err, "error creating namespace %s", namespace.Name)
 		}
 
 		namespaceCreateTry++
-		namespace.ObjectMeta.Name = fmt.Sprintf("%s-%s", originalNamespaceName, utils.RandomString(newEnvironmentRandLen))
+		namespace.Name = fmt.Sprintf("%s-%s", originalNamespaceName, utils.RandomString(newEnvironmentRandLen))
 
 		// wait before next try
 		time.Sleep(newEnvironmentDelay)

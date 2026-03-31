@@ -13,7 +13,6 @@ limitations under the License.
 package sentry_test
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -51,7 +50,7 @@ func TestClient(t *testing.T) {
 		t.Skip("no sentry endpoint")
 	}
 
-	issues, err := sentryClient.GetIssues(context.TODO(),
+	issues, err := sentryClient.GetIssues(t.Context(),
 		os.Getenv("TEST_SENTRY_QUERY"),
 		"7d",
 		"25",

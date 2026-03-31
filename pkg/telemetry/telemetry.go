@@ -70,7 +70,7 @@ func Attributes(span trace.Span, att map[string]string) {
 }
 
 func Event(span trace.Span, name string, att map[string]string) {
-	opts := make([]trace.EventOption, 0)
+	opts := make([]trace.EventOption, 0, len(att))
 
 	for k, v := range att {
 		opts = append(opts, trace.WithAttributes(attribute.String(k, v)))

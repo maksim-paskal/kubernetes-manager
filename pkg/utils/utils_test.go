@@ -96,7 +96,7 @@ func TestGetTemplatedResult(t *testing.T) {
 
 	test := "my {{ .Value }} {{ Security.Owner }}"
 
-	ctx := context.WithValue(context.Background(), types.ContextSecurityKey, types.ContextSecurity{
+	ctx := context.WithValue(t.Context(), types.ContextSecurityKey, types.ContextSecurity{
 		Owner: "runFromTest",
 	})
 

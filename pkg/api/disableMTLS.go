@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"slices"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/pkg/errors"
@@ -41,15 +42,7 @@ func (e *Environment) DisableMTLS(ctx context.Context) error {
 
 	args := controlPlane.Spec.Template.Spec.Containers[0].Args
 
-	needUpdate := true
-
-	for _, arg := range args {
-		if arg == envoyControlPlaneArg {
-			needUpdate = false
-
-			break
-		}
-	}
+	needUpdate := !slices.Contains(args, envoyControlPlaneArg)
 
 	// update deployment only arguments not exists
 	if needUpdate {

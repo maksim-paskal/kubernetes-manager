@@ -41,7 +41,8 @@ func NewEvent(ctx context.Context, message types.WebhookMessage) error {
 
 		if slices.Contains(condition.IDs, id) {
 			if len(condition.Events) == 0 || slices.Contains(condition.Events, message.Event) {
-				if err := processEvent(ctx, condition, message); err != nil {
+				err := processEvent(ctx, condition, message)
+				if err != nil {
 					return errors.Wrap(err, "error while processing event")
 				}
 			}

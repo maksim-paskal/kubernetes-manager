@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
@@ -58,14 +59,8 @@ func (e *Environment) GetContainers(ctx context.Context, filter string, containe
 
 			if len(containerLabelValue) == 0 {
 				result.Contaners = append(result.Contaners, containerText)
-			} else {
-				for _, searchContainer := range searchContainers {
-					if podContainer.Name == searchContainer {
-						result.Contaners = append(result.Contaners, containerText)
-
-						break
-					}
-				}
+			} else if slices.Contains(searchContainers, podContainer.Name) {
+				result.Contaners = append(result.Contaners, containerText)
 			}
 		}
 	}

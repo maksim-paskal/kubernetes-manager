@@ -127,7 +127,7 @@ type WikiPage struct {
 
 type Cache struct {
 	Type   string
-	Config interface{}
+	Config any
 }
 
 type KubernetesEndpoint struct {
@@ -230,16 +230,16 @@ func (p *ProjectProfile) GetIncludeNamespaced() []string {
 	return strings.Split(p.IncludeNamespaced, ",")
 }
 
-func (p *ProjectProfile) IsProjectRequired(projectID int) bool {
-	return slices.Contains(p.GetRequired(), strconv.Itoa(projectID))
+func (p *ProjectProfile) IsProjectRequired(projectID int64) bool {
+	return slices.Contains(p.GetRequired(), strconv.FormatInt(projectID, 10))
 }
 
-func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
+func (p *ProjectProfile) GetProjectSelectedBranch(projectID int64) string {
 	if len(p.DefaultBranch) == 0 {
 		return ""
 	}
 
-	for _, defaultBranch := range strings.Split(p.DefaultBranch, ",") {
+	for defaultBranch := range strings.SplitSeq(p.DefaultBranch, ",") {
 		defaultBranchData := strings.Split(defaultBranch, "=")
 		if len(defaultBranchData) != KeyValueLength {
 			log.Errorf("invalid defaultBranch format %s", defaultBranch)
@@ -247,7 +247,7 @@ func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
 			continue
 		}
 
-		if defaultBranchData[0] == strconv.Itoa(projectID) {
+		if defaultBranchData[0] == strconv.FormatInt(projectID, 10) {
 			return defaultBranchData[1]
 		}
 	}
@@ -255,12 +255,12 @@ func (p *ProjectProfile) GetProjectSelectedBranch(projectID int) string {
 	return ""
 }
 
-func (p *ProjectProfile) GetProjectSortPriority(projectID int) int {
+func (p *ProjectProfile) GetProjectSortPriority(projectID int64) int {
 	if len(p.SortPriorities) == 0 {
 		return p.DefaultPriority
 	}
 
-	for _, sortPriority := range strings.Split(p.SortPriorities, ",") {
+	for sortPriority := range strings.SplitSeq(p.SortPriorities, ",") {
 		sortPriorityData := strings.Split(sortPriority, "=")
 		if len(sortPriorityData) != KeyValueLength {
 			log.Errorf("invalid sortPriority format %s", sortPriority)
@@ -268,7 +268,7 @@ func (p *ProjectProfile) GetProjectSortPriority(projectID int) int {
 			continue
 		}
 
-		if sortPriorityData[0] == strconv.Itoa(projectID) {
+		if sortPriorityData[0] == strconv.FormatInt(projectID, 10) {
 			sortPriorityInt, err := strconv.Atoi(sortPriorityData[1])
 			if err != nil {
 				log.WithError(err).Errorf("error while converting sortPriority %s to int", sortPriorityData[1])
@@ -313,7 +313,7 @@ func (n *NamespaceMeta) GetTemplatedValue(ctx context.Context) *NamespaceMeta {
 
 type WebHook struct {
 	Provider string
-	Config   interface{}
+	Config   any
 	IDs      []string
 	Events   []types.Event
 }
@@ -605,7 +605,8 @@ func CheckConfig() error {
 	}
 
 	for _, profile := range config.ProjectProfiles {
-		if err := profile.Validate(); err != nil {
+		err := profile.Validate()
+		if err != nil {
 			return errors.Wrap(err, "error while validating profile: "+profile.Name)
 		}
 	}

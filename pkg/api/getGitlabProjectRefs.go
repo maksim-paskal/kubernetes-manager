@@ -34,7 +34,7 @@ type GetGitlabProjectBranchItem struct {
 type GetGitlabProjectRefsOpt struct {
 	ProjectID   string
 	MaxBranches int
-	MaxTags     int
+	MaxTags     int64
 }
 
 func GetGitlabProjectRefs(ctx context.Context, opts *GetGitlabProjectRefsOpt) ([]*GetGitlabProjectBranchItem, error) {
@@ -56,7 +56,7 @@ func GetGitlabProjectRefs(ctx context.Context, opts *GetGitlabProjectRefsOpt) ([
 	)
 
 	result := make([]*GetGitlabProjectBranchItem, 0)
-	currentPage := 0
+	currentPage := int64(0)
 
 	// add all project branches
 	for {

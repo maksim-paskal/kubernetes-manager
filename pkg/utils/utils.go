@@ -96,13 +96,13 @@ func getCustomFuncs(ctx context.Context) template.FuncMap {
 
 			return types.ContextSecurity{}
 		},
-		"RandomSliceElement": func(slice []interface{}) interface{} {
+		"RandomSliceElement": func(slice []any) any {
 			return slice[mathRand.Intn(len(slice))] //nolint:gosec
 		},
 	}
 }
 
-func GetTemplatedResult(ctx context.Context, text string, obj interface{}) ([]byte, error) {
+func GetTemplatedResult(ctx context.Context, text string, obj any) ([]byte, error) {
 	ctx, span := telemetry.Start(ctx, "utils.GetTemplatedResult")
 	defer span.End()
 

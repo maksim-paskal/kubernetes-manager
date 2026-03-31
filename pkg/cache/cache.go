@@ -43,7 +43,7 @@ const (
 
 var provider Provider
 
-func Init(ctx context.Context, providerName ProviderName, providerConfig interface{}) error {
+func Init(ctx context.Context, providerName ProviderName, providerConfig any) error {
 	switch providerName {
 	case NoopProvider:
 		provider = &noop.Provider{}

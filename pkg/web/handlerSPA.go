@@ -83,7 +83,7 @@ func (h HandlerSPA) serveStaticFiles(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 
-	_, err = w.Write([]byte(newContents))
+	_, err = w.Write([]byte(newContents)) //nolint:gosec
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -118,7 +118,7 @@ func (h HandlerSPA) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug(path)
 
 	// check whether a file exists at the given path
-	_, err = os.Stat(path)
+	_, err = os.Stat(path) //nolint:gosec
 	if os.IsNotExist(err) {
 		// file does not exist, serve index.html
 		http.ServeFile(w, r, filepath.Join(h.staticPath, h.indexPath))

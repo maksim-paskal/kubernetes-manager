@@ -28,14 +28,16 @@ func TestGitlabPipelineOperation(t *testing.T) {
 	}
 
 	for _, test := range testsValid {
-		if err := test.Check(); err != nil {
+		err := test.Check()
+		if err != nil {
 			t.Fatal("must be valid", err)
 		}
 	}
 
 	testsInValid := []api.GitlabPipelineOperation{"", "build", "test"}
 	for _, test := range testsInValid {
-		if err := test.Check(); err == nil {
+		err := test.Check()
+		if err == nil {
 			t.Fatal("must be invalid", err)
 		}
 	}
