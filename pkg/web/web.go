@@ -56,7 +56,7 @@ type HandlerResult struct {
 	headers map[string]string
 	output  HandlerResultOutput
 	cached  bool
-	Result  interface{}
+	Result  any
 }
 
 func NewHandlerResult() *HandlerResult {
@@ -135,7 +135,7 @@ func StartServer(ctx context.Context) {
 		WriteTimeout: serverWriteTimeout,
 	}
 
-	go func() {
+	go func() { //nolint:gosec
 		<-ctx.Done()
 
 		ctx, cancel := context.WithTimeout(context.Background(), config.Get().GetGracefulShutdown())
@@ -144,7 +144,8 @@ func StartServer(ctx context.Context) {
 		_ = server.Shutdown(ctx) //nolint:contextcheck
 	}()
 
-	if err := server.ListenAndServe(); err != nil && ctx.Err() == nil {
+	err := server.ListenAndServe()
+	if err != nil && ctx.Err() == nil {
 		log.WithError(err).Fatal()
 	}
 }

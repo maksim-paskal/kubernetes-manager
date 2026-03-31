@@ -26,7 +26,7 @@ func (p *Provider) Get(_ context.Context, _ string, _ any) error {
 	return errNotImplemented
 }
 
-func (p *Provider) Set(_ context.Context, _ string, _ interface{}, _ time.Duration) error {
+func (p *Provider) Set(_ context.Context, _ string, _ any, _ time.Duration) error {
 	return errNotImplemented
 }
 

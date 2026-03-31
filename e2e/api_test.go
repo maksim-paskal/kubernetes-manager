@@ -258,7 +258,7 @@ func TestDeleteNamespace(t *testing.T) {
 	for {
 		count := 0
 
-		counters.Range(func(_ interface{}, _ interface{}) bool {
+		counters.Range(func(_ any, _ any) bool {
 			count++
 
 			return true

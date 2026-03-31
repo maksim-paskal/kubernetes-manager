@@ -123,12 +123,14 @@ func (provider *Provider) Process(ctx context.Context) error {
 	result := Result{}
 	hasError := false
 
-	if err := <-processInstances; err != nil {
+	err := <-processInstances
+	if err != nil {
 		hasError = true
 		result.ErrProcessInstances = err.Error()
 	}
 
-	if err := <-processDatabases; err != nil {
+	err = <-processDatabases
+	if err != nil {
 		hasError = true
 		result.ErrProcessDatases = err.Error()
 	}

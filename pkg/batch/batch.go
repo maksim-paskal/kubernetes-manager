@@ -47,7 +47,8 @@ func Schedule(ctx context.Context) {
 			ctx, span := telemetry.Start(ctx, "batch.scheduleBatch", trace.WithNewRoot())
 			defer span.End()
 
-			if err := Execute(ctx); err != nil {
+			err := Execute(ctx)
+			if err != nil {
 				log.WithError(err).Error()
 			}
 		}()
@@ -91,7 +92,8 @@ func scaleDownALL(ctx context.Context) error {
 				eventMessage.Reason = "Will be scaled down soon..."
 				eventMessage.Properties["slackEmoji"] = ":warning:"
 
-				if err := webhook.NewEvent(ctx, eventMessage); err != nil {
+				err := webhook.NewEvent(ctx, eventMessage)
+				if err != nil {
 					log.WithError(err).Error()
 				}
 			}
@@ -193,7 +195,8 @@ func Execute(ctx context.Context) error {
 		}
 
 		// delete temporary tokens in namespace
-		if err := environment.DeleteTemporaryTokens(ctx); err != nil {
+		err := environment.DeleteTemporaryTokens(ctx)
+		if err != nil {
 			log.WithError(err).Error()
 		}
 

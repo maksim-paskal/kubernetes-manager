@@ -13,7 +13,6 @@ limitations under the License.
 package jira_test
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -35,7 +34,7 @@ func TestJira(t *testing.T) {
 		t.Skip("Skipping test because JIRA_ISSUE variable not set")
 	}
 
-	result, err := jira.GetIssueInfo(context.TODO(), os.Getenv("JIRA_ISSUE"))
+	result, err := jira.GetIssueInfo(t.Context(), os.Getenv("JIRA_ISSUE"))
 	if err != nil {
 		t.Fatal(err)
 	}

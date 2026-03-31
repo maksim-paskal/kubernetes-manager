@@ -14,6 +14,7 @@ package api
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -50,13 +51,7 @@ func (l *GetRemoteServerLabel) ValidKey() bool {
 		lastPowerOnTimeLabel,
 	}
 
-	for _, key := range validKeys {
-		if l.Key == key {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(validKeys, l.Key)
 }
 
 type GetRemoteServerItem struct {

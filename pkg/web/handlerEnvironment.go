@@ -55,7 +55,7 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		if _, err := w.Write([]byte(err.Error())); err != nil {
+		if _, err := w.Write([]byte(err.Error())); err != nil { //nolint:gosec
 			log.WithError(err).Error()
 		}
 
@@ -78,7 +78,8 @@ func handlerEnvironment(w http.ResponseWriter, r *http.Request) {
 	if result.output == HandlerResultOutputJSON {
 		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(w).Encode(result); err != nil {
+		err := json.NewEncoder(w).Encode(result)
+		if err != nil {
 			log.WithError(err).Error()
 		}
 	} else {
@@ -227,7 +228,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			return result, err
 		}
 
-		if err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation); err != nil {
+		err := environment.CreateGitlabPipelinesByServices(ctx, deployServices.Services, deployServices.Operation)
+		if err != nil {
 			return result, err
 		}
 
@@ -317,7 +319,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			ctx, span := telemetry.Start(ctx, "web.make-pause", trace.WithNewRoot())
 			defer span.End()
 
-			if err := environment.ScaleALL(ctx, 0); err != nil {
+			err := environment.ScaleALL(ctx, 0)
+			if err != nil {
 				log.WithError(err).Error()
 			}
 		}()
@@ -333,7 +336,8 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			ctx, span := telemetry.Start(ctx, "web.make-start", trace.WithNewRoot())
 			defer span.End()
 
-			if err := environment.ScaleALL(ctx, 1); err != nil {
+			err := environment.ScaleALL(ctx, 1)
+			if err != nil {
 				log.WithError(err).Error()
 			}
 		}()

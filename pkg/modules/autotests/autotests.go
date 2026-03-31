@@ -16,6 +16,7 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -151,7 +152,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 		pipelineDuration := pipeline.UpdatedAt.Sub(*pipeline.CreatedAt)
 
 		item := &Pipeline{
-			PipelineID:           strconv.Itoa(pipeline.ID),
+			PipelineID:           strconv.FormatInt(pipeline.ID, 10),
 			CommitShortSHA:       pipeline.SHA[:8],
 			Status:               PipelineStatus(pipeline.Status),
 			PipelineURL:          pipeline.WebURL,
@@ -333,9 +334,7 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 	}
 
 	// add extra env
-	for key, value := range input.ExtraEnv {
-		pipelineEnv[key] = value
-	}
+	maps.Copy(pipelineEnv, input.ExtraEnv)
 
 	gitlabClient := client.GetGitlabClient()
 
@@ -358,8 +357,8 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 		// example: TEST@FILE
 		// will be converted to TEST
 		// and variable type will be set to file
-		if strings.HasSuffix(key, pipelineEnvSuffixFile) {
-			variable.Key = gitlab.Ptr(strings.TrimSuffix(key, pipelineEnvSuffixFile))
+		if before, ok := strings.CutSuffix(key, pipelineEnvSuffixFile); ok {
+			variable.Key = gitlab.Ptr(before)
 			variable.VariableType = gitlab.Ptr(gitlab.FileVariableType)
 		}
 
@@ -451,7 +450,7 @@ func StopAutotest(ctx context.Context, input *StopAutotestInput) error {
 
 	gitlabClient := client.GetGitlabClient()
 
-	pipelineID, err := strconv.Atoi(input.PipelineID)
+	pipelineID, err := strconv.ParseInt(input.PipelineID, 10, 64)
 	if err != nil {
 		return errors.Wrap(err, "error converting pipeline id to int")
 	}

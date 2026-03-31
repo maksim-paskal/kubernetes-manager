@@ -42,7 +42,8 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 	go func() {
 		defer wg.Done()
 
-		if err := e.scaleDeployments(ctx, replicas); err != nil {
+		err := e.scaleDeployments(ctx, replicas)
+		if err != nil {
 			syncErrors.Store("scaleDeployments", err)
 			log.WithError(err).Error("error scaling deployments")
 		}
@@ -51,7 +52,8 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 	go func() {
 		defer wg.Done()
 
-		if err := e.scaleStatefulSets(ctx, replicas); err != nil {
+		err := e.scaleStatefulSets(ctx, replicas)
+		if err != nil {
 			syncErrors.Store("scaleStatefulSets", err)
 			log.WithError(err).Error("error scaling statefullsets")
 		}
@@ -65,7 +67,8 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 			annotation[config.LabelScaleDownDelay] = config.Get().GetScaleDownDelay().TimeToString()
 
-			if err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels); err != nil {
+			err := e.SaveNamespaceMeta(ctx, annotation, e.NamespaceLabels)
+			if err != nil {
 				syncErrors.Store("saveNamespaceMeta", err)
 				log.WithError(err).Error("error saving lastScaleDate")
 			}
@@ -90,12 +93,14 @@ func (e *Environment) ScaleNamespace(ctx context.Context, replicas int32) error 
 
 	if replicas == 0 {
 		// sometimes jobs still running after scale down
-		if err := e.deleteJobs(ctx); err != nil {
+		err := e.deleteJobs(ctx)
+		if err != nil {
 			return errors.Wrap(err, "error deleting jobs")
 		}
 
 		// sometimes frezzed in Terminating state
-		if err := e.deletePodsNow(ctx); err != nil {
+		err = e.deletePodsNow(ctx)
+		if err != nil {
 			return errors.Wrap(err, "error deleting pods")
 		}
 	}

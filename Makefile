@@ -11,9 +11,9 @@ build:
 	cd front && yarn install && APPVERSION=$(version) yarn generate
 	git tag -d `git tag -l "helm-chart-*"`
 	git tag -d `git tag -l "kubernetes-manager-*"`
-	go run github.com/goreleaser/goreleaser@latest build --clean --snapshot --skip=validate
+	go run github.com/goreleaser/goreleaser/v2@latest build --clean --snapshot --skip=validate
 	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager-amd64 .
-	mv ./dist/kubernetes-manager_linux_arm64/kubernetes-manager-arm64 .
+	mv ./dist/kubernetes-manager_linux_arm64_v8.0/kubernetes-manager-arm64 .
 	docker buildx build --platform=$(platform) --pull --push . -t $(image)
 promote-to-beta:
 	make build platform=linux/amd64,linux/arm64 tag=$(shell git rev-parse --short HEAD)
@@ -28,7 +28,7 @@ test:
 	go vet ./...
 	./scripts/test-pkg.sh
 	go mod tidy
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run -v
 	cd front && yarn lint
 
 .PHONY: e2e
