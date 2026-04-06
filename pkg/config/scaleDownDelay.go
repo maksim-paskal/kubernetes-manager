@@ -51,7 +51,8 @@ func NewScaleDownDelay(now time.Time, opts *ScaleDownDelayOpts) (*ScaleDownDelay
 		options: opts,
 	}
 
-	if err := s.setTargetScaleDownTime(now); err != nil {
+	err := s.setTargetScaleDownTime(now)
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to set target scale down time")
 	}
 

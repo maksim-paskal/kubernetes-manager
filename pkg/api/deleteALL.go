@@ -63,14 +63,16 @@ func (e *Environment) DeleteALL(ctx context.Context) *DeleteALLResult {
 		},
 	}
 
-	if err := <-deleteNamespace; err != nil {
+	err := <-deleteNamespace
+	if err != nil {
 		result.HasErrors = true
 		result.DeleteNamespaceResult = DeleteALLResultOperation{
 			Result: err.Error(),
 		}
 	}
 
-	if err := <-deleteClusterRolesAndBindings; err != nil {
+	err = <-deleteClusterRolesAndBindings
+	if err != nil {
 		result.HasErrors = true
 		result.DeleteClusterRolesAndBindings = DeleteALLResultOperation{
 			Result: err.Error(),

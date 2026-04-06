@@ -42,12 +42,11 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	result, err := apiOperation(ctx, r, vars["operation"])
-
 	if err != nil {
 		span.RecordError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		if _, err := w.Write([]byte(err.Error())); err != nil {
+		if _, err := w.Write([]byte(err.Error())); err != nil { //nolint:gosec
 			log.WithError(err).Error()
 		}
 
@@ -62,7 +61,8 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", "max-age=10")
 		}
 
-		if err := json.NewEncoder(w).Encode(result); err != nil {
+		err := json.NewEncoder(w).Encode(result)
+		if err != nil {
 			log.WithError(err).Error()
 		}
 	}
@@ -293,7 +293,8 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		result.Result = wikiResult
 
 	case "cache.flush":
-		if err := cache.Client().FlushALL(ctx); err != nil {
+		err := cache.Client().FlushALL(ctx)
+		if err != nil {
 			return result, err
 		}
 

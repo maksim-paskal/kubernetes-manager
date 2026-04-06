@@ -73,12 +73,14 @@ func (e *Environment) ScaleALL(ctx context.Context, replicas int32) error {
 	result := Result{}
 	hasError := false
 
-	if err := <-processWebhook; err != nil {
+	err := <-processWebhook
+	if err != nil {
 		hasError = true
 		result.ErrProcessWebhook = err.Error()
 	}
 
-	if err := <-processScale; err != nil {
+	err = <-processScale
+	if err != nil {
 		hasError = true
 		result.ErrProcessScale = err.Error()
 	}

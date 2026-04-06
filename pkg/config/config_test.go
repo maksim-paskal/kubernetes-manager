@@ -13,7 +13,6 @@ limitations under the License.
 package config_test
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -44,7 +43,7 @@ func TestConfig(t *testing.T) {
 		t.Fatal("links in kubernetesendpoints should not contain empty string " + string(linksJSON))
 	}
 
-	ctx := context.TODO()
+	ctx := t.Context()
 
 	test1 := config.GetNamespaceMeta(ctx, "").Labels
 
@@ -72,7 +71,7 @@ func TestConfig(t *testing.T) {
 		},
 	}
 
-	metaFormated := meta.GetTemplatedValue(context.TODO())
+	metaFormated := meta.GetTemplatedValue(t.Context())
 
 	if metaFormated.Labels["test1"] != *config.Get().WebListen {
 		t.Fatalf("annotation has wrong value %s", metaFormated.Labels["test1"])

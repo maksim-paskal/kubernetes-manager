@@ -1,24 +1,49 @@
-run:
-  timeout: 5m
+version: "2"
+linters:
+  default: all
+  disable:
+  - noinlineerr
+  - funcorder
+  - godoclint
+  - err113
+  - cyclop
+  - depguard
+  - exhaustruct
+  - funlen
+  - gochecknoglobals
+  - gocognit
+  - ireturn
+  - mnd
+  - musttag
+  - nestif
+  - testpackage
+  - varnamelen
+  - wrapcheck
+  settings:
+    lll:
+      line-length: 180
+  exclusions:
+    generated: lax
+    presets:
+    - comments
+    - common-false-positives
+    - legacy
+    - std-error-handling
+    paths:
+    - third_party$
+    - builtin$
+    - examples$
 issues:
   fix: true
-linters-settings:
-  lll:
-    line-length: 180
-linters:
-  enable-all: true
-  disable:
-  - gomnd
-  - testpackage
-  - nestif
-  - gochecknoglobals
-  - funlen
-  - gocognit
-  - cyclop
-  - wrapcheck
-  - varnamelen
-  - execinquery
-  - exhaustruct
-  - musttag
-  - depguard
-  - ireturn
+formatters:
+  enable:
+  - gci
+  - gofmt
+  - gofumpt
+  - goimports
+  exclusions:
+    generated: lax
+    paths:
+    - third_party$
+    - builtin$
+    - examples$

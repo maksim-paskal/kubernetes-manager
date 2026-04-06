@@ -13,7 +13,6 @@ limitations under the License.
 package httpcall_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +51,8 @@ func testHandler(t *testing.T) *mux.Router {
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := test(r); err != nil {
+		err := test(r)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			t.Error(err)
 		} else {
@@ -98,11 +98,13 @@ func TestNotify(t *testing.T) {
 		Namespace: "testNamespace",
 	}
 
-	if err := provider.Init(conditions, message); err != nil {
+	err := provider.Init(conditions, message)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := provider.Process(context.TODO()); err != nil {
+	err = provider.Process(t.Context())
+	if err != nil {
 		t.Fatal(err)
 	}
 }

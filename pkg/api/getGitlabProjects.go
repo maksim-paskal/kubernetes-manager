@@ -24,7 +24,7 @@ import (
 )
 
 type GetGitlabProjectsItem struct {
-	ProjectID      int
+	ProjectID      int64
 	Name           string
 	Description    string
 	DefaultBranch  string
@@ -82,7 +82,7 @@ func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*G
 	if projectProfile.Exclude == "*" {
 		for _, project := range projects {
 			if !projectProfile.IsProjectRequired(project.ID) {
-				exludeProjects = append(exludeProjects, strconv.Itoa(project.ID))
+				exludeProjects = append(exludeProjects, strconv.FormatInt(project.ID, 10))
 			}
 		}
 	} else {
@@ -98,21 +98,21 @@ func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*G
 			Description:    project.Description,
 			DefaultBranch:  project.DefaultBranch,
 			WebURL:         project.WebURL,
-			TagsList:       formatProjectTags(project.TagList),
+			TagsList:       formatProjectTags(project.Topics),
 			Required:       projectProfile.IsProjectRequired(project.ID),
 			SelectedBranch: projectProfile.GetProjectSelectedBranch(project.ID),
 			sortPriority:   projectProfile.GetProjectSortPriority(project.ID),
 		}
 
-		exclude := slices.Contains(exludeProjects, strconv.Itoa(item.ProjectID))
+		exclude := slices.Contains(exludeProjects, strconv.FormatInt(item.ProjectID, 10))
 
 		// if project in includes it must be always shown
-		if slices.Contains(projectProfile.GetInclude(), strconv.Itoa(item.ProjectID)) {
+		if slices.Contains(projectProfile.GetInclude(), strconv.FormatInt(item.ProjectID, 10)) {
 			exclude = false
 		}
 
 		// for namespaced include specific projects
-		if input.HasNamespace() && slices.Contains(projectProfile.GetIncludeNamespaced(), strconv.Itoa(item.ProjectID)) {
+		if input.HasNamespace() && slices.Contains(projectProfile.GetIncludeNamespaced(), strconv.FormatInt(item.ProjectID, 10)) {
 			exclude = false
 		}
 

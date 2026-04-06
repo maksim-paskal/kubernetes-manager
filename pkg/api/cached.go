@@ -55,7 +55,7 @@ func GetCachedGitlabProject(ctx context.Context, projectID string) (*gitlab.Proj
 	return project, nil
 }
 
-func GetCachedGitlabPipelineVariables(ctx context.Context, projectID string, pipeline int) ([]*gitlab.PipelineVariable, error) {
+func GetCachedGitlabPipelineVariables(ctx context.Context, projectID string, pipeline int64) ([]*gitlab.PipelineVariable, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetCachedGitlabPipelineVariables")
 	defer span.End()
 
@@ -89,14 +89,15 @@ func GetCachedGitlabProjectsByTopic(ctx context.Context, topic string) ([]*gitla
 	cacheKey := "gitlab::projects::topic::" + topic
 	cacheValue := make([]*gitlab.Project, 0)
 
-	if err := cache.Client().Get(ctx, cacheKey, &cacheValue); err == nil {
+	err := cache.Client().Get(ctx, cacheKey, &cacheValue)
+	if err == nil {
 		metrics.CacheHits.WithLabelValues("GetCachedGitlabProjectsByTopic").Inc()
 
 		return cacheValue, nil
 	}
 
 	projects := make([]*gitlab.Project, 0)
-	pageNumber := 1
+	pageNumber := int64(1)
 
 	for ctx.Err() == nil {
 		page, resp, err := client.GetGitlabClient().Projects.ListProjects(
@@ -148,9 +149,9 @@ func GetCachedKubernetesPodsStatus(ctx context.Context, cluster, namespace strin
 	result := slices.DeleteFunc(pods, func(pod corev1.Pod) bool {
 		switch status {
 		case PodIsRunning:
-			return !(pod.Status.Phase == corev1.PodRunning)
+			return pod.Status.Phase != corev1.PodRunning
 		case PodIsNotSucceeded:
-			return !(pod.Status.Phase != corev1.PodSucceeded)
+			return pod.Status.Phase == corev1.PodSucceeded
 		}
 
 		return false
