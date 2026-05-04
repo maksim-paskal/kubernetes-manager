@@ -165,6 +165,12 @@ var (
 		Help:      "The total number of cache hits",
 	}, []string{"operation"})
 
+	CacheMisses = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Name:      "cache_misses_total",
+		Help:      "The total number of cache misses",
+	}, []string{"operation"})
+
 	CacheAdd = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Name:      "cache_add_total",

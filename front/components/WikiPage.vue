@@ -10,14 +10,21 @@
     </template>
     <b-card-text>
       <b-spinner v-if="$fetchState.pending" variant="primary" />
-      <div v-else v-html="data.Content" />
+      <div v-else v-html="sanitizedContent" />
     </b-card-text>
   </b-card>
 </template>
 
 <script>
+import DOMPurify from 'dompurify'
+
 export default {
   props: ["projectID", "slug", "title"],
+  computed: {
+    sanitizedContent() {
+      return DOMPurify.sanitize(this.data.Content || '')
+    }
+  },
   async fetch() {
     this.data = {}
 

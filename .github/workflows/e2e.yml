@@ -10,9 +10,9 @@ jobs:
     - name: Setup Kubernetes
       run: curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${{ matrix.k3s_version }}" K3S_KUBECONFIG_MODE=777 sh -
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version: '1.25'
     - name: Run tests

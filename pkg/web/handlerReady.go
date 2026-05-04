@@ -22,11 +22,9 @@ import (
 func handlerReady(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("ready"))
 	if err != nil {
-		if err != nil {
-			log.
-				WithError(err).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-		}
+		log.
+			WithError(err).
+			WithFields(logrushooksentry.AddRequest(r)).
+			Error()
 	}
 }
