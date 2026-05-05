@@ -36,7 +36,12 @@ export default {
       return
     }
 
-    this.name = this.item.replace(jira_matcher, `<a target='_blank' href='${this.config.Links.JiraURL}/browse/$1'>$1</a>`);
+    const escaped = this.item
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+    this.name = escaped.replace(jira_matcher, `<a target='_blank' href='${this.config.Links.JiraURL}/browse/$1'>$1</a>`);
 
     // jira have CORS enabled, so we can't use fetch from browser
     const result = await fetch(`/api/jira-issue-info?issue=${encodeURI(jira_issue)}`);

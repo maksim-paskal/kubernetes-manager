@@ -11,11 +11,11 @@ nodeSelector: {}
 
 resources:
   limits:
-    cpu: 100m
-    memory: 200Mi
+    cpu: 300m
+    memory: 384Mi
   requests:
-    cpu: 100m
-    memory: 200Mi
+    cpu: 150m
+    memory: 192Mi
 
 sentry:
   enabled: false

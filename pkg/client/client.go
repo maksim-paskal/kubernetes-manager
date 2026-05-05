@@ -14,6 +14,7 @@ package client
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
@@ -37,18 +38,23 @@ var (
 	restconfigCluster map[string]*rest.Config
 )
 
+const httpClientTimeout = 30 * time.Second
+
 var gitlabHTTPClient = &http.Client{
 	Jar:       nil,
+	Timeout:   httpClientTimeout,
 	Transport: metrics.NewInstrumenter("gitlab").InstrumentedRoundTripper(),
 }
 
 var hcloudHTTPClient = &http.Client{
 	Jar:       nil,
+	Timeout:   httpClientTimeout,
 	Transport: metrics.NewInstrumenter("hcloud").InstrumentedRoundTripper(),
 }
 
 var sentryHTTPClient = &http.Client{
 	Jar:       nil,
+	Timeout:   httpClientTimeout,
 	Transport: metrics.NewInstrumenter("sentry").InstrumentedRoundTripper(),
 }
 

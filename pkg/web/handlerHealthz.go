@@ -22,11 +22,9 @@ import (
 func handlerHealthz(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("live"))
 	if err != nil {
-		if err != nil {
-			log.
-				WithError(err).
-				WithFields(logrushooksentry.AddRequest(r)).
-				Error()
-		}
+		log.
+			WithError(err).
+			WithFields(logrushooksentry.AddRequest(r)).
+			Error()
 	}
 }

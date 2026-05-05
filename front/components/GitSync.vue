@@ -74,7 +74,8 @@ export default {
     if (!this.selectedContainer) return;
     location.hash = this.selectedContainer;
 
-    const result = await fetch(`/api/${this.$route.params.environmentID}/git-sync?container=${this.selectedContainer}`);
+    const params = new URLSearchParams({ container: this.selectedContainer })
+    const result = await fetch(`/api/${this.$route.params.environmentID}/git-sync?${params}`);
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result

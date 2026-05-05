@@ -58,6 +58,8 @@ func GetIssueInfo(ctx context.Context, issue string) (*IssueInfo, error) {
 		metrics.CacheHits.WithLabelValues("GetIssueInfo").Inc()
 
 		return &cacheValue, nil
+	} else { //nolint:revive
+		metrics.CacheMisses.WithLabelValues("GetIssueInfo").Inc()
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)

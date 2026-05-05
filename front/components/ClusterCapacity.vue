@@ -32,7 +32,8 @@ export default {
   async fetch() {
     this.data = {}
 
-    const result = await fetch(`/api/cluster-info?cluster=${this.cluster}`);
+    const params = new URLSearchParams({ cluster: this.cluster })
+    const result = await fetch(`/api/cluster-info?${params}`);
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result

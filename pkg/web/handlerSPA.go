@@ -118,7 +118,7 @@ func (h HandlerSPA) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug(path)
 
 	// check whether a file exists at the given path
-	_, err = os.Stat(path) //nolint:gosec
+	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		// file does not exist, serve index.html
 		http.ServeFile(w, r, filepath.Join(h.staticPath, h.indexPath))

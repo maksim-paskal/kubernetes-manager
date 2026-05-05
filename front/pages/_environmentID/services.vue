@@ -17,14 +17,18 @@
           }}</span>
         </template>
         <template v-slot:cell(Actions)="row">
-          <b-button size="sm" variant="outline-danger" @click="call('make-delete-pod', { PodName: row.item.ServiceHost })"
+          <b-button size="sm" variant="outline-danger" :disabled="!!callIsLoading"
+            @click="call('make-delete-pod', { PodName: row.item.ServiceHost })"
             v-if="row.item.Type == 'pod'">restart
           </b-button>
-          <b-button size="sm" variant="outline-primary" @click="showProxyDialog(row)" v-if="row.item.Ports">proxy
+          <b-button size="sm" variant="outline-primary" :disabled="!!callIsLoading"
+            @click="showProxyDialog(row)" v-if="row.item.Ports">proxy
           </b-button>
-          <b-button size="sm" variant="outline-primary" @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
+          <b-button size="sm" variant="outline-primary" :disabled="!!callIsLoading"
+            @click="showShellDialog(row)" v-if="row.item.Type == 'pod'">
             shell</b-button>
-          <b-button size="sm" variant="outline-primary" @click="showLogsDialog(row)" v-if="row.item.Type == 'pod'">
+          <b-button size="sm" variant="outline-primary" :disabled="!!callIsLoading"
+            @click="showLogsDialog(row)" v-if="row.item.Type == 'pod'">
             logs</b-button>
           <b-button v-if="/.*mysql.*.svc.cluster.local$/.test(
             row.item.ServiceHost

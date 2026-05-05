@@ -102,7 +102,8 @@ export default {
     }
   },
   async fetch() {
-    const result = await fetch(`/api/${this.$route.params.environmentID}/autotests?size=${this.size}`);
+    const params = new URLSearchParams({ size: this.size })
+    const result = await fetch(`/api/${this.$route.params.environmentID}/autotests?${params}`);
     if (result.ok) {
       this.data = await result.json();
     } else {

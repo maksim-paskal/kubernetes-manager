@@ -31,7 +31,8 @@ export default {
   },
   async fetch() {
     this.data = {}
-    const result = await fetch(`/api/${this.$route.params.environmentID}/pod-containers?pod=${this.pod}`);
+    const params = new URLSearchParams({ pod: this.pod })
+    const result = await fetch(`/api/${this.$route.params.environmentID}/pod-containers?${params}`);
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result
