@@ -2,6 +2,18 @@ apiVersion: v1
 entries:
   kubernetes-manager:
   - apiVersion: v2
+    created: "2026-05-05T06:32:40.160071963Z"
+    description: Kubernetes GUI for trunc development
+    digest: 7f349e9257d79dc6a1b80495331049d6a4ca2ce1d4a1ea3724e6246c6365a03b
+    icon: https://helm.sh/img/helm.svg
+    maintainers:
+    - email: paskal.maksim@gmail.com
+      name: maksim-paskal
+    name: kubernetes-manager
+    urls:
+    - https://github.com/maksim-paskal/kubernetes-manager/releases/download/kubernetes-manager-1.1.4/kubernetes-manager-1.1.4.tgz
+    version: 1.1.4
+  - apiVersion: v2
     created: "2025-09-04T08:31:41.577171484Z"
     description: Kubernetes GUI for trunc development
     digest: 1f8fc83a15e3fddbe9fda2d17d14ea55252d4f2eb33fd6cc30fa5b95b8ae140b
@@ -246,4 +258,4 @@ entries:
     urls:
     - https://github.com/maksim-paskal/kubernetes-manager/releases/download/kubernetes-manager-rbac-0.0.2/kubernetes-manager-rbac-0.0.2.tgz
     version: 0.0.2
-generated: "2021-11-22T15:32:01.049662+02:00"
+generated: "2026-05-05T06:32:40.160260635Z"
