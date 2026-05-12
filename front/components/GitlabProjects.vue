@@ -16,6 +16,10 @@
         <b-button variant="outline-primary" @click="resetSelection()">Reset selection</b-button>
         <b-button variant="outline-primary" @click="showShareDialog()">Share settings</b-button>
       </div>
+      <div v-else>
+        <b-button variant="outline-primary" @click="selectAllFromInstalled()">Select installed branches</b-button>
+        <b-button variant="outline-primary" @click="cleanSelection()">Clean selection</b-button>
+      </div>
       <b-table striped hover :items="data" :fields="tableFields">
         <template #cell(Service)="data">
           <b-button title="delete service from namespace" v-if="podInfo" :disabled="data.item.GitBranch ? false : true"
@@ -158,6 +162,16 @@ export default {
     selectAllFromMain() {
       this.data.forEach(async (row) => {
         row.Deploy = row.DefaultBranch
+      });
+    },
+    selectAllFromInstalled() {
+      this.data.forEach((row) => {
+        row.Deploy = row.GitBranch;
+      });
+    },
+    cleanSelection() {
+      this.data.forEach((el) => {
+        el.Deploy = "";
       });
     },
     resetSelection() {
