@@ -161,6 +161,9 @@ export default {
   methods: {
     selectAllFromMain() {
       this.data.forEach(async (row) => {
+        // ignore beta/testing services
+        if (["(beta)", "(testing)"].some(tag => row.Description.toLowerCase().includes(tag))) return;
+
         row.Deploy = row.DefaultBranch
       });
     },
