@@ -20,7 +20,7 @@
     "bootstrap-icons": "1.11.3",
     "bootstrap-vue": "2.23.1",
     "dompurify": "3.2.6",
-    "nuxt": "2.17.3",
+    "nuxt": "3.21.7",
     "vue": "2.7.16"
   },
   "devDependencies": {
