@@ -18,6 +18,7 @@
       </div>
       <div v-else>
         <b-button variant="outline-primary" @click="selectAllFromInstalled()">Select installed branches</b-button>
+        <b-button variant="outline-primary" @click="selectOnlyFailed()">Select only failed</b-button>
         <b-button variant="outline-primary" @click="cleanSelection()">Clean selection</b-button>
       </div>
       <b-table striped hover :items="data" :fields="tableFields">
@@ -176,6 +177,20 @@ export default {
       this.data.forEach((el) => {
         el.Deploy = "";
       });
+    },
+    selectOnlyFailed() {
+      let found=0;
+      this.infoText = "";
+
+      this.data.forEach((row) => {
+        if (row.AdditionalInfo?.Pipelines.LastErrorPipeline) {
+          row.Deploy = row.GitBranch;
+          found++;
+        }
+      });
+      if (!found) {
+        this.infoText = 'No failed microservices found.';
+      }
     },
     resetSelection() {
       this.data.forEach(async (el) => {
