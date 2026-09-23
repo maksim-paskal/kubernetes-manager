@@ -9,6 +9,7 @@ linters:
   - cyclop
   - depguard
   - exhaustruct
+  - exhaustruct_v5
   - funlen
   - gochecknoglobals
   - gocognit
