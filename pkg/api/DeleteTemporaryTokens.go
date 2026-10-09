@@ -27,10 +27,6 @@ func (e *Environment) DeleteTemporaryTokens(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "api.DeleteTemporaryTokens")
 	defer span.End()
 
-	if e.IsSystemNamespace() {
-		return errors.Wrap(errIsSystemNamespace, e.Namespace)
-	}
-
 	saList, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "kubernetes-manager=true",
 	})
