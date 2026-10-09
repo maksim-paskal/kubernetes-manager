@@ -188,16 +188,16 @@ func Execute(ctx context.Context) error {
 			"namespace": environment.Namespace,
 		})
 
+		// delete temporary tokens in namespace, including system namespaces
+		err := environment.DeleteTemporaryTokens(ctx)
+		if err != nil {
+			log.WithError(err).Error()
+		}
+
 		if environment.IsSystemNamespace() {
 			log.Debugf("%s is system namespace", environment.Namespace)
 
 			continue
-		}
-
-		// delete temporary tokens in namespace
-		err := environment.DeleteTemporaryTokens(ctx)
-		if err != nil {
-			log.WithError(err).Error()
 		}
 
 		reason, description := environment.IsStaled(0)
