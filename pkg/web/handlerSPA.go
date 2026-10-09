@@ -59,16 +59,18 @@ func (h HandlerSPA) GetContentReplacer() *strings.Replacer {
 }
 
 func (h HandlerSPA) serveStaticFiles(w http.ResponseWriter, r *http.Request) {
+	// r.URL.Path is always absolute, so Clean collapses any ".." before Join
+	// prepends the static dir, keeping the result inside staticPath.
 	path := filepath.Join(*config.Get().FrontDist, filepath.Clean(r.URL.Path))
 
-	_, err := os.Stat(path)
+	_, err := os.Stat(path) //nolint:gosec
 	if os.IsNotExist(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 
 		return
 	}
 
-	read, err := os.ReadFile(path)
+	read, err := os.ReadFile(path) //nolint:gosec
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.
@@ -102,7 +104,8 @@ func (h HandlerSPA) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get the absolute path to prevent directory traversal
+	// get the absolute path to prevent directory traversal: r.URL.Path is always
+	// absolute, so this just cleans it, same as the reasoning in serveStaticFiles.
 	path, err := filepath.Abs(r.URL.Path)
 	if err != nil {
 		// if we failed to get the absolute path respond with a 400 bad request
@@ -118,7 +121,8 @@ func (h HandlerSPA) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug(path)
 
 	// check whether a file exists at the given path
-	_, err = os.Stat(path)
+	// (path is confined to staticPath: see comment on filepath.Abs above)
+	_, err = os.Stat(path) //nolint:gosec
 	if os.IsNotExist(err) {
 		// file does not exist, serve index.html
 		http.ServeFile(w, r, filepath.Join(h.staticPath, h.indexPath))
