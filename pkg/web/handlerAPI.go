@@ -300,6 +300,15 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = "ok"
 
+	case "debug.request":
+		type DebugRequest struct {
+			RequestHeaders http.Header
+		}
+
+		result.Result = DebugRequest{
+			RequestHeaders: r.Header,
+		}
+
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)
 	}
