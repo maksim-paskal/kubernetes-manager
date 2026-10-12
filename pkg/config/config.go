@@ -72,7 +72,10 @@ const (
 	LabelGitSyncBranch    = Namespace + "/git-sync-branch"
 	LabelDescription      = Namespace + "/description"
 
-	HeaderOwner = "X-Owner"
+	// use oauth proxy header for identifying the owner
+	// include additional headers to ingress
+	// nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User"
+	HeaderOwner = "X-Auth-Request-User"
 )
 
 type Links struct {
