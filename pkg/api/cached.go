@@ -130,9 +130,14 @@ type PodStatus string
 const (
 	// return only running pods.
 	PodIsRunning PodStatus = "running"
-	// return all pods except Succeeded.
-	PodIsNotSucceeded PodStatus = "not_succeeded"
+	// return all pods except finished ones, Succeeded and Failed (e.g. evicted) pods do not run anymore.
+	PodIsNotFinished PodStatus = "not_finished"
 )
+
+// isPodFinished reports whether the pod has terminated for good, a finished pod is not restarted.
+func isPodFinished(pod corev1.Pod) bool {
+	return pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed
+}
 
 func GetCachedKubernetesPodsStatus(ctx context.Context, cluster, namespace string, status PodStatus) ([]corev1.Pod, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetCachedKubernetesPodsRunning")
@@ -148,8 +153,8 @@ func GetCachedKubernetesPodsStatus(ctx context.Context, cluster, namespace strin
 		switch status {
 		case PodIsRunning:
 			return pod.Status.Phase != corev1.PodRunning
-		case PodIsNotSucceeded:
-			return pod.Status.Phase == corev1.PodSucceeded
+		case PodIsNotFinished:
+			return isPodFinished(pod)
 		}
 
 		return false

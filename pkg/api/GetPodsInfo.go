@@ -45,7 +45,7 @@ func (e *Environment) GetPodsInfo(ctx context.Context) (*PodsInfo, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetPodsInfo")
 	defer span.End()
 
-	pods, err := GetCachedKubernetesPodsStatus(ctx, e.Cluster, e.Namespace, PodIsNotSucceeded)
+	pods, err := GetCachedKubernetesPodsStatus(ctx, e.Cluster, e.Namespace, PodIsNotFinished)
 	if err != nil {
 		return nil, errors.Wrap(err, "error list pods")
 	}
