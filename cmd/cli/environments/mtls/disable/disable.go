@@ -13,20 +13,35 @@ limitations under the License.
 package disable
 
 import (
+	"strings"
+
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
 	"github.com/spf13/cobra"
 )
 
 func Command() *cobra.Command {
+	global.AddYesFlag(command)
+
 	return command
 }
 
 var command = &cobra.Command{
 	Use:   "disable <id>",
 	Short: "Disable mTLS in environment",
+	Long:  "Disable mTLS in environments, asks for confirmation on a terminal, use --yes to skip it.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		for _, id := range args {
+			if err := apiclient.ValidateEnvironmentID(id); err != nil {
+				return err
+			}
+		}
+
+		if err := global.Confirm(cmd, "Disable mTLS in "+strings.Join(args, ", ")+"?"); err != nil {
+			return err
+		}
+
 		client, err := global.Client(cmd)
 		if err != nil {
 			return err
