@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/rds"
-	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi"
+	"github.com/aws/aws-sdk-go/aws"                              //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go/aws/credentials"                  //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go/aws/session"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go/service/ec2"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go/service/rds"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi" //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
