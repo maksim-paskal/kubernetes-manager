@@ -472,3 +472,61 @@ func (c *Client) GetKubeConfig(ctx context.Context, id string) (string, error) {
 
 	return result, nil
 }
+
+// GetAutotests returns the autotest runs of the environment, size 0 returns all of them.
+func (c *Client) GetAutotests(ctx context.Context, id string, size int) ([]*types.AutotestPipeline, error) {
+	details, err := c.getAutotestDetails(ctx, id, size)
+	if err != nil {
+		return nil, err
+	}
+
+	return details.Pipelines, nil
+}
+
+// GetAutotestActions returns the tests that can be started in the environment.
+func (c *Client) GetAutotestActions(ctx context.Context, id string) ([]*types.AutotestAction, error) {
+	// the runs are not needed, ask for the smallest page
+	details, err := c.getAutotestDetails(ctx, id, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	return details.Actions, nil
+}
+
+func (c *Client) getAutotestDetails(ctx context.Context, id string, size int) (*types.AutotestDetails, error) {
+	path, err := envPath(id, "autotests")
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := c.get[types.AutotestDetails](ctx, path, map[string]string{"size": strconv.Itoa(size)})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get autotests")
+	}
+
+	return &result, nil
+}
+
+// StartAutotest starts a run of the autotest in the environment and returns the message of the server.
+func (c *Client) StartAutotest(ctx context.Context, id string, input types.StartAutotestInput) (string, error) {
+	path, err := envPath(id, "make-start-autotest")
+	if err != nil {
+		return "", err
+	}
+
+	body, err := c.post(ctx, path, input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to start autotest")
+	}
+
+	var envelope struct {
+		Result string
+	}
+
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return "", errors.Wrap(err, "failed to decode envelope")
+	}
+
+	return envelope.Result, nil
+}

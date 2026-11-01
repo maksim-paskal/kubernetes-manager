@@ -13,6 +13,7 @@ limitations under the License.
 package environments
 
 import (
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/create"
 	envDelete "github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/delete"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/hosts"
@@ -35,6 +36,7 @@ func Command() *cobra.Command {
 	command.AddCommand(mtls.Command())
 	command.AddCommand(kubeconfig.Command())
 	command.AddCommand(hosts.Command())
+	command.AddCommand(autotests.Command())
 
 	return command
 }
