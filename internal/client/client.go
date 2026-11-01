@@ -109,7 +109,7 @@ func (c *Client) post(ctx context.Context, name string, input any) ([]byte, erro
 	}
 
 	if slog.Default().Enabled(ctx, slog.LevelDebug) {
-		slog.DebugContext(ctx, "request body", "body", string(buf))
+		slog.DebugContext(ctx, debugBody("request body", buf))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+name, bytes.NewReader(buf))
@@ -197,6 +197,21 @@ func redactHeaders(h http.Header) http.Header {
 	return out
 }
 
+// debugBody returns the debug message with the body below it. JSON is indented, it is put in the message
+// because the log handler quotes and escapes attribute values, which makes a body unreadable.
+func debugBody(message string, body []byte) string {
+	body = bytes.TrimSpace(body)
+
+	var out bytes.Buffer
+
+	if json.Indent(&out, body, "", "  ") != nil {
+		out.Reset()
+		out.Write(body)
+	}
+
+	return message + "\n" + out.String()
+}
+
 // spinnerVerbs are shown at random while a request is in flight.
 var spinnerVerbs = []string{"Loading", "Thinking", "Pondering", "Cogitating", "Mulling", "Noodling"}
 
@@ -249,7 +264,7 @@ func (c *Client) call(req *http.Request) (*http.Response, error) {
 			return nil, errors.Wrap(err, "failed to read response body")
 		}
 
-		slog.DebugContext(req.Context(), "response body", "body", string(b))
+		slog.DebugContext(req.Context(), debugBody("response body", b))
 
 		resp.Body = io.NopCloser(bytes.NewReader(b))
 	}
