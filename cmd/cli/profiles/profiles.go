@@ -13,17 +13,36 @@ limitations under the License.
 package profiles
 
 import (
-	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/profiles/list"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	"github.com/spf13/cobra"
 )
 
 func Command() *cobra.Command {
-	command.AddCommand(list.Command())
-
 	return command
 }
 
 var command = &cobra.Command{
 	Use:   "profiles",
-	Short: "Manage profiles",
+	Short: "List profiles",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		client, err := global.Client(cmd)
+		if err != nil {
+			return err
+		}
+
+		profiles, err := client.GetProfiles(cmd.Context())
+		if err != nil {
+			return err
+		}
+
+		rows := make([][]string, len(profiles))
+		for i, profile := range profiles {
+			rows[i] = []string{profile.Name}
+		}
+
+		global.OutputTable(cmd, profiles, []string{"NAME"}, rows)
+
+		return nil
+	},
 }

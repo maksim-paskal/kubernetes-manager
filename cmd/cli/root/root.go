@@ -22,8 +22,8 @@ import (
 
 	"charm.land/fang/v2"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/auth"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/clusters"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/commands"
-	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/config"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/profiles"
@@ -80,7 +80,7 @@ func registerCommands() {
 	rootCmd.AddCommand(environments.Command())
 	rootCmd.AddCommand(profiles.Command())
 	rootCmd.AddCommand(services.Command())
-	rootCmd.AddCommand(config.Command())
+	rootCmd.AddCommand(clusters.Command())
 	rootCmd.AddCommand(commands.Command())
 
 	showAliases(rootCmd)

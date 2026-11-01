@@ -25,7 +25,7 @@ linters:
     lll:
       line-length: 180
     staticcheck:
-      # SA4023 panics on cmd/cli/config/clusters with honnef.co/go/tools v0.8.2 and go1.27 (nilness fact index out of range),
+      # SA4023 panics on cmd/cli/clusters with honnef.co/go/tools v0.8.2 and go1.27 (nilness fact index out of range),
       # which aborts the whole golangci-lint run; keep the defaults and drop only that check until the upstream fix is released
       checks:
       - all
