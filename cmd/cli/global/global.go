@@ -160,7 +160,7 @@ func Output(cmd *cobra.Command, message any) {
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 
 	if jsonOutput {
-		outputJSON(cmd, message)
+		OutputJSON(cmd, message)
 
 		return
 	}
@@ -169,11 +169,12 @@ func Output(cmd *cobra.Command, message any) {
 	case string:
 		fmt.Fprintln(cmd.OutOrStdout(), message)
 	default:
-		outputJSON(cmd, message)
+		OutputJSON(cmd, message)
 	}
 }
 
-func outputJSON(cmd *cobra.Command, message any) {
+// OutputJSON prints the message as indented JSON, the output flags are not checked.
+func OutputJSON(cmd *cobra.Command, message any) {
 	b, err := json.MarshalIndent(message, "", "  ")
 	if err != nil {
 		cmd.PrintErrln("failed to marshal output:", err)
