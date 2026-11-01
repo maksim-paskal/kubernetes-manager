@@ -339,9 +339,58 @@ func (c *Client) GetEnvironment(ctx context.Context, id string) (*Environment, e
 	return &result, nil
 }
 
+// ServiceRef is a service of an environment: the ref (branch or tag) to deploy from the project.
+type ServiceRef struct {
+	ProjectID int
+	Ref       string
+}
+
+// ParseServiceRef parses <projectID>:<ref>, the ref itself can not contain ':' or ';'.
+func ParseServiceRef(value string) (ServiceRef, error) {
+	projectID, ref, found := strings.Cut(value, ":")
+	if !found || ref == "" || strings.ContainsAny(ref, ":;") {
+		return ServiceRef{}, errors.Errorf("invalid service %q, expected <projectID>:<ref>", value)
+	}
+
+	id, err := strconv.Atoi(projectID)
+	if err != nil {
+		return ServiceRef{}, errors.Errorf("invalid service %q, project id must be a number", value)
+	}
+
+	return ServiceRef{ProjectID: id, Ref: ref}, nil
+}
+
+func (s ServiceRef) String() string {
+	return strconv.Itoa(s.ProjectID) + ":" + s.Ref
+}
+
+// formatServiceRefs returns the services in the format of the server, items are separated by ';'.
+func formatServiceRefs(services []ServiceRef) string {
+	items := make([]string, len(services))
+
+	for i, service := range services {
+		items[i] = service.String()
+	}
+
+	return strings.Join(items, ";")
+}
+
+// CreateEnvironmentInput is the request to create an environment from a profile.
+type CreateEnvironmentInput struct {
+	Profile  string
+	Cluster  string
+	Name     string
+	Services []ServiceRef
+}
+
 // CreateEnvironment creates a new environment and returns its ID.
-func (c *Client) CreateEnvironment(ctx context.Context, input types.StartNewEnvironmentInput) (string, error) {
-	body, err := c.post(ctx, "/api/make-create-environment", input)
+func (c *Client) CreateEnvironment(ctx context.Context, input CreateEnvironmentInput) (string, error) {
+	body, err := c.post(ctx, "/api/make-create-environment", types.StartNewEnvironmentInput{
+		Profile:  input.Profile,
+		Cluster:  input.Cluster,
+		Name:     input.Name,
+		Services: formatServiceRefs(input.Services),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -450,14 +499,14 @@ func (c *Client) DisableMTLSEnvironment(ctx context.Context, id string) error {
 	return nil
 }
 
-// ScaleDownDelayEnvironment delays the automatic pause of the environment, the delay is a duration like 3h.
-func (c *Client) ScaleDownDelayEnvironment(ctx context.Context, id, delay string) error {
+// ScaleDownDelayEnvironment delays the automatic pause of the environment.
+func (c *Client) ScaleDownDelayEnvironment(ctx context.Context, id string, delay time.Duration) error {
 	path, err := envPath(id, "make-scaledown-delay")
 	if err != nil {
 		return err
 	}
 
-	_, err = c.post(ctx, path, map[string]string{"Delay": delay})
+	_, err = c.post(ctx, path, map[string]string{"Delay": delay.String()})
 	if err != nil {
 		return errors.Wrap(err, "failed to delay scaledown of environment")
 	}
