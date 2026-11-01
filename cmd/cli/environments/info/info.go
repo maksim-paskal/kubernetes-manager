@@ -10,7 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package get
+package info
 
 import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
@@ -22,7 +22,7 @@ func Command() *cobra.Command {
 }
 
 var command = &cobra.Command{
-	Use:   "get <id>",
+	Use:   "info <id>",
 	Short: "Get environment",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
