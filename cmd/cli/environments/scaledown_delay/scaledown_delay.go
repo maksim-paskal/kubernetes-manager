@@ -44,7 +44,7 @@ var command = &cobra.Command{
 			return err
 		}
 
-		if err := client.ScaleDownDelayEnvironment(cmd.Context(), args[0], args[1]); err != nil {
+		if err := client.ScaleDownDelayEnvironment(cmd.Context(), args[0], delay); err != nil {
 			return err
 		}
 
