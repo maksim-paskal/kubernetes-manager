@@ -128,6 +128,9 @@ func OutputTable(cmd *cobra.Command, data any, headers []string, rows [][]string
 
 	fmt.Fprintln(cmd.OutOrStdout(), table.New().
 		Border(lipgloss.NormalBorder()).
+		StyleFunc(func(_, _ int) lipgloss.Style {
+			return lipgloss.NewStyle().Padding(0, 1)
+		}).
 		Headers(headers...).
 		Rows(rows...).
 		Render())

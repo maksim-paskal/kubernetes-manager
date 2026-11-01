@@ -46,7 +46,7 @@ var command = &cobra.Command{
 
 		rows := make([][]string, len(environments))
 		for i, environment := range environments {
-			rows[i] = []string{" " + environment.ID + " ", environment.Namespace}
+			rows[i] = []string{environment.ID, environment.Namespace}
 		}
 
 		global.OutputTable(cmd,
