@@ -14,6 +14,7 @@ package global
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
@@ -54,7 +55,8 @@ func RequestAndWait(cmd *cobra.Command, ids []string, request func(id string) er
 	return waitErr
 }
 
-// WaitIDs waits for every id with --wait, it does nothing without the flag.
+// WaitIDs waits for every id with --wait, it does nothing without the flag. The ids are waited in parallel,
+// they share one deadline, so a slow id must not use the time of the next ones and hide that they are ready.
 func WaitIDs(cmd *cobra.Command, ids []string, wait func(ctx context.Context, id string) error) error {
 	if shouldWait, _ := cmd.Flags().GetBool("wait"); !shouldWait {
 		return nil
@@ -68,7 +70,31 @@ func WaitIDs(cmd *cobra.Command, ids []string, wait func(ctx context.Context, id
 	ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 	defer cancel()
 
-	return ForEachID(cmd, ids, nil, func(id string) error {
-		return wait(ctx, id)
-	})
+	errs := make([]error, len(ids))
+
+	var wg sync.WaitGroup
+
+	for i, id := range ids {
+		wg.Go(func() {
+			errs[i] = wait(ctx, id)
+		})
+	}
+
+	wg.Wait()
+
+	failed := 0
+
+	for i, err := range errs {
+		if err != nil {
+			failed++
+
+			cmd.PrintErrln(errors.Wrap(err, ids[i]))
+		}
+	}
+
+	if failed > 0 {
+		return errors.Errorf("%d of %d failed", failed, len(ids))
+	}
+
+	return nil
 }
