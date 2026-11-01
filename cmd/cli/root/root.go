@@ -59,12 +59,15 @@ func registerCommands() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+global.CLIName+".yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug logs")
 	rootCmd.PersistentFlags().Bool("json", false, "output in JSON format")
-	rootCmd.PersistentFlags().StringP("output", "o", "", "output format (name)")
+	rootCmd.PersistentFlags().Bool("ids", false, "print only the first column of each table, e.g. environment ids")
 
-	// reject unknown formats, otherwise a typo silently prints the default table
+	// the two output modes are exclusive, otherwise one of them would be silently ignored
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
-		if output, _ := cmd.Flags().GetString("output"); output != "" && output != "name" {
-			return errors.New("unsupported output format " + output + ", supported: name")
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		idsOutput, _ := cmd.Flags().GetBool("ids")
+
+		if jsonOutput && idsOutput {
+			return errors.New("--json and --ids cannot be used together")
 		}
 
 		return nil

@@ -110,8 +110,9 @@ func OutputTable(cmd *cobra.Command, data any, headers []string, rows [][]string
 		return
 	}
 
-	outputFormat, _ := cmd.Flags().GetString("output")
-	if outputFormat == "name" {
+	// the first column is the value the next command takes, e.g. the environment id or the profile name
+	idsOutput, _ := cmd.Flags().GetBool("ids")
+	if idsOutput {
 		for i := range rows {
 			Output(cmd, strings.TrimSpace(rows[i][0]))
 		}

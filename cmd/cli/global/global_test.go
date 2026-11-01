@@ -14,7 +14,7 @@ func TestOutputTableBorderAligned(t *testing.T) {
 
 	cmd := &cobra.Command{}
 	cmd.Flags().Bool("json", false, "")
-	cmd.Flags().String("output", "", "")
+	cmd.Flags().Bool("ids", false, "")
 
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
