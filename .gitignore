@@ -1,7 +1,9 @@
 test.sh
 dist
 /kubernetes-manager*
-kubeconfig*
+/kubeconfig*
+/e2e/kubeconfig*
+/e2e/testdata/kubeconfig
 __debug_bin
 coverage.out
 deploy-*
