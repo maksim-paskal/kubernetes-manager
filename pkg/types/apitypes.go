@@ -256,6 +256,29 @@ type EnvironmentBadge struct {
 	Description string
 }
 
+// Issue is a Sentry issue of the environment, the CLI copy of the server response.
+type Issue struct {
+	ID            string
+	ShortID       string
+	Project       string
+	ProjectURL    string
+	Title         string
+	Culprit       string
+	Description   string
+	Level         string
+	Link          string
+	LastSeen      string
+	LastSeenShort string
+	IsNew         bool
+}
+
+// GetIssuesResponse is the issues response of the environment, the server and the CLI share it.
+type GetIssuesResponse struct {
+	IssuesExternalLink string
+	Items              []Issue
+	IssuesProjects     []string
+}
+
 // AutotestPipeline is an autotest run, the server fills it from the GitLab pipeline.
 type AutotestPipeline struct {
 	PipelineID           string
