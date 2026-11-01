@@ -34,8 +34,11 @@ module.exports = {
     config: {}, // Additional config
   },
   proxy: {
-    '/api/': `${process.env.BACKEND_URL}`,
-    '/oauth2/userinfo': `${process.env.BACKEND_URL}`
+    '/api/': {
+      target: `${process.env.BACKEND_URL}`,
+      // local dev has no auth proxy in front of the backend, so act as the logged-in user
+      headers: { 'X-Auth-Request-User': process.env.DEV_AUTH_USER || process.env.USER || 'dev' },
+    },
   },
   ssr: false,
   target: 'static',

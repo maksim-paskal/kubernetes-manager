@@ -116,12 +116,12 @@ Vue.mixin({
 
       return ""
     },
-    async loadUser(endpoint) {
+    async loadUser() {
       try {
-        const info = await fetch(`${endpoint}`);
+        const info = await fetch("/api/whoami");
         if (info.ok) {
           const data = await info.json();
-          this.$store.commit("setUser", data);
+          this.$store.commit("setUser", { user: data.Result.Name, email: data.Result.Email });
         } else {
           throw Error(await info.text());
         }
