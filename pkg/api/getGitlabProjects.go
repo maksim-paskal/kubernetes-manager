@@ -20,24 +20,11 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 )
 
-type GetGitlabProjectsItem struct {
-	ProjectID      int64
-	Name           string
-	Description    string
-	DefaultBranch  string
-	WebURL         string
-	TagsList       []string
-	AdditionalInfo *GetGitlabProjectsInfoItem // custom field for front end
-	Deploy         string                     // custom field for front end
-	// custom field for front end
-	RowVariant     string `json:"_rowVariant"` //nolint:tagliatelle
-	Required       bool
-	SelectedBranch string
-	sortPriority   int
-}
+type GetGitlabProjectsItem = types.GetGitlabProjectsItem
 
 type GetGitlabProjectsInput struct {
 	Profile   string
@@ -90,6 +77,7 @@ func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*G
 	}
 
 	result := make([]*GetGitlabProjectsItem, 0)
+	sortPriorities := make(map[int64]int)
 
 	for _, project := range projects {
 		item := GetGitlabProjectsItem{
@@ -101,8 +89,9 @@ func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*G
 			TagsList:       formatProjectTags(project.Topics),
 			Required:       projectProfile.IsProjectRequired(project.ID),
 			SelectedBranch: projectProfile.GetProjectSelectedBranch(project.ID),
-			sortPriority:   projectProfile.GetProjectSortPriority(project.ID),
 		}
+
+		sortPriorities[item.ProjectID] = projectProfile.GetProjectSortPriority(item.ProjectID)
 
 		exclude := slices.Contains(exludeProjects, strconv.FormatInt(item.ProjectID, 10))
 
@@ -123,8 +112,8 @@ func GetGitlabProjects(ctx context.Context, input *GetGitlabProjectsInput) ([]*G
 
 	// sort by sortPriority and Name
 	sort.SliceStable(result, func(i, j int) bool {
-		if result[i].sortPriority != result[j].sortPriority {
-			return result[i].sortPriority < result[j].sortPriority
+		if sortPriorities[result[i].ProjectID] != sortPriorities[result[j].ProjectID] {
+			return sortPriorities[result[i].ProjectID] < sortPriorities[result[j].ProjectID]
 		}
 
 		return result[i].Name < result[j].Name

@@ -17,16 +17,11 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 )
 
-type GetGitlabProjectsInfoItem struct {
-	PodRunning     *GetPodByImageResult
-	Pipelines      *GetGitlabPipelinesStatusResults
-	CommitsBehind  *int
-	DefaultBranch  *string
-	BranchNotFound bool
-}
+type GetGitlabProjectsInfoItem = types.GetGitlabProjectsInfoItem
 
 func (e *Environment) GetGitlabProjectsInfo(ctx context.Context, projectID, branch string) (*GetGitlabProjectsInfoItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetGitlabProjectsInfo")

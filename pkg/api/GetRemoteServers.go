@@ -14,7 +14,6 @@ package api
 
 import (
 	"context"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -23,77 +22,36 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-type GetRemoteServerItemStatus string
-
-const (
-	lastPowerOnTimeLabel = "lastPowerOnTime"
-	staledTime           = 14 * 24 * time.Hour
+type (
+	GetRemoteServerItemStatus = types.GetRemoteServerItemStatus
+	GetRemoteServerLabel      = types.GetRemoteServerLabel
+	GetRemoteServerItem       = types.GetRemoteServerItem
 )
 
 const (
-	GetRemoteServerItemStatusRunning GetRemoteServerItemStatus = "Running"
-	GetRemoteServerItemStatusStoped  GetRemoteServerItemStatus = "Stoped"
+	GetRemoteServerItemStatusRunning = types.GetRemoteServerItemStatusRunning
+	GetRemoteServerItemStatusStoped  = types.GetRemoteServerItemStatusStoped
 )
-
-type GetRemoteServerLabel struct {
-	Key         string
-	Value       string
-	Description string
-}
-
-func (l *GetRemoteServerLabel) ValidKey() bool {
-	validKeys := []string{
-		lastPowerOnTimeLabel,
-	}
-
-	return slices.Contains(validKeys, l.Key)
-}
-
-type GetRemoteServerItem struct {
-	Cloud           string
-	ID              string
-	Name            string
-	Status          GetRemoteServerItemStatus
-	IPv4            string
-	Created         time.Time
-	Labels          map[string]string
-	FormattedLabels []*GetRemoteServerLabel
-	Links           []*config.OtherLink
-}
-
-func (i *GetRemoteServerItem) GetLastPowerOnTime() (time.Time, error) {
-	lastPowerOnTimeString, ok := i.Labels[lastPowerOnTimeLabel]
-	if !ok {
-		return i.Created, nil
-	}
-
-	return utils.UnixToTime(lastPowerOnTimeString)
-}
-
-func (i *GetRemoteServerItem) IsStaled() bool {
-	lastPowerOnTime, err := i.GetLastPowerOnTime()
-	if err != nil {
-		return false
-	}
-
-	return time.Since(lastPowerOnTime) > staledTime
-}
 
 var errNoHetznerCloudToken = errors.New("no hetzner cloud token, please set it in config file")
 
 // return all remote servers.
-func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
+func GetRemoteServers(ctx context.Context, all bool) ([]*GetRemoteServerItem, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetRemoteServers")
 	defer span.End()
 
 	if len(config.Get().RemoteServer.HetznerToken) == 0 {
 		return nil, errNoHetznerCloudToken
 	}
+
+	currentUser := user.Get(ctx)
 
 	hcloundClient := client.GetHcloudClient()
 
@@ -105,6 +63,12 @@ func GetRemoteServers(ctx context.Context) ([]*GetRemoteServerItem, error) {
 	}
 
 	for _, server := range servers {
+		if !all {
+			if owner, ok := server.Labels["owner"]; !ok || owner != currentUser.Name {
+				continue
+			}
+		}
+
 		status := GetRemoteServerItemStatusStoped
 
 		if server.Status == hcloud.ServerStatusRunning {
@@ -189,7 +153,7 @@ func getRemoteServerLabels(labels map[string]string) []*GetRemoteServerLabel {
 			item.Value, item.Description = formatUnixTime(v)
 		}
 
-		if item.Key == lastPowerOnTimeLabel {
+		if item.Key == types.LastPowerOnTimeLabel {
 			item.Key = badgeLastStarted
 		}
 

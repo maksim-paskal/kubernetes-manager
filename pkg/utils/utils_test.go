@@ -13,11 +13,10 @@ limitations under the License.
 package utils_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 )
 
@@ -94,10 +93,10 @@ func TestConvertStringToInt64(t *testing.T) {
 func TestGetTemplatedResult(t *testing.T) {
 	t.Parallel()
 
-	test := "my {{ .Value }} {{ Security.Owner }}"
+	test := "my {{ .Value }} {{ User.Name }}"
 
-	ctx := context.WithValue(t.Context(), types.ContextSecurityKey, types.ContextSecurity{
-		Owner: "runFromTest",
+	ctx := user.Set(t.Context(), user.User{
+		Name: "runFromTest",
 	})
 
 	result, err := utils.GetTemplatedResult(ctx, test, struct{ Value string }{Value: "test"})

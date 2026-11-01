@@ -30,6 +30,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/modules/autotests"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -112,15 +113,7 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 	result := NewHandlerResult()
 
-	if owner := r.Header[config.HeaderOwner]; len(owner) > 0 {
-		log.Infof("user %s request %s", owner[0], operation)
-
-		ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{Owner: owner[0]})
-
-		telemetry.Attributes(span, map[string]string{
-			"owner": owner[0],
-		})
-	}
+	ctx = withUser(ctx, span, r, operation)
 
 	if err := checkForMakeOperation(ctx, operation, r); err != nil {
 		return result, errors.Wrap(err, "check make operation")
@@ -269,13 +262,13 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 			labels = make(map[string]string)
 		}
 
-		owner := r.Header[config.HeaderOwner]
+		owner := user.Get(ctx).Name
 
 		if len(owner) == 0 {
 			return result, errors.Wrap(errBadFormat, "no owner specified")
 		}
 
-		userLabel := fmt.Sprintf("%s-%s", config.LabelUserLiked, owner[0])
+		userLabel := fmt.Sprintf("%s-%s", config.LabelUserLiked, owner)
 
 		hasUserLike := false
 		if labels[userLabel] == config.TrueValue {
@@ -809,17 +802,30 @@ func checkForMakeOperation(ctx context.Context, operation string, r *http.Reques
 		return errMustBePOST
 	}
 
-	if _, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity); !ok {
+	if user.Get(ctx).Name == "" {
 		return errMustHaveOwner
 	}
 
 	return nil
 }
 
+func withUser(ctx context.Context, span trace.Span, r *http.Request, operation string) context.Context {
+	ctx = user.FromHeaders(ctx, r.Header)
+
+	if name := user.Get(ctx).Name; name != "" {
+		log.Infof("user %s request %s", name, operation)
+
+		telemetry.Attributes(span, map[string]string{
+			"owner": name,
+		})
+	}
+
+	return ctx
+}
+
 func copyContextSecurity(ctxSrc context.Context, ctxDesct context.Context) context.Context { //nolint:golint
-	security, ok := ctxSrc.Value(types.ContextSecurityKey).(types.ContextSecurity)
-	if ok {
-		return context.WithValue(ctxDesct, types.ContextSecurityKey, security)
+	if srcUser := user.Get(ctxSrc); srcUser.Name != "" {
+		return user.Set(ctxDesct, srcUser)
 	}
 
 	return ctxDesct

@@ -28,7 +28,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/jira"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/metrics"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	logrushooksentry "github.com/maksim-paskal/logrus-hook-sentry"
 	"github.com/pkg/errors"
@@ -77,15 +77,7 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 	result := NewHandlerResult()
 
-	if owner := r.Header[config.HeaderOwner]; len(owner) > 0 {
-		log.Infof("user %s request %s", owner[0], operation)
-
-		ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{Owner: owner[0]})
-
-		telemetry.Attributes(span, map[string]string{
-			"owner": owner[0],
-		})
-	}
+	ctx = withUser(ctx, span, r, operation)
 
 	if err := checkForMakeOperation(ctx, operation, r); err != nil {
 		return result, errors.Wrap(err, "check make operation")
@@ -204,7 +196,7 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 
 		result.Result = projectTypes
 	case "remote-servers":
-		remoteServers, err := api.GetRemoteServers(ctx)
+		remoteServers, err := api.GetRemoteServers(ctx, r.Form.Get("all") == "true")
 		if err != nil {
 			return result, err
 		}
@@ -308,6 +300,13 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		result.Result = DebugRequest{
 			RequestHeaders: r.Header,
 		}
+	case "whoami":
+		currentUser := user.Get(ctx)
+		if currentUser.Name == "" {
+			return result, errors.New("no security context found")
+		}
+
+		result.Result = currentUser
 
 	default:
 		return result, errors.Wrap(errNoComandFound, operation)

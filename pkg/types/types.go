@@ -29,14 +29,6 @@ const (
 	containerArraySplitter  = ":"
 )
 
-type ContextSecurityKeys string
-
-const ContextSecurityKey ContextSecurityKeys = "app.security"
-
-type ContextSecurity struct {
-	Owner string
-}
-
 type Event string
 
 const (

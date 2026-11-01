@@ -76,7 +76,7 @@ func GetWikiPage(ctx context.Context, input *GetWikiPageInput) (*GetWikiPageItem
 		input.ProjectID,
 		input.Slug,
 		&gitlab.GetWikiPageOptions{
-			RenderHTML: gitlab.Ptr(true),
+			RenderHTML: new(true),
 		},
 		gitlab.WithContext(ctx),
 	)

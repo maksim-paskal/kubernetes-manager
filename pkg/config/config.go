@@ -13,7 +13,6 @@ limitations under the License.
 package config
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -71,62 +70,15 @@ const (
 	LabelGitSyncOrigin    = Namespace + "/git-sync-origin"
 	LabelGitSyncBranch    = Namespace + "/git-sync-branch"
 	LabelDescription      = Namespace + "/description"
-
-	// use oauth proxy header for identifying the owner
-	// include additional headers to ingress
-	// nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User"
-	HeaderOwner = "X-Auth-Request-User"
 )
 
-type Links struct {
-	SentryURL     string
-	SlackURL      string
-	LogsURL       string
-	LogsPodURL    string
-	PhpMyAdminURL string
-	MetricsURL    string
-	TracingURL    string
-	JiraURL       string
-	Others        []OtherLink
-}
-
-func (l *Links) FormatedLinks(namespace string) (*Links, error) {
-	linksJSON, err := json.Marshal(l)
-	if err != nil {
-		return nil, errors.Wrap(err, "error while json.Marshal")
-	}
-
-	linksJSONFormatted := linksJSON
-	linksJSONFormatted = bytes.ReplaceAll(linksJSONFormatted, []byte("__Namespace__"), []byte(namespace))
-
-	link := Links{}
-
-	err = json.Unmarshal(linksJSONFormatted, &link)
-	if err != nil {
-		return nil, errors.Wrap(err, "error while json.Unmarshal")
-	}
-
-	return &link, nil
-}
-
-type OtherLink struct {
-	Name        string
-	URL         string
-	Description string
-}
-
-type Template struct {
-	NamespacePattern string // display template on some namespace
-	Display          string
-	Data             string
-}
-
-type WikiPage struct {
-	Title     string
-	ProjectID int
-	Slug      string
-	Size      int
-}
+// The link and wiki types are shared with the CLI, see pkg/types.
+type (
+	Links     = types.Links
+	OtherLink = types.OtherLink
+	Template  = types.Template
+	WikiPage  = types.WikiPage
+)
 
 type Cache struct {
 	Type   string

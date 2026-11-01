@@ -46,8 +46,8 @@ func (e *Environment) createBranchIfTag(ctx context.Context, pid int, ref string
 	gitlabBranch, _, err := e.gitlabClient.Branches.CreateBranch(
 		pid,
 		&gitlab.CreateBranchOptions{
-			Branch: gitlab.Ptr("tagfork-" + ref + "-" + utils.RandomString(config.TemporaryTokenRandLength)),
-			Ref:    gitlab.Ptr(tag.Commit.ID),
+			Branch: new("tagfork-" + ref + "-" + utils.RandomString(config.TemporaryTokenRandLength)),
+			Ref:    new(tag.Commit.ID),
 		},
 		gitlab.WithContext(ctx),
 	)

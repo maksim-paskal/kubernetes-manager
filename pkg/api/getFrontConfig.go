@@ -14,21 +14,13 @@ package api
 
 import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 )
 
-type GetFrontConfigItem struct {
-	ClusterName string
-	Maintenance bool
-	Links       *config.Links
-}
-
-type GetFrontConfigResult struct {
-	Version        string
-	Links          *config.Links
-	Clusters       []*GetFrontConfigItem
-	DebugTemplates []*config.Template
-	WikiPages      []*config.WikiPage
-}
+type (
+	GetFrontConfigItem   = types.GetFrontConfigItem
+	GetFrontConfigResult = types.GetFrontConfigResult
+)
 
 // Get config for front pages.
 func GetFrontConfig() *GetFrontConfigResult {

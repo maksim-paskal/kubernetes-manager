@@ -27,6 +27,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/sluglify"
 	"github.com/pkg/errors"
@@ -35,23 +36,93 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type StartNewEnvironmentInput struct {
-	Profile  string
-	Services string
-	Cluster  string
-	Name     string
-}
+// StartNewEnvironmentInput is a defined type, so its validation methods stay in this package.
+type StartNewEnvironmentInput types.StartNewEnvironmentInput
 
-func (input *StartNewEnvironmentInput) GetUser(ctx context.Context) string {
-	ctx, span := telemetry.Start(ctx, "api.GetUser")
-	defer span.End()
+func (input *StartNewEnvironmentInput) SetDefaults(ctx context.Context) error {
+	if input.Cluster == "" {
+		endpoints := config.Get().GetKubernetesEndpoints()
+		if len(endpoints) == 0 {
+			return errors.Wrap(errCreateNewBranchMissingInput, "no kubernetes endpoints configured")
+		}
 
-	security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
-	if ok {
-		return security.Owner
+		input.Cluster = endpoints[0].Name
 	}
 
-	return ""
+	// an empty or unknown profile is reported by Validation
+	profile := input.GetProfile()
+	if profile == nil {
+		return nil
+	}
+
+	userServices, err := ParseEnvironmentServices(input.Services, nil)
+	if err != nil {
+		return errors.Wrap(err, "error parsing user services")
+	}
+
+	// fill in required services that the user did not select
+	missing := make([]string, 0)
+
+	for _, required := range profile.GetRequired() {
+		if !slices.ContainsFunc(userServices, func(s *EnvironmentServices) bool { return s.GeProjectID() == required }) {
+			missing = append(missing, required)
+		}
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+
+	// GitLab is queried only when a required service is missing
+	projects, err := GetGitlabProjects(ctx, &GetGitlabProjectsInput{
+		Profile: input.Profile,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error getting gitlab projects")
+	}
+
+	// input.Services is ";" separated and may have no trailing separator
+	serviceItems := make([]string, 0, len(missing)+1)
+	if trimmed := strings.TrimRight(input.Services, ";"); trimmed != "" {
+		serviceItems = append(serviceItems, trimmed)
+	}
+
+	for _, required := range missing {
+		projectID, err := strconv.ParseInt(required, 10, 64)
+		if err != nil {
+			return errors.Wrapf(errCreateNewBranchMissingInput, "required project %s is not a project id", required)
+		}
+
+		var project *GetGitlabProjectsItem
+
+		for _, p := range projects {
+			if p.ProjectID == projectID {
+				project = p
+
+				break
+			}
+		}
+
+		if project == nil {
+			return errors.Wrapf(errCreateNewBranchMissingInput, "required project %s not found", required)
+		}
+
+		// the branch configured in the profile wins over the default branch of the project
+		branch := project.SelectedBranch
+		if branch == "" {
+			branch = project.DefaultBranch
+		}
+
+		if branch == "" {
+			return errors.Wrapf(errCreateNewBranchMissingInput, "required project %s has no branch", required)
+		}
+
+		serviceItems = append(serviceItems, required+":"+branch)
+	}
+
+	input.Services = strings.Join(serviceItems, ";")
+
+	return nil
 }
 
 func (input *StartNewEnvironmentInput) GetNamespace() (string, error) {
@@ -102,11 +173,7 @@ func (input *StartNewEnvironmentInput) Validation(ctx context.Context) error {
 		return errors.Wrap(errCreateNewBranchMissingInput, "cluster is required")
 	}
 
-	if len(input.Services) == 0 {
-		return errors.Wrap(errCreateNewBranchMissingInput, "services is required")
-	}
-
-	if len(input.GetUser(ctx)) == 0 {
+	if len(user.Get(ctx).Name) == 0 {
 		return errors.Wrap(errCreateNewBranchMissingInput, "user is required")
 	}
 
@@ -118,13 +185,17 @@ func (input *StartNewEnvironmentInput) Validation(ctx context.Context) error {
 		return errors.Wrapf(errCreateNewBranchMissingInput, "profile %s unknown", input.Profile)
 	}
 
+	if len(input.Services) == 0 {
+		return errors.Wrap(errCreateNewBranchMissingInput, "services is required")
+	}
+
 	if config.Get().GetKubernetesEndpointByName(input.Cluster) == nil {
 		return errors.Wrapf(errCreateNewBranchMissingInput, "cluster %s unknown", input.Cluster)
 	}
 
 	services, err := ParseEnvironmentServices(input.Services, nil)
 	if err != nil {
-		return errors.Wrap(errCreateNewBranchMissingInput, "can not get services")
+		return errors.Wrap(err, "can not get services")
 	}
 
 	selectedProjectIDs := make([]string, 0)
@@ -156,6 +227,12 @@ func (services *EnvironmentServices) GeProjectID() string {
 
 func ParseEnvironmentServices(services string, sortByProjectIDs []string) ([]*EnvironmentServices, error) {
 	result := make([]*EnvironmentServices, 0)
+
+	if len(services) == 0 {
+		return result, nil
+	}
+
+	services = strings.TrimRight(services, ";")
 
 	for service := range strings.SplitSeq(services, ";") {
 		serviceData := strings.Split(service, ":")
@@ -200,8 +277,8 @@ func StartNewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (
 	ctx, span := telemetry.Start(ctx, "api.StartNewEnvironment")
 	defer span.End()
 
-	if len(input.Cluster) == 0 {
-		input.Cluster = config.Get().GetKubernetesEndpoints()[0].Name
+	if err := input.SetDefaults(ctx); err != nil {
+		return nil, errors.Wrap(err, "error setting defaults")
 	}
 
 	environment, err := processCreateNewBranch(ctx, input)
@@ -316,11 +393,9 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 	namespaceMeta := config.GetNamespaceMeta(ctx, idInfo.Namespace)
 
 	namespace := corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        idInfo.Namespace,
-			Labels:      namespaceMeta.Labels,
-			Annotations: namespaceMeta.Annotations,
-		},
+		Name:        idInfo.Namespace,
+		Labels:      namespaceMeta.Labels,
+		Annotations: namespaceMeta.Annotations,
 	}
 
 	if namespace.Annotations == nil {
@@ -340,7 +415,7 @@ func NewEnvironment(ctx context.Context, input *StartNewEnvironmentInput) (*Envi
 
 	namespace.Labels[config.Namespace] = config.TrueValue
 
-	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, input.GetUser(ctx))
+	creatorLabel := fmt.Sprintf("%s-%s", config.LabelNamespaceCreator, user.Get(ctx).Name)
 	namespace.Labels[creatorLabel] = config.TrueValue
 
 	originalNamespaceName := namespace.Name

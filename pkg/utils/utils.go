@@ -26,7 +26,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/pkg/errors"
 )
 
@@ -83,18 +83,21 @@ func RandomString(l int) string {
 	return str[:l]
 }
 
+// templateSecurity is the value of {{ Security }} in templates, existing configs use {{ Security.Owner }}.
+type templateSecurity struct {
+	Owner string
+}
+
 func getCustomFuncs(ctx context.Context) template.FuncMap {
 	ctx, span := telemetry.Start(ctx, "utils.getCustomFuncs")
 	defer span.End()
 
 	return template.FuncMap{
-		"Security": func() types.ContextSecurity {
-			security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
-			if ok {
-				return security
-			}
-
-			return types.ContextSecurity{}
+		"User": func() user.User {
+			return user.Get(ctx)
+		},
+		"Security": func() templateSecurity {
+			return templateSecurity{Owner: user.Get(ctx).Name}
 		},
 		"RandomSliceElement": func(slice []any) any {
 			return slice[mathRand.Intn(len(slice))] //nolint:gosec

@@ -64,7 +64,7 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 	}
 
 	awsConfig := &aws.Config{
-		Region: aws.String(provider.config.Region),
+		Region: new(provider.config.Region),
 	}
 
 	if len(provider.config.AccessKeyID) > 0 && len(provider.config.AccessSecretKey) > 0 {
@@ -151,20 +151,20 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.aws.processInstances")
 	defer span.End()
 
-	svc := ec2.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
+	svc := ec2.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
 				Name: aws.String("tag:" + config.TagCluster),
 				Values: []*string{
-					aws.String(provider.message.Cluster),
+					new(provider.message.Cluster),
 				},
 			},
 			{
 				Name: aws.String("tag:" + config.TagNamespace),
 				Values: []*string{
-					aws.String(provider.message.Namespace),
+					new(provider.message.Namespace),
 				},
 			},
 		},
@@ -199,7 +199,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 	switch provider.message.Event { //nolint:exhaustive
 	case types.EventStart:
 		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{
-			DryRun:      aws.Bool(false),
+			DryRun:      new(false),
 			InstanceIds: instances,
 		})
 		if err != nil {
@@ -209,7 +209,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 		log.Debug(result.String())
 	case types.EventStop:
 		result, err := svc.StopInstancesWithContext(ctx, &ec2.StopInstancesInput{
-			DryRun:      aws.Bool(false),
+			DryRun:      new(false),
 			InstanceIds: instances,
 		})
 		if err != nil {
@@ -228,7 +228,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.aws.processDatabases")
 	defer span.End()
 
-	resources := resourcegroupstaggingapi.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
+	resources := resourcegroupstaggingapi.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
 
 	// list databases by tags, rds.DescribeDBInstances do not use tags for filtering
 	dbs, err := resources.GetResources(&resourcegroupstaggingapi.GetResourcesInput{
@@ -248,7 +248,7 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 		return errors.Wrap(err, "error getting resources databases")
 	}
 
-	svc := rds.New(provider.sess, &aws.Config{Region: aws.String(provider.config.Region)})
+	svc := rds.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
 
 	for _, resource := range dbs.ResourceTagMappingList {
 		database, err := svc.DescribeDBInstancesWithContext(ctx, &rds.DescribeDBInstancesInput{
