@@ -17,15 +17,12 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
-type GetGitlabPipelinesStatusResults struct {
-	LastErrorPipeline   string
-	LastRunningPipeline string
-	LastSuccessPipeline string
-}
+type GetGitlabPipelinesStatusResults = types.GetGitlabPipelinesStatusResults
 
 const GetGitlabPipelinesStatusMaxLimit = 20
 
@@ -43,13 +40,11 @@ func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID st
 	projectPipelines, _, err := e.gitlabClient.Pipelines.ListProjectPipelines(
 		projectID,
 		&gitlab.ListProjectPipelinesOptions{
-			ListOptions: gitlab.ListOptions{
-				Page:    1,
-				PerPage: GetGitlabPipelinesStatusMaxLimit,
-			},
-			Source:   gitlab.Ptr("api"),
-			OrderBy:  gitlab.Ptr("id"),
-			Sort:     gitlab.Ptr("desc"),
+			Page:     1,
+			PerPage:  GetGitlabPipelinesStatusMaxLimit,
+			Source:   new("api"),
+			OrderBy:  new("id"),
+			Sort:     new("desc"),
 			Username: config.Get().GitlabTokenUser,
 		},
 		gitlab.WithContext(ctx),

@@ -17,14 +17,11 @@ import (
 	"strings"
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 )
 
-type GetPodByImageResult struct {
-	Tag     string
-	GitHash string
-	Found   bool
-}
+type GetPodByImageResult = types.GetPodByImageResult
 
 func (e *Environment) GetPodByImage(ctx context.Context, imagePrefix string) (*GetPodByImageResult, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetPodByImage")

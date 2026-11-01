@@ -69,10 +69,8 @@ func GetGitlabProjectRefs(ctx context.Context, opts *GetGitlabProjectRefsOpt) ([
 		gitBranches, _, err := gitlabClient.Branches.ListBranches(
 			opts.ProjectID,
 			&gitlab.ListBranchesOptions{
-				ListOptions: gitlab.ListOptions{
-					Page:    currentPage,
-					PerPage: gitlabListPerPage,
-				},
+				Page:    currentPage,
+				PerPage: gitlabListPerPage,
 			},
 			gitlab.WithContext(ctx),
 		)
@@ -114,10 +112,8 @@ func GetGitlabProjectRefs(ctx context.Context, opts *GetGitlabProjectRefsOpt) ([
 	gitTags, _, err := gitlabClient.Tags.ListTags(
 		opts.ProjectID,
 		&gitlab.ListTagsOptions{
-			ListOptions: gitlab.ListOptions{
-				Page:    0,
-				PerPage: opts.MaxTags,
-			},
+			Page:    0,
+			PerPage: opts.MaxTags,
 			OrderBy: &orderBy,
 		},
 		gitlab.WithContext(ctx),

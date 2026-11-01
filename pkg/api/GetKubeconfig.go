@@ -18,6 +18,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/sluglify"
 	"github.com/pkg/errors"
@@ -178,7 +179,7 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*authentication
 
 	// embed the requesting user in the name so that a Forbidden error from this
 	// token (e.g. `system:serviceaccount:<ns>:<name>`) names who requested it.
-	if owner := sluglify.GetSlugString(e.GetUser(ctx), maxTokenOwnerLength, ""); len(owner) > 0 {
+	if owner := sluglify.GetSlugString(user.Get(ctx).Name, maxTokenOwnerLength, ""); len(owner) > 0 {
 		tokenName = "kubernetes-manager-" + owner + "-" + randSuffix
 	}
 
@@ -187,10 +188,8 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*authentication
 	}
 
 	serviceAccount := corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   tokenName,
-			Labels: labels,
-		},
+		Name:   tokenName,
+		Labels: labels,
 	}
 
 	sa, err := e.clientset.CoreV1().ServiceAccounts(e.Namespace).Create(ctx, &serviceAccount, metav1.CreateOptions{})
@@ -222,11 +221,9 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*authentication
 	}
 
 	serviceAccountRole := rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   tokenName,
-			Labels: labels,
-		},
-		Rules: rules,
+		Name:   tokenName,
+		Labels: labels,
+		Rules:  rules,
 	}
 
 	role, err := e.clientset.RbacV1().Roles(e.Namespace).Create(ctx, &serviceAccountRole, metav1.CreateOptions{})
@@ -235,10 +232,8 @@ func (e *Environment) createTemporaryToken(ctx context.Context) (*authentication
 	}
 
 	serviceAccountRoleBinding := rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   tokenName,
-			Labels: labels,
-		},
+		Name:   tokenName,
+		Labels: labels,
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",

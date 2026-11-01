@@ -21,34 +21,20 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
 
-type SetRemoteServerStatusAction string
-
-const (
-	SetRemoteServerStatusPowerOn  SetRemoteServerStatusAction = "PowerOn"
-	SetRemoteServerStatusPowerOff SetRemoteServerStatusAction = "PowerOff"
+type (
+	SetRemoteServerStatusAction = types.SetRemoteServerStatusAction
+	SetRemoteServerActionInput  = types.SetRemoteServerActionInput
 )
 
-func (a SetRemoteServerStatusAction) Validate() error {
-	if a == SetRemoteServerStatusPowerOn {
-		return nil
-	}
-
-	if a == SetRemoteServerStatusPowerOff {
-		return nil
-	}
-
-	return errors.New("unknown status")
-}
-
-type SetRemoteServerActionInput struct {
-	Cloud  string
-	ID     string
-	Action SetRemoteServerStatusAction
-}
+const (
+	SetRemoteServerStatusPowerOn  = types.SetRemoteServerStatusPowerOn
+	SetRemoteServerStatusPowerOff = types.SetRemoteServerStatusPowerOff
+)
 
 // return all remote servers.
 func SetRemoteServerAction(ctx context.Context, input SetRemoteServerActionInput) error {

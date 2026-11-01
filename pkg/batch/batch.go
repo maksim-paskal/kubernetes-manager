@@ -20,6 +20,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/webhook"
 	"github.com/pkg/errors"
@@ -33,8 +34,8 @@ func Schedule(ctx context.Context) {
 	ctx, span := telemetry.Start(ctx, "batch.Schedule")
 	defer span.End()
 
-	ctx = context.WithValue(ctx, types.ContextSecurityKey, types.ContextSecurity{
-		Owner: "BatchOperations",
+	ctx = user.Set(ctx, user.User{
+		Name: "BatchOperations",
 	})
 
 	ticker := time.NewTicker(config.Get().GetBatchShedulePeriod())
@@ -117,7 +118,7 @@ func scaleDownALL(ctx context.Context) error {
 	}
 
 	// scaledown servers
-	servers, err := api.GetRemoteServers(ctx)
+	servers, err := api.GetRemoteServers(ctx, true)
 	if err != nil {
 		return errors.Wrap(err, "error listing servers")
 	}

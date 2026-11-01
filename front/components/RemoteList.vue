@@ -67,7 +67,7 @@ export default {
     }
   },
   async fetch() {
-    const result = await fetch('/api/remote-servers');
+    const result = await fetch('/api/remote-servers?all=true');
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result

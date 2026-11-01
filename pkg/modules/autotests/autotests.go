@@ -26,7 +26,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -122,9 +122,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	pipelines, _, err := gitlabClient.Pipelines.ListProjectPipelines(
 		autotestConfig.ProjectID,
 		&gitlab.ListProjectPipelinesOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: gitlabListPerPage,
-			},
+			PerPage: gitlabListPerPage,
 		},
 		gitlab.WithContext(ctx),
 	)
@@ -242,15 +240,6 @@ type StartAutotestInput struct {
 	ExtraEnv    map[string]string
 }
 
-func (s *StartAutotestInput) GetUser(ctx context.Context) string {
-	security, ok := ctx.Value(types.ContextSecurityKey).(types.ContextSecurity)
-	if ok {
-		return security.Owner
-	}
-
-	return ""
-}
-
 func (s *StartAutotestInput) Validate(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "autotests.Validate")
 	defer span.End()
@@ -259,7 +248,7 @@ func (s *StartAutotestInput) Validate(ctx context.Context) error {
 		return errors.New("test type is empty")
 	}
 
-	if len(s.GetUser(ctx)) == 0 {
+	if len(user.Get(ctx).Name) == 0 {
 		return errors.New("user is empty")
 	}
 
@@ -315,7 +304,7 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 
 	pipelineEnv := map[string]string{
 		envNameTest:      input.Test,
-		envNameOwner:     input.GetUser(ctx),
+		envNameOwner:     user.Get(ctx).Name,
 		envNameNamespace: input.environment.Namespace,
 	}
 
@@ -346,8 +335,8 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 		}
 
 		variable := &gitlab.PipelineVariableOptions{
-			Key:          gitlab.Ptr(key),
-			Value:        gitlab.Ptr(value),
+			Key:          new(key),
+			Value:        new(value),
 			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		}
 
@@ -358,7 +347,7 @@ func StartAutotest(ctx context.Context, input *StartAutotestInput) error {
 		// will be converted to TEST
 		// and variable type will be set to file
 		if before, ok := strings.CutSuffix(key, pipelineEnvSuffixFile); ok {
-			variable.Key = gitlab.Ptr(before)
+			variable.Key = new(before)
 			variable.VariableType = gitlab.Ptr(gitlab.FileVariableType)
 		}
 
@@ -468,9 +457,7 @@ func StopAutotest(ctx context.Context, input *StopAutotestInput) error {
 		autotestConfig.ProjectID,
 		pipelineID,
 		&gitlab.ListJobsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: gitlabListPerPage,
-			},
+			PerPage: gitlabListPerPage,
 		},
 		gitlab.WithContext(ctx),
 	)

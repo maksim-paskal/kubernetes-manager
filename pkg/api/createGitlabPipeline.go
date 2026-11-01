@@ -20,6 +20,7 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/pkg/errors"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
@@ -92,28 +93,28 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	variables := make([]*gitlab.PipelineVariableOptions, 0)
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.Ptr(string(input.Operation)),
-		Value:        gitlab.Ptr("true"),
+		Key:          new(string(input.Operation)),
+		Value:        new("true"),
 		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.Ptr(gitlabNamespaceKey),
-		Value:        gitlab.Ptr(e.Namespace),
+		Key:          new(gitlabNamespaceKey),
+		Value:        new(e.Namespace),
 		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	variables = append(variables, &gitlab.PipelineVariableOptions{
-		Key:          gitlab.Ptr(gitlabClusterKey),
-		Value:        gitlab.Ptr(e.Cluster),
+		Key:          new(gitlabClusterKey),
+		Value:        new(e.Cluster),
 		VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 	})
 
 	if projectProfile := e.getProjectProfile(); projectProfile != nil {
 		for key, value := range projectProfile.PipelineVariables {
 			variables = append(variables, &gitlab.PipelineVariableOptions{
-				Key:          gitlab.Ptr(key),
-				Value:        gitlab.Ptr(value),
+				Key:          new(key),
+				Value:        new(value),
 				VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 			})
 		}
@@ -122,8 +123,8 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 	if clusterProfile := e.getClusterProfile(); clusterProfile != nil {
 		for key, value := range clusterProfile.PipelineVariables {
 			variables = append(variables, &gitlab.PipelineVariableOptions{
-				Key:          gitlab.Ptr(key),
-				Value:        gitlab.Ptr(value),
+				Key:          new(key),
+				Value:        new(value),
 				VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 			})
 		}
@@ -144,16 +145,16 @@ func (e *Environment) CreateGitlabPipeline(ctx context.Context, input *CreateGit
 		keyFormatted = strings.ReplaceAll(keyFormatted, "-", "_")
 
 		variables = append(variables, &gitlab.PipelineVariableOptions{
-			Key:          gitlab.Ptr(keyFormatted),
-			Value:        gitlab.Ptr(value),
+			Key:          new(keyFormatted),
+			Value:        new(value),
 			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		})
 	}
 
-	if user := e.GetUser(ctx); user != "" {
+	if currentUser := user.Get(ctx); currentUser.Name != "" {
 		variables = append(variables, &gitlab.PipelineVariableOptions{
-			Key:          gitlab.Ptr(gitlabVariablePrefix + "USER"),
-			Value:        gitlab.Ptr(user),
+			Key:          new(gitlabVariablePrefix + "USER"),
+			Value:        new(currentUser.Name),
 			VariableType: gitlab.Ptr(gitlab.EnvVariableType),
 		})
 	}

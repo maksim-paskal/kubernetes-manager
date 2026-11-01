@@ -102,10 +102,8 @@ func GetCachedGitlabProjectsByTopic(ctx context.Context, topic string) ([]*gitla
 	for ctx.Err() == nil {
 		page, resp, err := client.GetGitlabClient().Projects.ListProjects(
 			&gitlab.ListProjectsOptions{
-				Topic: gitlab.Ptr(topic),
-				ListOptions: gitlab.ListOptions{
-					Page: pageNumber,
-				},
+				Topic: new(topic),
+				Page:  pageNumber,
 			},
 			gitlab.WithContext(ctx),
 		)
