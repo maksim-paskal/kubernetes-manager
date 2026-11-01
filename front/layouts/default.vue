@@ -15,7 +15,7 @@
 export default {
   async fetch() {
     this.loadConfig();
-    this.loadUser("/oauth2/userinfo");
+    this.loadUser();
   },
 }
 </script>

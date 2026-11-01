@@ -90,7 +90,6 @@ func GetHandler() *mux.Router {
 	mux.Use(checkForServerPanic)
 	mux.HandleFunc("/api/ready", handlerReady)
 	mux.HandleFunc("/api/healthz", handlerHealthz)
-	mux.HandleFunc("/oauth2/userinfo", handlerUser)
 	mux.HandleFunc("/api/{operation}", handlerAPI)
 	mux.HandleFunc("/api/{environmentID}/{operation}", handlerEnvironment)
 
