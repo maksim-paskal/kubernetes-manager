@@ -100,6 +100,19 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 		filter := r.Form.Get("filter")
 		sortby := r.Form.Get("sortby")
 
+		scopeFilter, err := environmentsScopeFilter(ctx, r.Form.Get("scope"))
+		if err != nil {
+			return result, err
+		}
+
+		if len(scopeFilter) > 0 {
+			if len(filter) > 0 {
+				filter += ","
+			}
+
+			filter += scopeFilter
+		}
+
 		if len(sortby) == 0 {
 			sortby = "created"
 		}
@@ -313,4 +326,28 @@ func apiOperation(ctx context.Context, r *http.Request, operation string) (*Hand
 	}
 
 	return result, nil
+}
+
+// environmentsScopeFilter converts a named scope to a label selector
+// for the current user, the user is always taken from the request context.
+func environmentsScopeFilter(ctx context.Context, scope string) (string, error) {
+	var labelPrefix string
+
+	switch scope {
+	case "":
+		return "", nil
+	case "liked":
+		labelPrefix = config.LabelUserLiked
+	case "created":
+		labelPrefix = config.LabelNamespaceCreator
+	default:
+		return "", errors.Wrap(errBadFormat, "unknown scope")
+	}
+
+	owner := user.Get(ctx).Name
+	if len(owner) == 0 {
+		return "", errors.Wrap(errBadFormat, "no owner specified")
+	}
+
+	return labelPrefix + "-" + owner + "=" + config.TrueValue, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -42,6 +43,7 @@ type Environment struct {
 	NamespaceLastScaledDays int
 	NamespaceAnnotations    map[string]string
 	NamespaceLabels         map[string]string
+	LikedByMe               bool
 	NamespaceDescription    string
 	Links                   *config.Links
 	Hosts                   []string
@@ -132,6 +134,7 @@ func (e *Environment) loadFromNamespace(ctx context.Context, namespace corev1.Na
 	e.NamespaceCreatedDays = utils.DiffToNowDays(namespace.CreationTimestamp.Time)
 	e.NamespaceAnnotations = namespace.Annotations
 	e.NamespaceLabels = namespace.Labels
+	e.LikedByMe = isLikedBy(namespace.Labels, user.Get(ctx).Name)
 
 	// by default scale up is date of creation
 	e.NamespaceLastScaled = e.NamespaceCreated
@@ -197,4 +200,13 @@ func (e *Environment) ReloadFromNamespace(ctx context.Context) error {
 	}
 
 	return e.loadFromNamespace(ctx, *namespace)
+}
+
+// isLikedBy reports whether owner has liked the environment, the like is stored as a label per user.
+func isLikedBy(labels map[string]string, owner string) bool {
+	if owner == "" {
+		return false
+	}
+
+	return labels[fmt.Sprintf("%s-%s", config.LabelUserLiked, owner)] == config.TrueValue
 }

@@ -16,7 +16,7 @@
 
     <div v-bind:class="(callIsLoading || $fetchState.pending) ? 'hide' : ''">
       <div v-bind:class="(currentStep == 1) ? '' : 'hide'">
-        <UserQuotas ref="userQuotas" v-if="this.user.user && this.config.Links" />
+        <UserQuotas ref="userQuotas" v-if="this.config.Links" />
       </div>
       <div v-bind:class="(currentStep == 2) ? '' : 'hide'">
         <div style="display:flex;align-items:center;margin-bottom: 10px;">
@@ -28,7 +28,7 @@
             style="width:300px" />
         </div>
 
-        <div v-if="user.user && config && projectProfile">
+        <div v-if="config && projectProfile">
           <GitlabProjects ref="createNewEnvironmentProjects" :projectProfile="projectProfile" />
         </div>
       </div>

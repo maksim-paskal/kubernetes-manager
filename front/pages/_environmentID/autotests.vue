@@ -7,7 +7,7 @@
       }}</b-alert>
     <b-spinner v-else-if="$fetchState.pending || callIsLoading" variant="primary" />
     <div v-else>
-      <div style="margin-bottom: 15px" v-if="this.user.user">
+      <div style="margin-bottom: 15px">
         <b-button style="margin-right: 10px" v-bind:key="index" v-for="(item, index) in this.data.Result.Actions"
           target="_blank" @click="startAutotest(item)">&nbsp;{{ item.Name
           }}</b-button>

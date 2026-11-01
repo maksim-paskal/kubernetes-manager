@@ -65,11 +65,7 @@
 <script>
 export default {
   async fetch() {
-    let url = `/api/environments`;
-    if (this.filter) {
-      url += `?sortby=lastscaled&filter=` + encodeURIComponent(this.filter);
-    }
-    const result = await fetch(url);
+    const result = await fetch("/api/environments?sortby=lastscaled&scope=created");
     if (result.ok) {
       const data = await result.json();
       this.data = data.Result;
@@ -94,14 +90,6 @@ export default {
       data: [],
       selectedEnvironments: []
     };
-  },
-  computed: {
-    userLabel() {
-      return this.const({ user: this.user.user }).LabelCreator;
-    },
-    filter() {
-      return `${this.userLabel}=true`;
-    }
   },
   methods: {
     getEnvironmentName(data) {

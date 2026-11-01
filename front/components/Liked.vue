@@ -1,5 +1,5 @@
 <template>
-  <b-button variant="link" size="sm" v-if="!this.environment.ID || this.loading || !this.user.user"><em
+  <b-button variant="link" size="sm" v-if="!this.environment.ID || this.loading"><em
       class="bi bi-hourglass" />
   </b-button>
   <b-alert variant="danger" v-else-if="this.errorText" show>{{ this.errorText }}</b-alert>
@@ -36,11 +36,8 @@ export default {
     }
   },
   computed: {
-    userLabel() {
-      return this.const({ user: this.user.user }).LabelLiked
-    },
     hasLabel() {
-      return this.namespaceLabel(this.userLabel) == "true" ? true : false
+      return this.environment.LikedByMe
     },
     likedUsers() {
       if (!this.environment.NamespaceLabels) return;
