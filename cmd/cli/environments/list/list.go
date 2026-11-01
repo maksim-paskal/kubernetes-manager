@@ -14,7 +14,6 @@ package list
 
 import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
-	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -37,12 +36,7 @@ var command = &cobra.Command{
 		params := map[string]string{}
 
 		if all, _ := cmd.Flags().GetBool("all"); !all {
-			user, err := client.GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
-			params["filter"] = config.LabelNamespaceCreator + "-" + user.Name + "=true"
+			params["scope"] = "created"
 		}
 
 		environments, err := client.GetEnvironments(cmd.Context(), params)
