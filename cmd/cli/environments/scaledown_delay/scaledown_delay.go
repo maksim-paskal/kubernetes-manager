@@ -25,10 +25,11 @@ func Command() *cobra.Command {
 }
 
 var command = &cobra.Command{
-	Use:   "scaledown-delay <id> <delay>",
-	Short: "Delay automatic pause of environment",
-	Long:  "Delay automatic pause of environment, delay is a duration like 3h or 90m.",
-	Args:  cobra.ExactArgs(2),
+	Use:     "scaledown-delay <id> <delay>",
+	Aliases: []string{"delay"},
+	Short:   "Delay automatic pause of environment",
+	Long:    "Delay automatic pause of environment, delay is a duration like 3h or 90m.",
+	Args:    cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		delay, err := time.ParseDuration(args[1])
 		if err != nil {
