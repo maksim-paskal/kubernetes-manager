@@ -18,10 +18,12 @@ import (
 	envDelete "github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/delete"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/hosts"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/info"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/issues"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/kubeconfig"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/list"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/mtls"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/pause"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/scaledown_delay"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/start"
 	"github.com/spf13/cobra"
 )
@@ -36,6 +38,8 @@ func Command() *cobra.Command {
 	command.AddCommand(mtls.Command())
 	command.AddCommand(kubeconfig.Command())
 	command.AddCommand(hosts.Command())
+	command.AddCommand(issues.Command())
+	command.AddCommand(scaledown_delay.Command())
 	command.AddCommand(autotests.Command())
 
 	return command

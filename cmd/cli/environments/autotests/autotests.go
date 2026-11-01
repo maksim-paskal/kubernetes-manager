@@ -15,6 +15,7 @@ package autotests
 import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests/create"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests/list"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests/stop"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests/tests"
 	"github.com/spf13/cobra"
 )
@@ -23,6 +24,7 @@ func Command() *cobra.Command {
 	command.AddCommand(list.Command())
 	command.AddCommand(tests.Command())
 	command.AddCommand(create.Command())
+	command.AddCommand(stop.Command())
 
 	return command
 }

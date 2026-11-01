@@ -450,6 +450,36 @@ func (c *Client) DisableMTLSEnvironment(ctx context.Context, id string) error {
 	return nil
 }
 
+// ScaleDownDelayEnvironment delays the automatic pause of the environment, the delay is a duration like 3h.
+func (c *Client) ScaleDownDelayEnvironment(ctx context.Context, id, delay string) error {
+	path, err := envPath(id, "make-scaledown-delay")
+	if err != nil {
+		return err
+	}
+
+	_, err = c.post(ctx, path, map[string]string{"Delay": delay})
+	if err != nil {
+		return errors.Wrap(err, "failed to delay scaledown of environment")
+	}
+
+	return nil
+}
+
+// GetIssues returns the Sentry issues of the environment.
+func (c *Client) GetIssues(ctx context.Context, id string) (*types.GetIssuesResponse, error) {
+	path, err := envPath(id, "issues")
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := c.get[types.GetIssuesResponse](ctx, path, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get issues")
+	}
+
+	return &result, nil
+}
+
 func (c *Client) GetConfig(ctx context.Context) (*types.GetFrontConfigResult, error) {
 	result, err := c.get[types.GetFrontConfigResult](ctx, "/api/front-config", nil)
 	if err != nil {
@@ -506,6 +536,21 @@ func (c *Client) getAutotestDetails(ctx context.Context, id string, size int) (*
 	}
 
 	return &result, nil
+}
+
+// StopAutotest stops the autotest run with the pipeline id in the environment.
+func (c *Client) StopAutotest(ctx context.Context, id, pipelineID string) error {
+	path, err := envPath(id, "make-stop-autotest")
+	if err != nil {
+		return err
+	}
+
+	_, err = c.post(ctx, path, map[string]string{"PipelineID": pipelineID})
+	if err != nil {
+		return errors.Wrap(err, "failed to stop autotest")
+	}
+
+	return nil
 }
 
 // StartAutotest starts a run of the autotest in the environment and returns the message of the server.
