@@ -16,8 +16,8 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/autotests"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/create"
 	envDelete "github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/delete"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/get"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/hosts"
-	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/info"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/issues"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/kubeconfig"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/list"
@@ -30,7 +30,7 @@ import (
 
 func Command() *cobra.Command {
 	command.AddCommand(list.Command())
-	command.AddCommand(info.Command())
+	command.AddCommand(get.Command())
 	command.AddCommand(create.Command())
 	command.AddCommand(envDelete.Command())
 	command.AddCommand(start.Command())
