@@ -26,6 +26,8 @@ import (
 )
 
 type Links struct {
+	// set per request in the info handler, not from config
+	Self          string `json:",omitempty"` //nolint:tagliatelle
 	SentryURL     string
 	SlackURL      string
 	LogsURL       string

@@ -151,6 +151,12 @@ func environmentOperation(ctx context.Context, r *http.Request, environmentID st
 
 		result.Result = services
 	case "info":
+		if environment.Links == nil {
+			environment.Links = &config.Links{}
+		}
+
+		environment.Links.Self = fmt.Sprintf("%s://%s/%s/info", *config.Get().IngressHostDefaultProtocol, r.Host, environmentID)
+
 		result.Result = environment
 	case "containers":
 		filter := r.Form.Get("filter")
