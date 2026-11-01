@@ -12,7 +12,10 @@ limitations under the License.
 */
 package client
 
-import "testing"
+import (
+	"net/http"
+	"testing"
+)
 
 func TestDebugBody(t *testing.T) {
 	t.Parallel()
@@ -35,5 +38,30 @@ func TestDebugBody(t *testing.T) {
 				t.Fatalf("got %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRedactHeaders(t *testing.T) {
+	t.Parallel()
+
+	headers := http.Header{
+		"Authorization": {"Basic secret"},
+		"Set-Cookie":    {"session=secret"},
+		"Cache-Control": {"max-age=10"},
+	}
+
+	got := redactHeaders(headers)
+
+	if got.Get("Authorization") != "REDACTED" || got.Get("Set-Cookie") != "REDACTED" || got.Get("Cache-Control") != "max-age=10" {
+		t.Fatalf("headers = %v", got)
+	}
+
+	// the original is not changed, it is still used by the request
+	if headers.Get("Authorization") != "Basic secret" {
+		t.Fatal("redactHeaders changed the original headers")
+	}
+
+	if got := redactHeaders(nil); len(got) != 0 {
+		t.Fatalf("nil headers = %v", got)
 	}
 }
