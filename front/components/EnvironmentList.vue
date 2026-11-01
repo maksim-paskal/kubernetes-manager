@@ -32,14 +32,20 @@
 </template>
 <script>
 export default {
-  props: ["filter"],
+  props: ["filter", "scope"],
   async fetch() {
 
-    let url = `/api/environments`;
+    const params = new URLSearchParams();
 
     if (this.filter) {
-      url += `?filter=` + encodeURIComponent(this.filter);
+      params.set("filter", this.filter);
     }
+
+    if (this.scope) {
+      params.set("scope", this.scope);
+    }
+
+    const url = `/api/environments?${params.toString()}`;
 
     const result = await fetch(url);
     if (result.ok) {

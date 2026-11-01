@@ -5,7 +5,7 @@
 
     <b-spinner v-if="callIsLoading" variant="primary" />
     <div v-else>
-      <GitlabProjects v-if="user.user && config" ref="externalServicesProjects" podInfo="true"
+      <GitlabProjects v-if="config" ref="externalServicesProjects" podInfo="true"
         :namespace="environment.Namespace" />
       <b-spinner v-else size="sm" variant="primary" />
 

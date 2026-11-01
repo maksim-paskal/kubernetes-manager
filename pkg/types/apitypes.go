@@ -226,6 +226,7 @@ type Environment struct {
 	NamespaceLastScaledDays int
 	NamespaceAnnotations    map[string]string
 	NamespaceLabels         map[string]string
+	LikedByMe               bool
 	NamespaceDescription    string
 	Links                   *Links
 	Hosts                   []string

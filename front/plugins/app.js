@@ -92,13 +92,11 @@ Vue.mixin({
       }
       return `Kubernetes Manager ${devider} ${name}`
     },
-    const(data) {
+    const() {
       return {
         LabelEnvironmentName: `${KubernetesManager}/environment-name`,
         LabelRequiredPods: `${KubernetesManager}/requiredRunningPodsCount`,
         LabelLikedPrefix: `${KubernetesManager}/user-liked-`,
-        LabelLiked: `${KubernetesManager}/user-liked-${data && data.user ? data.user : "unknown"}`,
-        LabelCreator: `${KubernetesManager}/user-creator-${data && data.user ? data.user : "unknown"}`,
         AnnotationAlert: `${KubernetesManager}/alert`,
       }
     },
