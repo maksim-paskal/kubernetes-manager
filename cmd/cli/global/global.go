@@ -58,7 +58,7 @@ func Client(cmd *cobra.Command) (*client.Client, error) {
 			resolveValue(viper.GetString("auth.login")),
 			resolveValue(viper.GetString("auth.password")),
 		).
-		WithDevUser(viper.GetString("dev_user"))
+		WithDevUser(resolveValue(viper.GetString("dev_user")))
 
 	if err := cli.Validate(); err != nil {
 		// a config file that was given but does not exist is the most likely cause
