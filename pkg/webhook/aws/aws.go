@@ -17,12 +17,14 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"                              //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
-	"github.com/aws/aws-sdk-go/aws/credentials"                  //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
-	"github.com/aws/aws-sdk-go/aws/session"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
-	"github.com/aws/aws-sdk-go/service/ec2"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
-	"github.com/aws/aws-sdk-go/service/rds"                      //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
-	"github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi" //nolint:staticcheck // aws-sdk-go v1 is deprecated; migration to v2 is pending
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/rds"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+	rgtypes "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
@@ -38,7 +40,7 @@ type providerConfig struct {
 
 type Provider struct {
 	config    providerConfig
-	sess      *session.Session
+	awsConfig aws.Config
 	condition config.WebHook
 	message   types.WebhookMessage
 }
@@ -63,21 +65,23 @@ func (provider *Provider) Init(condition config.WebHook, message types.WebhookMe
 		provider.config.Region = os.Getenv("AWS_REGION")
 	}
 
-	awsConfig := &aws.Config{
-		Region: new(provider.config.Region),
+	loadOptions := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(provider.config.Region),
 	}
 
 	if len(provider.config.AccessKeyID) > 0 && len(provider.config.AccessSecretKey) > 0 {
-		awsConfig.Credentials = credentials.NewStaticCredentials(
-			provider.config.AccessKeyID,
-			provider.config.AccessSecretKey,
-			"",
-		)
+		loadOptions = append(loadOptions, awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(
+				provider.config.AccessKeyID,
+				provider.config.AccessSecretKey,
+				"",
+			),
+		))
 	}
 
-	provider.sess, err = session.NewSession(awsConfig)
+	provider.awsConfig, err = awsconfig.LoadDefaultConfig(context.Background(), loadOptions...)
 	if err != nil {
-		return errors.Wrap(err, "error while creating session")
+		return errors.Wrap(err, "error while creating aws config")
 	}
 
 	return nil
@@ -151,20 +155,20 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.aws.processInstances")
 	defer span.End()
 
-	svc := ec2.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
+	svc := ec2.NewFromConfig(provider.awsConfig)
 
 	params := &ec2.DescribeInstancesInput{
-		Filters: []*ec2.Filter{
+		Filters: []ec2types.Filter{
 			{
 				Name: aws.String("tag:" + config.TagCluster),
-				Values: []*string{
-					new(provider.message.Cluster),
+				Values: []string{
+					provider.message.Cluster,
 				},
 			},
 			{
 				Name: aws.String("tag:" + config.TagNamespace),
-				Values: []*string{
-					new(provider.message.Namespace),
+				Values: []string{
+					provider.message.Namespace,
 				},
 			},
 		},
@@ -172,7 +176,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 
 	log.Debug(params)
 
-	resp, err := svc.DescribeInstancesWithContext(ctx, params)
+	resp, err := svc.DescribeInstances(ctx, params)
 	if err != nil {
 		return errors.Wrap(err, "error while getting instances")
 	}
@@ -181,13 +185,13 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 		return errors.New("reservations not found")
 	}
 
-	instances := make([]*string, 0)
+	instances := make([]string, 0)
 
 	for _, reservations := range resp.Reservations {
 		for _, instance := range reservations.Instances {
 			// exclude terminated instances
-			if *instance.State.Name != "shutting-down" && *instance.State.Name != "terminated" {
-				instances = append(instances, instance.InstanceId)
+			if instance.State.Name != ec2types.InstanceStateNameShuttingDown && instance.State.Name != ec2types.InstanceStateNameTerminated {
+				instances = append(instances, aws.ToString(instance.InstanceId))
 			}
 		}
 	}
@@ -198,7 +202,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 
 	switch provider.message.Event { //nolint:exhaustive
 	case types.EventStart:
-		result, err := svc.StartInstancesWithContext(ctx, &ec2.StartInstancesInput{
+		result, err := svc.StartInstances(ctx, &ec2.StartInstancesInput{
 			DryRun:      new(false),
 			InstanceIds: instances,
 		})
@@ -206,9 +210,9 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 			return errors.Wrap(err, "error while starting database")
 		}
 
-		log.Debug(result.String())
+		log.Debug(result)
 	case types.EventStop:
-		result, err := svc.StopInstancesWithContext(ctx, &ec2.StopInstancesInput{
+		result, err := svc.StopInstances(ctx, &ec2.StopInstancesInput{
 			DryRun:      new(false),
 			InstanceIds: instances,
 		})
@@ -216,7 +220,7 @@ func (provider *Provider) processInstances(ctx context.Context) error {
 			return errors.Wrap(err, "error while stoping database")
 		}
 
-		log.Debug(result.String())
+		log.Debug(result)
 	default:
 		log.Warn("unknown event " + provider.message.Event)
 	}
@@ -228,19 +232,19 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 	ctx, span := telemetry.Start(ctx, "webhook.aws.processDatabases")
 	defer span.End()
 
-	resources := resourcegroupstaggingapi.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
+	resources := resourcegroupstaggingapi.NewFromConfig(provider.awsConfig)
 
 	// list databases by tags, rds.DescribeDBInstances do not use tags for filtering
-	dbs, err := resources.GetResources(&resourcegroupstaggingapi.GetResourcesInput{
-		ResourceTypeFilters: aws.StringSlice([]string{"rds:db"}),
-		TagFilters: []*resourcegroupstaggingapi.TagFilter{
+	dbs, err := resources.GetResources(ctx, &resourcegroupstaggingapi.GetResourcesInput{
+		ResourceTypeFilters: []string{"rds:db"},
+		TagFilters: []rgtypes.TagFilter{
 			{
 				Key:    aws.String(config.TagCluster),
-				Values: aws.StringSlice([]string{provider.message.Cluster}),
+				Values: []string{provider.message.Cluster},
 			},
 			{
 				Key:    aws.String(config.TagNamespace),
-				Values: aws.StringSlice([]string{provider.message.Namespace}),
+				Values: []string{provider.message.Namespace},
 			},
 		},
 	})
@@ -248,10 +252,10 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 		return errors.Wrap(err, "error getting resources databases")
 	}
 
-	svc := rds.New(provider.sess, &aws.Config{Region: new(provider.config.Region)})
+	svc := rds.NewFromConfig(provider.awsConfig)
 
 	for _, resource := range dbs.ResourceTagMappingList {
-		database, err := svc.DescribeDBInstancesWithContext(ctx, &rds.DescribeDBInstancesInput{
+		database, err := svc.DescribeDBInstances(ctx, &rds.DescribeDBInstancesInput{
 			DBInstanceIdentifier: resource.ResourceARN,
 		})
 		if err != nil {
@@ -269,14 +273,14 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 				continue
 			}
 
-			result, err := svc.StartDBInstanceWithContext(ctx, &rds.StartDBInstanceInput{
+			result, err := svc.StartDBInstance(ctx, &rds.StartDBInstanceInput{
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {
 				return errors.Wrap(err, "error while starting instances")
 			}
 
-			log.Debug(result.String())
+			log.Debug(result)
 
 		case types.EventStop:
 			// stop instance only if it is available
@@ -286,14 +290,14 @@ func (provider *Provider) processDatabases(ctx context.Context) error {
 				continue
 			}
 
-			result, err := svc.StopDBInstanceWithContext(ctx, &rds.StopDBInstanceInput{
+			result, err := svc.StopDBInstance(ctx, &rds.StopDBInstanceInput{
 				DBInstanceIdentifier: database.DBInstances[0].DBInstanceIdentifier,
 			})
 			if err != nil {
 				return errors.Wrap(err, "error while stoping instances")
 			}
 
-			log.Debug(result.String())
+			log.Debug(result)
 		default:
 			log.Warn("unknown event " + provider.message.Event)
 		}
