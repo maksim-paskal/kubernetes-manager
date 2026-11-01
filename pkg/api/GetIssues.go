@@ -19,37 +19,17 @@ import (
 
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
 )
-
-type Issue struct {
-	ID            string
-	ShortID       string
-	Project       string
-	ProjectURL    string
-	Title         string
-	Culprit       string
-	Description   string
-	Level         string
-	Link          string
-	LastSeen      string
-	LastSeenShort string
-	IsNew         bool
-}
-
-type GetIssuesResponse struct {
-	IssuesExternalLink string
-	Items              []Issue
-	IssuesProjects     []string
-}
 
 const (
 	GetIssuesPeriod = "10h"
 	GetIssuesLimit  = "25"
 )
 
-func (e *Environment) GetIssues(ctx context.Context) (*GetIssuesResponse, error) {
+func (e *Environment) GetIssues(ctx context.Context) (*types.GetIssuesResponse, error) {
 	ctx, span := telemetry.Start(ctx, "api.GetIssues")
 	defer span.End()
 
@@ -64,14 +44,14 @@ func (e *Environment) GetIssues(ctx context.Context) (*GetIssuesResponse, error)
 		return nil, errors.Wrap(err, "error getting issues")
 	}
 
-	result := &GetIssuesResponse{
+	result := &types.GetIssuesResponse{
 		IssuesExternalLink: client.GetSentryClient().GetIssuesExternalLink(query, GetIssuesPeriod),
-		Items:              make([]Issue, len(issues)),
+		Items:              make([]types.Issue, len(issues)),
 		IssuesProjects:     make([]string, 0),
 	}
 
 	for i, issue := range issues {
-		result.Items[i] = Issue{
+		result.Items[i] = types.Issue{
 			ID:            issue.ID,
 			ShortID:       issue.ShortID,
 			Project:       issue.Project.Name,
