@@ -42,7 +42,7 @@ var command = &cobra.Command{
 
 		rows := make([][]string, len(servers))
 		for i, server := range servers {
-			rows[i] = []string{" " + server.ID + " ", server.Name, string(server.Status)}
+			rows[i] = []string{server.ID, server.Name, string(server.Status)}
 		}
 
 		global.OutputTable(cmd,

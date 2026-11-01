@@ -38,7 +38,7 @@ var command = &cobra.Command{
 
 		rows := make([][]string, len(profiles))
 		for i, profile := range profiles {
-			rows[i] = []string{" " + profile.Name + " "}
+			rows[i] = []string{profile.Name}
 		}
 
 		global.OutputTable(cmd, profiles, []string{"NAME"}, rows)
