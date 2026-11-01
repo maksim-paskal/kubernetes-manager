@@ -26,6 +26,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/pkg/client"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/telemetry"
+	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/user"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/utils"
 	"github.com/pkg/errors"
@@ -38,29 +39,9 @@ type (
 		Test string
 	}
 	Details struct {
-		CustomAction     *config.AutotestCustomAction
-		Actions          []*config.AutotestAction
-		Pipelines        []*Pipeline
-		LastPipelines    []*Pipeline
-		HasMorePipelines bool
-	}
-	PipelineStatus string
-	Pipeline       struct {
-		PipelineID           string
-		PipelineRef          string
-		PipelineURL          string
-		PipelineCreated      string
-		PipelineCreatedHuman string
-		PipelineOwner        string
-		PipelineRelease      string
-		PipelineDuration     string
-		CommitShortSHA       string
-		ResultURL            string
-		ProgressURL          string
-		Status               PipelineStatus
-		Test                 string
-		TestNamespace        string
-		PipelineEnv          map[string]string
+		types.AutotestDetails
+
+		CustomAction *config.AutotestCustomAction
 	}
 )
 
@@ -70,9 +51,9 @@ const (
 	envNameRelease   string = "RELEASE"
 	envNameNamespace string = "TEST_NAMESPACE"
 
-	pipelineStatusSuccess PipelineStatus = "success"
-	pipelineStatusRunning PipelineStatus = "running"
-	pipelineStatusPending PipelineStatus = "pending"
+	pipelineStatusSuccess string = "success"
+	pipelineStatusRunning string = "running"
+	pipelineStatusPending string = "pending"
 
 	pipelineEnvSuffixFile string = "@FILE"
 )
@@ -95,6 +76,21 @@ func (d *Details) Normalize(a *config.Autotest) error {
 	return nil
 }
 
+func toAutotestActions(actions []*config.AutotestAction) []*types.AutotestAction {
+	result := make([]*types.AutotestAction, len(actions))
+
+	for i, action := range actions {
+		result[i] = &types.AutotestAction{
+			Name:    action.Name,
+			Test:    action.Test,
+			Release: action.Release,
+			Ref:     action.Ref,
+		}
+	}
+
+	return result
+}
+
 func GetAutotestDetails(ctx context.Context, environment *api.Environment, size int) (*Details, error) {
 	ctx, span := telemetry.Start(ctx, "autotests.GetAutotestDetails")
 	defer span.End()
@@ -106,10 +102,10 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 	}
 
 	result := Details{
+		Pipelines:     []*types.AutotestPipeline{},
+		LastPipelines: []*types.AutotestPipeline{},
 		CustomAction:  autotestConfig.CustomAction.DeepCopy(),
-		Actions:       autotestConfig.Actions,
-		Pipelines:     []*Pipeline{},
-		LastPipelines: []*Pipeline{},
+		Actions:       toAutotestActions(autotestConfig.Actions),
 	}
 
 	// add defaults values if not set
@@ -149,10 +145,10 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 
 		pipelineDuration := pipeline.UpdatedAt.Sub(*pipeline.CreatedAt)
 
-		item := &Pipeline{
+		item := &types.AutotestPipeline{
 			PipelineID:           strconv.FormatInt(pipeline.ID, 10),
 			CommitShortSHA:       pipeline.SHA[:8],
-			Status:               PipelineStatus(pipeline.Status),
+			Status:               pipeline.Status,
 			PipelineURL:          pipeline.WebURL,
 			PipelineRef:          pipeline.Ref,
 			PipelineCreated:      utils.TimeToString(*pipeline.CreatedAt),
@@ -211,7 +207,7 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 		result.Pipelines = append(result.Pipelines, item)
 	}
 
-	result.LastPipelines = make([]*Pipeline, 0)
+	result.LastPipelines = make([]*types.AutotestPipeline, 0)
 
 	// search last pipelines for action types
 	for _, action := range autotestConfig.Actions {
@@ -233,11 +229,9 @@ func GetAutotestDetails(ctx context.Context, environment *api.Environment, size 
 }
 
 type StartAutotestInput struct {
+	types.StartAutotestInput
+
 	environment *api.Environment
-	Ref         string
-	Test        string
-	Force       bool
-	ExtraEnv    map[string]string
 }
 
 func (s *StartAutotestInput) Validate(ctx context.Context) error {

@@ -255,3 +255,46 @@ type EnvironmentBadge struct {
 	Value       string
 	Description string
 }
+
+// AutotestPipeline is an autotest run, the server fills it from the GitLab pipeline.
+type AutotestPipeline struct {
+	PipelineID           string
+	PipelineRef          string
+	PipelineURL          string
+	PipelineCreated      string
+	PipelineCreatedHuman string
+	PipelineOwner        string
+	PipelineRelease      string
+	PipelineDuration     string
+	CommitShortSHA       string
+	ResultURL            string
+	ProgressURL          string
+	Status               string
+	Test                 string
+	TestNamespace        string
+	PipelineEnv          map[string]string
+}
+
+// AutotestAction is a test that can be started in the environment.
+type AutotestAction struct {
+	Name    string
+	Test    string
+	Release string
+	Ref     string
+}
+
+// AutotestDetails is the autotests response, the server adds its config types on top of it.
+type AutotestDetails struct {
+	Pipelines        []*AutotestPipeline
+	LastPipelines    []*AutotestPipeline
+	Actions          []*AutotestAction
+	HasMorePipelines bool
+}
+
+// StartAutotestInput is the make-start-autotest request, an empty Ref runs the test on the ref configured for it.
+type StartAutotestInput struct {
+	Ref      string
+	Test     string
+	Force    bool
+	ExtraEnv map[string]string
+}
