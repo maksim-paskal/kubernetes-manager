@@ -126,14 +126,31 @@ func OutputTable(cmd *cobra.Command, data any, headers []string, rows [][]string
 		return
 	}
 
+	cells := make([][]string, len(rows))
+	for i := range rows {
+		cells[i] = make([]string, len(rows[i]))
+		for j := range rows[i] {
+			cells[i][j] = tableCell(rows[i][j])
+		}
+	}
+
 	fmt.Fprintln(cmd.OutOrStdout(), table.New().
 		Border(lipgloss.NormalBorder()).
 		StyleFunc(func(_, _ int) lipgloss.Style {
 			return lipgloss.NewStyle().Padding(0, 1)
 		}).
 		Headers(headers...).
-		Rows(rows...).
+		Rows(cells...).
 		Render())
+}
+
+// variationSelectorReplacer drops the emoji presentation selector and the keycap mark. Terminals disagree
+// with the width calculation for such sequences (e.g. "1️⃣", "🏘️"), which shifts the table border.
+var variationSelectorReplacer = strings.NewReplacer("\uFE0F", "", "\u20E3", "")
+
+// tableCell makes a cell safe to measure, so the table border stays aligned.
+func tableCell(value string) string {
+	return variationSelectorReplacer.Replace(value)
 }
 
 func Output(cmd *cobra.Command, message any) {
