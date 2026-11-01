@@ -17,6 +17,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -77,7 +78,10 @@ func TestRequestAndWait(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var requested, waited []string
+			var (
+				mu                sync.Mutex
+				requested, waited []string
+			)
 
 			err := global.RequestAndWait(newWaitCommand(t, tt.args...), ids,
 				func(id string) error {
@@ -90,7 +94,10 @@ func TestRequestAndWait(t *testing.T) {
 					return nil
 				},
 				func(_ context.Context, id string) error {
+					mu.Lock()
+
 					waited = append(waited, id)
+					mu.Unlock()
 
 					if id == tt.failWait {
 						return errors.New("wait failed")
@@ -108,7 +115,11 @@ func TestRequestAndWait(t *testing.T) {
 				t.Errorf("requested = %v, want %v", requested, tt.wantRequested)
 			}
 
-			if !slices.Equal(waited, tt.wantWaited) {
+			wantWaited := slices.Sorted(slices.Values(tt.wantWaited))
+
+			slices.Sort(waited)
+
+			if !slices.Equal(waited, wantWaited) {
 				t.Errorf("waited = %v, want %v", waited, tt.wantWaited)
 			}
 		})
@@ -136,7 +147,10 @@ func TestRequestAndWaitInvalidID(t *testing.T) {
 func TestRequestAndWaitSharesTimeout(t *testing.T) {
 	t.Parallel()
 
-	var deadlines []time.Time
+	var (
+		mu        sync.Mutex
+		deadlines []time.Time
+	)
 
 	err := global.RequestAndWait(newWaitCommand(t, "--wait", "--timeout", "1h"), []string{"c:one", "c:two"},
 		func(string) error { return nil },
@@ -146,7 +160,10 @@ func TestRequestAndWaitSharesTimeout(t *testing.T) {
 				t.Error("wait context has no deadline")
 			}
 
+			mu.Lock()
+
 			deadlines = append(deadlines, deadline)
+			mu.Unlock()
 
 			return nil
 		},

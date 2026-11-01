@@ -25,6 +25,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -34,13 +36,26 @@ import (
 )
 
 func NewClient() *Client {
-	return &Client{
+	c := &Client{
 		// write spinner to stderr, stdout must stay clean for --json output
 		s: spinner.New(spinner.CharSets[7], 100*time.Millisecond, spinner.WithWriterFile(os.Stderr)),
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
 		},
 	}
+
+	// PreUpdate runs on every frame in the goroutine of the spinner, the dots advance every 5 frames
+	// (about half a second) through ".", ".." and "...". It must not take the spinner lock, Stop is called under it.
+	frame := 0
+
+	c.s.PreUpdate = func(s *spinner.Spinner) {
+		text, _ := c.spinnerText.Load().(string)
+
+		s.Suffix = text + strings.Repeat(".", frame/5%3+1)
+		frame++
+	}
+
+	return c
 }
 
 type BasicAuth struct {
@@ -50,6 +65,11 @@ type BasicAuth struct {
 
 type Client struct {
 	s *spinner.Spinner
+
+	// spinnerUsers is the number of requests that show the spinner, spinnerText is the text of the last one
+	spinnerMu    sync.Mutex
+	spinnerUsers int
+	spinnerText  atomic.Value
 
 	HTTPClient *http.Client
 
@@ -221,23 +241,64 @@ func debugBody(message string, body []byte) string {
 // spinnerVerbs are shown at random while a request is in flight.
 var spinnerVerbs = []string{"Loading", "Thinking", "Pondering", "Cogitating", "Mulling", "Noodling"}
 
+// showSpinner shows the spinner when the request is still running after a second, the returned func stops it.
+// The requests can run in parallel, the spinner is shown while any of them is in flight.
+func (c *Client) showSpinner(text string) func() {
+	// the lock keeps a timer that fires while the request finishes from starting the spinner after it was stopped
+	var (
+		mu       sync.Mutex
+		stopped  bool
+		starting bool
+	)
+
+	// Wait for a short moment before starting the spinner to avoid flickering for fast requests
+	timer := time.AfterFunc(time.Second, func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if stopped {
+			return
+		}
+
+		starting = true
+
+		c.spinnerMu.Lock()
+		defer c.spinnerMu.Unlock()
+
+		c.spinnerText.Store(text)
+
+		if c.spinnerUsers == 0 {
+			c.s.Start()
+		}
+
+		c.spinnerUsers++
+	})
+
+	return func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		stopped = true
+
+		timer.Stop()
+
+		if !starting {
+			return
+		}
+
+		c.spinnerMu.Lock()
+		defer c.spinnerMu.Unlock()
+
+		if c.spinnerUsers--; c.spinnerUsers == 0 {
+			c.s.Stop()
+		}
+	}
+}
+
 func (c *Client) call(req *http.Request) (*http.Response, error) {
 	text := " " + spinnerVerbs[mathRand.Intn(len(spinnerVerbs))] + " " + strings.TrimPrefix(req.URL.Path, "/api/") //nolint:gosec
 
-	// PreUpdate runs on every frame, the dots advance every 5 frames (about half a second) through ".", ".." and "..."
-	frame := 0
-	c.s.PreUpdate = func(s *spinner.Spinner) {
-		s.Suffix = text + strings.Repeat(".", frame/5%3+1)
-		frame++
-	}
-
-	// Wait for a short moment before starting the spinner to avoid flickering for fast requests
-	spinnerTimer := time.AfterFunc(time.Second, c.s.Start)
-
-	defer func() {
-		spinnerTimer.Stop()
-		c.s.Stop()
-	}()
+	defer c.showSpinner(text)()
 
 	req.SetBasicAuth(c.Auth.Login, c.Auth.Password)
 
