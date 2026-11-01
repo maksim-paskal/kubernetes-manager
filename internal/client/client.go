@@ -188,10 +188,16 @@ func (c *Client) get[T any](ctx context.Context, name string, params map[string]
 	return envelope.Result, nil
 }
 
+// secretHeaders carry credentials, their values are never logged.
+var secretHeaders = []string{"Authorization", "Cookie", "Set-Cookie"}
+
 func redactHeaders(h http.Header) http.Header {
 	out := h.Clone()
-	if out.Get("Authorization") != "" {
-		out.Set("Authorization", "REDACTED")
+
+	for _, name := range secretHeaders {
+		if out.Get(name) != "" {
+			out.Set(name, "REDACTED")
+		}
 	}
 
 	return out
@@ -242,10 +248,13 @@ func (c *Client) call(req *http.Request) (*http.Response, error) {
 
 	status := 0
 
+	var responseHeaders http.Header
+
 	startTime := time.Now()
 
 	defer func() {
-		slog.Debug("Making request", "url", req.URL.String(), "method", req.Method, "status", status, "headers", redactHeaders(req.Header), "duration", time.Since(startTime))
+		slog.Debug("Making request", "url", req.URL.String(), "method", req.Method, "status", status,
+			"headers", redactHeaders(req.Header), "responseHeaders", redactHeaders(responseHeaders), "duration", time.Since(startTime))
 	}()
 
 	resp, err := c.HTTPClient.Do(req)
@@ -254,6 +263,7 @@ func (c *Client) call(req *http.Request) (*http.Response, error) {
 	}
 
 	status = resp.StatusCode
+	responseHeaders = resp.Header
 
 	// kubeconfig contains a service account token, its body is never logged
 	if slog.Default().Enabled(req.Context(), slog.LevelDebug) && !strings.HasSuffix(req.URL.Path, "/kubeconfig") {
