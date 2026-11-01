@@ -60,20 +60,26 @@ func (input *StartNewEnvironmentInput) SetDefaults(ctx context.Context) error {
 		return errors.Wrap(err, "error parsing user services")
 	}
 
+	selectedProjectIDs := make([]string, 0, len(userServices))
+	for _, service := range userServices {
+		selectedProjectIDs = append(selectedProjectIDs, service.GeProjectID())
+	}
+
 	// fill in required services that the user did not select
 	missing := make([]string, 0)
 
 	for _, required := range profile.GetRequired() {
-		if !slices.ContainsFunc(userServices, func(s *EnvironmentServices) bool { return s.GeProjectID() == required }) {
+		if !slices.Contains(selectedProjectIDs, required) {
 			missing = append(missing, required)
 		}
 	}
 
-	if len(missing) == 0 {
+	// services with a branch set in the profile are prefilled too, the same way the create page selects them
+	if len(missing) == 0 && len(profile.DefaultBranch) == 0 {
 		return nil
 	}
 
-	// GitLab is queried only when a required service is missing
+	// GitLab is queried only when there is something to fill in
 	projects, err := GetGitlabProjects(ctx, &GetGitlabProjectsInput{
 		Profile: input.Profile,
 	})
@@ -118,6 +124,17 @@ func (input *StartNewEnvironmentInput) SetDefaults(ctx context.Context) error {
 		}
 
 		serviceItems = append(serviceItems, required+":"+branch)
+	}
+
+	// prefill not required services that have a branch set in the profile, skip the ones the user selected
+	for _, project := range projects {
+		projectID := strconv.FormatInt(project.ProjectID, 10)
+
+		if project.Required || project.SelectedBranch == "" || slices.Contains(selectedProjectIDs, projectID) {
+			continue
+		}
+
+		serviceItems = append(serviceItems, projectID+":"+project.SelectedBranch)
 	}
 
 	input.Services = strings.Join(serviceItems, ";")
