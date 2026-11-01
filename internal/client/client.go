@@ -58,6 +58,9 @@ type Client struct {
 
 	// DevUser is sent as the X-Auth-Request-User header, set only for local development
 	DevUser string
+
+	// PollInterval is how often the Wait methods check the environment, zero means the default
+	PollInterval time.Duration
 }
 
 func (c *Client) WithBaseURL(baseURL string) *Client {

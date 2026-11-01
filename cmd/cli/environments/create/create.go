@@ -13,7 +13,9 @@ limitations under the License.
 package create
 
 import (
+	"context"
 	"strings"
+	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
@@ -51,19 +53,24 @@ func (s *serviceRefs) Type() string {
 	return "projectID:ref"
 }
 
+// defaultCreateWaitTimeout is longer than the default of start and pause, the GitLab builds run before the pods start.
+const defaultCreateWaitTimeout = 30 * time.Minute
+
 func Command() *cobra.Command {
 	command.Flags().Var(&services, "service", "Service to include in the environment, e.g. 12:main, can be repeated, see 'services list'")
 	command.Flags().String("name", "", "Name of the environment")
 	command.Flags().String("cluster", "", "Cluster to use for the environment")
+	global.AddWaitFlags(command, defaultCreateWaitTimeout)
 
 	return command
 }
 
 var command = &cobra.Command{
-	Use:     "create <profile>",
-	Short:   "Create environment",
-	Long:    "Create environment from the profile, prints the id of the new environment.",
-	Example: "  kubernetes-manager environments create my-profile --name feature-x --service 12:main --service 15:feature-x",
+	Use:   "create <profile>",
+	Short: "Create environment",
+	Long: "Create environment from the profile, prints the id of the new environment. " +
+		"The pods start after the GitLab pipelines deploy the services, use --wait to wait until they are ready.",
+	Example: "  kubernetes-manager environments create my-profile --name feature-x --service 12:main --service 15:feature-x --wait",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client, err := global.Client(cmd)
@@ -81,8 +88,17 @@ var command = &cobra.Command{
 			return err
 		}
 
+		// the id is printed before the wait, so it is still known when the wait times out
 		global.Output(cmd, id)
 
-		return nil
+		return global.WaitIDs(cmd, []string{id}, func(ctx context.Context, id string) error {
+			if err := client.WaitEnvironmentStarted(ctx, id); err != nil {
+				return err
+			}
+
+			cmd.PrintErrln("Environment " + id + " is ready")
+
+			return nil
+		})
 	},
 }

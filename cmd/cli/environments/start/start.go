@@ -13,18 +13,22 @@ limitations under the License.
 package start
 
 import (
+	"context"
+
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
-	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
 	"github.com/spf13/cobra"
 )
 
 func Command() *cobra.Command {
+	global.AddWaitFlags(command, global.DefaultWaitTimeout)
+
 	return command
 }
 
 var command = &cobra.Command{
 	Use:   "start <id>",
 	Short: "Start environment",
+	Long:  "Start environments, the server starts the pods in background, use --wait to wait until all pods are ready.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client, err := global.Client(cmd)
@@ -32,14 +36,25 @@ var command = &cobra.Command{
 			return err
 		}
 
-		return global.ForEachID(cmd, args, apiclient.ValidateEnvironmentID, func(id string) error {
-			if err := client.StartEnvironment(cmd.Context(), id); err != nil {
-				return err
-			}
+		return global.RequestAndWait(cmd, args,
+			func(id string) error {
+				if err := client.StartEnvironment(cmd.Context(), id); err != nil {
+					return err
+				}
 
-			global.Output(cmd, "Environment "+id+" start requested")
+				global.Output(cmd, "Environment "+id+" start requested")
 
-			return nil
-		})
+				return nil
+			},
+			func(ctx context.Context, id string) error {
+				if err := client.WaitEnvironmentStarted(ctx, id); err != nil {
+					return err
+				}
+
+				global.Output(cmd, "Environment "+id+" started")
+
+				return nil
+			},
+		)
 	},
 }
