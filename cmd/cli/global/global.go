@@ -52,6 +52,9 @@ func Client(cmd *cobra.Command) (*client.Client, error) {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
+	// initConfig runs before the debug level is set, so the used config is logged here
+	slog.Debug("Using config file", "file", viper.ConfigFileUsed())
+
 	cli := client.NewClient().
 		WithBaseURL(resolveValue(viper.GetString("auth.address"))).
 		WithBasicAuth(
