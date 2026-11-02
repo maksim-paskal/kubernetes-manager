@@ -59,21 +59,80 @@ func (e *Environment) GetGitlabPipelinesStatus(ctx context.Context, projectID st
 			return nil, errors.Wrap(err, "failed to get project pipeline variables")
 		}
 
-		for _, pipelineVar := range pipelineVars {
-			if pipelineVar.Key == gitlabNamespaceKey && pipelineVar.Value == e.Namespace {
-				switch projectPipeline.Status {
-				case "running":
-					result.LastRunningPipeline = projectPipeline.WebURL
-				case "success":
-					result.LastSuccessPipeline = projectPipeline.WebURL
-				case "failed":
-					result.LastErrorPipeline = projectPipeline.WebURL
-				}
-				// use only first pipeline
-				return &result, nil
+		if !isNamespacePipeline(pipelineVars, e.Namespace) {
+			continue
+		}
+
+		operation := pipelineOperation(pipelineVars)
+
+		// a snapshot does not deploy the services, the deploy before it is still the state
+		if operation == GitlabPipelineOperationSnapshot {
+			continue
+		}
+
+		// a deleted service is not in the namespace, its earlier deploys are not the state anymore
+		if operation == GitlabPipelineOperationDelete && projectPipeline.Status == "success" {
+			return &result, nil
+		}
+
+		setPipelineResult(&result, projectPipeline.Status, projectPipeline.WebURL)
+
+		// use only first pipeline
+		return &result, nil
+	}
+
+	return &result, nil
+}
+
+// isPipelineInProgress is true for the pipeline that is not finished yet, a queued one waits for a runner
+// and is deploying as well as a running one.
+func isPipelineInProgress(status string) bool {
+	switch status {
+	case "created", "waiting_for_resource", "preparing", "pending", "running", "scheduled":
+		return true
+	default:
+		return false
+	}
+}
+
+// setPipelineResult sets the link of the pipeline to the field of its status, a canceled pipeline is an error:
+// the deploy it was meant to do did not happen.
+func setPipelineResult(result *GetGitlabPipelinesStatusResults, status, webURL string) {
+	switch {
+	case isPipelineInProgress(status):
+		result.LastRunningPipeline = webURL
+	case status == "success":
+		result.LastSuccessPipeline = webURL
+	case status == "failed", status == "canceled":
+		result.LastErrorPipeline = webURL
+	}
+}
+
+// isNamespacePipeline is true for the pipeline that deploys the namespace, the namespace is a variable of it.
+func isNamespacePipeline(vars []*gitlab.PipelineVariable, namespace string) bool {
+	for _, v := range vars {
+		if v.Key == gitlabNamespaceKey && v.Value == namespace {
+			return true
+		}
+	}
+
+	return false
+}
+
+// pipelineOperation returns the operation the pipeline was created with, it is the variable set to "true".
+func pipelineOperation(vars []*gitlab.PipelineVariable) GitlabPipelineOperation {
+	for _, op := range []GitlabPipelineOperation{
+		GitlabPipelineOperationBuild,
+		GitlabPipelineOperationDelete,
+		GitlabPipelineOperationDeploy,
+		GitlabPipelineOperationSnapshot,
+	} {
+		for _, v := range vars {
+			if v.Key == string(op) && v.Value == "true" {
+				return op
 			}
 		}
 	}
 
-	return &result, nil
+	return ""
 }
