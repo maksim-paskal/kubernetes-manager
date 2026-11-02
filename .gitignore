@@ -11,3 +11,4 @@ config-test.yaml
 /.cr-*
 /integration-tests/chart/charts
 .npmrc
+/.kubernetes-manager.yaml

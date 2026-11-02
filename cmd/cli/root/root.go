@@ -98,10 +98,17 @@ func showAliases(cmd *cobra.Command) {
 }
 
 func initConfig() {
-	if cfgFile != "" {
+	// a config in the current folder is used only when it exists, a new config (login) is always created in the home directory
+	localConfig := "." + global.CLIName + ".yaml"
+	localInfo, localErr := os.Stat(localConfig)
+
+	switch {
+	case cfgFile != "":
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
-	} else {
+	case localErr == nil && !localInfo.IsDir():
+		viper.SetConfigFile(localConfig)
+	default:
 		// Find home directory.
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
