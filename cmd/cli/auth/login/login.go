@@ -47,23 +47,8 @@ var command = &cobra.Command{
 			return errors.Wrap(err, "failed to authenticate with the kubernetes manager")
 		}
 
-		// config contains the password in plain text, create it readable only by the owner
-		viper.SetConfigPermissions(0o600)
-
 		// an explicit --config file (or the existing default config) is overwritten,
-		// SafeWriteConfig only creates the default config and ignores the --config path
-		var writeErr error
-		if viper.ConfigFileUsed() != "" {
-			writeErr = viper.WriteConfig()
-		} else {
-			writeErr = viper.SafeWriteConfig()
-		}
-
-		if writeErr != nil {
-			return errors.Wrap(writeErr, "failed to write config")
-		}
-
-		// config contains the password in plain text, restrict access to the owner
+		// a new config is created in the home directory
 		configFile := viper.ConfigFileUsed()
 		if configFile == "" {
 			home, err := os.UserHomeDir()
@@ -74,12 +59,45 @@ var command = &cobra.Command{
 			configFile = filepath.Join(home, "."+global.CLIName+".yaml")
 		}
 
-		if err := os.Chmod(configFile, 0o600); err != nil {
-			return errors.Wrap(err, "failed to restrict config permissions")
+		if err := saveSettings(cmd, configFile); err != nil {
+			return err
 		}
 
 		global.Output(cmd, "OK")
 
 		return nil
 	},
+}
+
+// saveSettings writes the config file from its own settings, not from viper: viper also holds the environment
+// variables, so the password from KUBERNETES_MANAGER_AUTH_PASSWORD would be written in plain text.
+// Only the flags given to login are set, the other keys stay as they are in the file.
+func saveSettings(cmd *cobra.Command, configFile string) error {
+	file := viper.New()
+	file.SetConfigFile(configFile)
+
+	if err := file.ReadInConfig(); err != nil && !os.IsNotExist(err) {
+		return errors.Wrap(err, "failed to read config")
+	}
+
+	for _, name := range []string{"address", "login", "password"} {
+		if cmd.Flags().Changed(name) {
+			value, _ := cmd.Flags().GetString(name)
+			file.Set("auth."+name, value)
+		}
+	}
+
+	// config contains the password in plain text, create it readable only by the owner
+	file.SetConfigPermissions(0o600)
+
+	if err := file.WriteConfigAs(configFile); err != nil {
+		return errors.Wrap(err, "failed to write config")
+	}
+
+	// the write does not change the permissions of an existing file, restrict access to the owner
+	if err := os.Chmod(configFile, 0o600); err != nil {
+		return errors.Wrap(err, "failed to restrict config permissions")
+	}
+
+	return nil
 }

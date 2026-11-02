@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/maksim-paskal/kubernetes-manager/pkg/config"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -43,8 +44,9 @@ const (
 // maxProjectInfoRequests limits the parallel requests, every one of them makes the server ask GitLab.
 const maxProjectInfoRequests = 8
 
-// projectAnnotationPrefix is the namespace annotation of the deployed branch of a project, the deploy pipeline sets it.
-const projectAnnotationPrefix = "kubernetes-manager/project-"
+// projectAnnotationPrefix is the namespace annotation of the deployed branch of a project, the server sets it
+// with the same constant, see config.LabelInstalledProject.
+const projectAnnotationPrefix = config.LabelInstalledProject + "-"
 
 // ServiceStatus is the state of one external service of the environment.
 type ServiceStatus struct {

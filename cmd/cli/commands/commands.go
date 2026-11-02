@@ -64,6 +64,7 @@ type flagInfo struct {
 	Type      string `json:"type"`
 	Default   string `json:"default,omitempty"`
 	Usage     string `json:"usage"`
+	Required  bool   `json:"required,omitempty"`
 }
 
 // collectCommands returns the runnable commands below parent, groups only lead to their children.
@@ -102,12 +103,16 @@ func collectFlags(set *pflag.FlagSet) []flagInfo {
 			return
 		}
 
+		// MarkFlagRequired sets this annotation, the command fails without the flag
+		_, required := flag.Annotations[cobra.BashCompOneRequiredFlag]
+
 		items = append(items, flagInfo{
 			Name:      flag.Name,
 			Shorthand: flag.Shorthand,
 			Type:      flag.Value.Type(),
 			Default:   defaultValue(flag.DefValue),
 			Usage:     flag.Usage,
+			Required:  required,
 		})
 	})
 
