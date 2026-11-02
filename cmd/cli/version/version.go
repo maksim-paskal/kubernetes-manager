@@ -31,8 +31,11 @@ var command = &cobra.Command{
 	},
 }
 
-// buildVersion returns the module version and the git commit recorded by the Go toolchain,
-// the CLI is not built with the release ldflags used by the server.
+// gitCommit is the short git commit hash, set at build time with -ldflags.
+var gitCommit string
+
+// buildVersion returns the module version and the git commit,
+// the short hash set at build time or the revision recorded by the Go toolchain.
 func buildVersion() string {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -42,6 +45,10 @@ func buildVersion() string {
 	version := info.Main.Version
 	if version == "" {
 		version = "(devel)"
+	}
+
+	if gitCommit != "" {
+		return version + " (" + gitCommit + ")"
 	}
 
 	for _, setting := range info.Settings {

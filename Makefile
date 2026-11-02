@@ -15,6 +15,10 @@ build:
 	mv ./dist/kubernetes-manager_linux_amd64_v1/kubernetes-manager-amd64 .
 	mv ./dist/kubernetes-manager_linux_arm64_v8.0/kubernetes-manager-arm64 .
 	docker buildx build --platform=$(platform) --pull --push . -t $(image)
+cli-ldflags=-X github.com/maksim-paskal/kubernetes-manager/cmd/cli/version.gitCommit=$(version)
+build-cli:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$(cli-ldflags)" -o /tmp/kubernetes-manager-cli-amd64 ./cmd/cli
+	go build -trimpath -ldflags "$(cli-ldflags)" -o /tmp/kubernetes-manager-cli ./cmd/cli
 promote-to-beta:
 	make build platform=linux/amd64,linux/arm64 tag=$(shell git rev-parse --short HEAD)
 security-scan:
