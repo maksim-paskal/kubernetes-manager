@@ -28,7 +28,7 @@ var services global.ServiceRefs
 const defaultCreateWaitTimeout = 30 * time.Minute
 
 func Command() *cobra.Command {
-	command.Flags().Var(&services, "service", "Service to include in the environment, e.g. 12:main, can be repeated, see 'services list'; the profile may fill in the services it requires")
+	command.Flags().Var(&services, "service", "Service to include, e.g. 12:main, can be repeated, see 'services list', the profile may fill in the services it requires")
 	command.Flags().String("name", "", "Name of the environment, optional, shown as an annotation, does not change the namespace name")
 	command.Flags().String("cluster", "", "Cluster to use for the environment, optional, defaults to the first cluster configured on the server, see 'clusters'")
 	global.AddWaitFlags(command, defaultCreateWaitTimeout)
