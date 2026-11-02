@@ -93,3 +93,50 @@ func TestScaleDownDelaySendsDuration(t *testing.T) {
 		t.Fatalf("delay sent %q, want %q", got, want)
 	}
 }
+
+func TestCreateEnvironmentWithoutClusterAndName(t *testing.T) {
+	t.Parallel()
+
+	var body map[string]string
+
+	var decodeErr error
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		decodeErr = json.Unmarshal(raw, &body)
+
+		_, _ = w.Write([]byte(`{"Result":"cluster:namespace"}`))
+	}))
+	defer server.Close()
+
+	cli := NewClient().WithBaseURL(server.URL).WithBasicAuth("login", "password")
+
+	// cluster and name are optional, the server defaults the cluster and skips the name when they are empty
+	id, err := cli.CreateEnvironment(context.Background(), CreateEnvironmentInput{
+		Profile:  "my-profile",
+		Services: []ServiceRef{{ProjectID: 12, Ref: "main"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if decodeErr != nil {
+		t.Fatal(decodeErr)
+	}
+
+	if got, want := id, "cluster:namespace"; got != want {
+		t.Fatalf("id %q, want %q", got, want)
+	}
+
+	// the keys must be sent, otherwise the empty values below are read from a nil map
+	for _, key := range []string{"Cluster", "Name"} {
+		got, ok := body[key]
+		if !ok {
+			t.Fatalf("%s not sent", key)
+		}
+
+		if got != "" {
+			t.Fatalf("%s sent %q, want empty", key, got)
+		}
+	}
+}
