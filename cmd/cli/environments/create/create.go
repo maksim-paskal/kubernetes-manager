@@ -14,7 +14,6 @@ package create
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
@@ -23,35 +22,7 @@ import (
 )
 
 // services collects the repeated --service flag, it is package level because the command is.
-var services serviceRefs
-
-// serviceRefs is the value of the --service flag, each use adds one <projectID>:<ref>.
-type serviceRefs []apiclient.ServiceRef
-
-func (s *serviceRefs) String() string {
-	items := make([]string, len(*s))
-
-	for i, service := range *s {
-		items[i] = service.String()
-	}
-
-	return strings.Join(items, ",")
-}
-
-func (s *serviceRefs) Set(value string) error {
-	service, err := apiclient.ParseServiceRef(value)
-	if err != nil {
-		return err
-	}
-
-	*s = append(*s, service)
-
-	return nil
-}
-
-func (s *serviceRefs) Type() string {
-	return "projectID:ref"
-}
+var services global.ServiceRefs
 
 // defaultCreateWaitTimeout is longer than the default of start and pause, the GitLab builds run before the pods start.
 const defaultCreateWaitTimeout = 30 * time.Minute
