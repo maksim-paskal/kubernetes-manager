@@ -37,6 +37,8 @@ func TestParseServiceRef(t *testing.T) {
 		{value: "app:main", wantErr: true},
 		{value: "12:feature:x", wantErr: true},
 		{value: "12:a;b", wantErr: true},
+		{value: "0:main", wantErr: true},
+		{value: "-5:main", wantErr: true},
 	}
 
 	for _, tt := range tests {

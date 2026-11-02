@@ -442,8 +442,8 @@ func ParseServiceRef(value string) (ServiceRef, error) {
 	}
 
 	id, err := strconv.Atoi(projectID)
-	if err != nil {
-		return ServiceRef{}, errors.Errorf("invalid service %q, project id must be a number", value)
+	if err != nil || id <= 0 {
+		return ServiceRef{}, errors.Errorf("invalid service %q, project id must be a positive number", value)
 	}
 
 	return ServiceRef{ProjectID: id, Ref: ref}, nil
