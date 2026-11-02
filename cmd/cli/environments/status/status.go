@@ -29,7 +29,8 @@ var command = &cobra.Command{
 	Use:   "status <id>",
 	Short: "Show state of environment pods",
 	Long: "Show the state of the environments: paused (no pods), starting, running (all pods are ready), " +
-		"failed or stopping (pods are terminating). The pod state can be about 10 seconds old, the server caches it.",
+		"failed or stopping (pods are terminating). The pod state can be about 10 seconds old, the server caches it. " +
+		"It does not tell whether the services are deployed, see environments services.",
 	Example: "  kubernetes-manager environments status cluster:namespace",
 	Args:    cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
