@@ -14,6 +14,7 @@ package get
 
 import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
+	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
 	"github.com/spf13/cobra"
 )
 
@@ -31,15 +32,28 @@ var command = &cobra.Command{
 			return err
 		}
 
-		for _, id := range args {
+		environments := make([]*apiclient.Environment, 0, len(args))
+
+		// a failed id does not stop the others, the environments are printed together as one JSON value
+		err = global.ForEachID(cmd, args, apiclient.ValidateEnvironmentID, func(id string) error {
 			environment, err := client.GetEnvironment(cmd.Context(), id)
 			if err != nil {
 				return err
 			}
 
-			global.Output(cmd, environment)
+			environments = append(environments, environment)
+
+			return nil
+		})
+
+		// one id prints the environment, several ids print a list
+		switch {
+		case len(args) == 1 && len(environments) == 1:
+			global.Output(cmd, environments[0])
+		case len(args) > 1 && len(environments) > 0:
+			global.Output(cmd, environments)
 		}
 
-		return nil
+		return err
 	},
 }
