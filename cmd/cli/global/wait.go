@@ -22,17 +22,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DefaultWaitTimeout is the --timeout of the operations that scale environments.
+// DefaultWaitTimeout is the --wait.timeout of the operations that scale environments.
 const DefaultWaitTimeout = 10 * time.Minute
 
-// AddWaitFlags adds --wait and --timeout to a command that starts an operation the server finishes in background.
+// AddWaitFlags adds --wait and --wait.timeout to a command that starts an operation the server finishes in background.
 func AddWaitFlags(cmd *cobra.Command, defaultTimeout time.Duration) {
 	cmd.Flags().Bool("wait", false, "wait until the operation is finished")
-	cmd.Flags().Duration("timeout", defaultTimeout, "how long to wait for all environments with --wait")
+	cmd.Flags().Duration("wait.timeout", defaultTimeout, "how long to wait for all environments with --wait")
 }
 
 // RequestAndWait sends the request for every environment id. With --wait it then waits for every id that was
-// requested, all of them share the --timeout, so the operations run in parallel on the server.
+// requested, all of them share the --wait.timeout, so the operations run in parallel on the server.
 func RequestAndWait(cmd *cobra.Command, ids []string, request func(id string) error, wait func(ctx context.Context, id string) error) error {
 	requested := make([]string, 0, len(ids))
 
@@ -62,9 +62,9 @@ func WaitIDs(cmd *cobra.Command, ids []string, wait func(ctx context.Context, id
 		return nil
 	}
 
-	timeout, err := cmd.Flags().GetDuration("timeout")
+	timeout, err := cmd.Flags().GetDuration("wait.timeout")
 	if err != nil {
-		return errors.Wrap(err, "invalid --timeout")
+		return errors.Wrap(err, "invalid --wait.timeout")
 	}
 
 	ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
