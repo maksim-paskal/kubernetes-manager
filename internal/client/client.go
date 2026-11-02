@@ -241,7 +241,11 @@ func debugBody(message string, body []byte) string {
 }
 
 // spinnerVerbs are shown at random while a request is in flight.
-var spinnerVerbs = []string{"Loading", "Thinking", "Pondering", "Cogitating", "Mulling", "Noodling"}
+var spinnerVerbs = []string{
+	"Loading", "Thinking", "Pondering", "Cogitating", "Mulling", "Noodling",
+	"Brewing", "Compiling", "Conjuring", "Crunching", "Dithering", "Fetching", "Juggling", "Marinating",
+	"Percolating", "Puzzling", "Ruminating", "Scheming", "Spelunking", "Summoning", "Tinkering", "Untangling", "Wrangling",
+}
 
 // spinnerDelay is how long a request runs before the spinner shows, to avoid flickering for fast requests.
 // A request that starts while the spinner shows, or within the delay after it stopped, shows it at once, so the
