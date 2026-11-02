@@ -24,6 +24,7 @@ import (
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/mtls"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/pause"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/scaledown_delay"
+	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/services"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/start"
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/environments/status"
 	"github.com/spf13/cobra"
@@ -37,6 +38,7 @@ func Command() *cobra.Command {
 	command.AddCommand(start.Command())
 	command.AddCommand(pause.Command())
 	command.AddCommand(status.Command())
+	command.AddCommand(services.Command())
 	command.AddCommand(mtls.Command())
 	command.AddCommand(kubeconfig.Command())
 	command.AddCommand(hosts.Command())
