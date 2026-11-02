@@ -34,10 +34,10 @@ const CLIName = "kubernetes-manager"
 // EnvPrefix is the prefix of environment variables that override the config, e.g. KUBERNETES_MANAGER_AUTH_PASSWORD.
 const EnvPrefix = "KUBERNETES_MANAGER"
 
-// envReferenceRe matches a whole value that is a reference to an environment variable, e.g. ${KM_PASSWORD}.
-var envReferenceRe = regexp.MustCompile(`^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$`)
+// envReferenceRe matches a whole value that is a reference to an environment variable, e.g. os.environ/KM_PASSWORD.
+var envReferenceRe = regexp.MustCompile(`^os\.environ/([A-Za-z_][A-Za-z0-9_]*)$`)
 
-// resolveValue returns the environment variable for a value that is exactly ${NAME},
+// resolveValue returns the environment variable for a value that is exactly os.environ/NAME,
 // any other value (including passwords with $ in them) is used as is.
 func resolveValue(value string) string {
 	if match := envReferenceRe.FindStringSubmatch(value); match != nil {
