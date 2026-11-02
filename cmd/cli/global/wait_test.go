@@ -152,7 +152,7 @@ func TestRequestAndWaitSharesTimeout(t *testing.T) {
 		deadlines []time.Time
 	)
 
-	err := global.RequestAndWait(newWaitCommand(t, "--wait", "--timeout", "1h"), []string{"c:one", "c:two"},
+	err := global.RequestAndWait(newWaitCommand(t, "--wait", "--wait.timeout", "1h"), []string{"c:one", "c:two"},
 		func(string) error { return nil },
 		func(ctx context.Context, _ string) error {
 			deadline, ok := ctx.Deadline()

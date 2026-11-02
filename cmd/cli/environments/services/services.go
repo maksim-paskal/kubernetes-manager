@@ -13,10 +13,12 @@ limitations under the License.
 package services
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	apiclient "github.com/maksim-paskal/kubernetes-manager/internal/client"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +48,10 @@ var command = &cobra.Command{
 		}
 
 		status, err := client.GetServicesStatus(cmd.Context(), args[0])
+		if errors.Is(err, context.DeadlineExceeded) {
+			return errors.Wrap(err, "services are not checked in time, raise --timeout")
+		}
+
 		if err != nil {
 			return err
 		}

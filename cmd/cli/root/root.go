@@ -36,7 +36,9 @@ import (
 
 var (
 	cfgFile string
-	rootCmd = &cobra.Command{
+	// cancelCommand stops the deadline of --timeout when the command is finished.
+	cancelCommand context.CancelFunc
+	rootCmd       = &cobra.Command{
 		Use:   global.CLIName,
 		Short: "kubernetes manager CLI tool",
 		Long:  `kubernetes manager CLI tool for managing environments`,
@@ -56,11 +58,17 @@ func Execute(ctx context.Context) error {
 
 func registerCommands() {
 	cobra.OnInitialize(initConfig)
+	cobra.OnFinalize(func() {
+		if cancelCommand != nil {
+			cancelCommand()
+		}
+	})
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+global.CLIName+".yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug logs")
 	rootCmd.PersistentFlags().Bool("json", false, "output in JSON format")
 	rootCmd.PersistentFlags().Bool("ids", false, "print only the first column of each table, e.g. environment ids")
+	rootCmd.PersistentFlags().Duration("timeout", 0, "limit the whole command, e.g. 30s or 2m, 0 is no limit")
 
 	// the two output modes are exclusive, otherwise one of them would be silently ignored
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
@@ -69,6 +77,18 @@ func registerCommands() {
 
 		if jsonOutput && idsOutput {
 			return errors.New("--json and --ids cannot be used together")
+		}
+
+		timeout, err := cmd.Flags().GetDuration("timeout")
+		if err != nil {
+			return fmt.Errorf("invalid --timeout: %w", err)
+		}
+
+		if timeout > 0 {
+			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
+			cancelCommand = cancel
+
+			cmd.SetContext(ctx)
 		}
 
 		return nil
