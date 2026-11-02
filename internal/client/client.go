@@ -66,10 +66,12 @@ type BasicAuth struct {
 type Client struct {
 	s *spinner.Spinner
 
-	// spinnerUsers is the number of requests that show the spinner, spinnerText is the text of the last one
-	spinnerMu    sync.Mutex
-	spinnerUsers int
-	spinnerText  atomic.Value
+	// spinnerUsers is the number of requests that show the spinner, spinnerText is the text of the last one,
+	// spinnerStoppedAt is when the spinner stopped the last time
+	spinnerMu        sync.Mutex
+	spinnerUsers     int
+	spinnerText      atomic.Value
+	spinnerStoppedAt time.Time
 
 	HTTPClient *http.Client
 
@@ -241,6 +243,11 @@ func debugBody(message string, body []byte) string {
 // spinnerVerbs are shown at random while a request is in flight.
 var spinnerVerbs = []string{"Loading", "Thinking", "Pondering", "Cogitating", "Mulling", "Noodling"}
 
+// spinnerDelay is how long a request runs before the spinner shows, to avoid flickering for fast requests.
+// A request that starts while the spinner shows, or within the delay after it stopped, shows it at once, so the
+// requests of one command do not make the spinner blink.
+const spinnerDelay = time.Second
+
 // showSpinner shows the spinner when the request is still running after a second, the returned func stops it.
 // The requests can run in parallel, the spinner is shown while any of them is in flight.
 func (c *Client) showSpinner(text string) func() {
@@ -251,8 +258,7 @@ func (c *Client) showSpinner(text string) func() {
 		starting bool
 	)
 
-	// Wait for a short moment before starting the spinner to avoid flickering for fast requests
-	timer := time.AfterFunc(time.Second, func() {
+	start := func() {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -272,7 +278,19 @@ func (c *Client) showSpinner(text string) func() {
 		}
 
 		c.spinnerUsers++
-	})
+	}
+
+	var timer *time.Timer
+
+	c.spinnerMu.Lock()
+	visible := c.spinnerUsers > 0 || time.Since(c.spinnerStoppedAt) < spinnerDelay
+	c.spinnerMu.Unlock()
+
+	if visible {
+		start()
+	} else {
+		timer = time.AfterFunc(spinnerDelay, start)
+	}
 
 	return func() {
 		mu.Lock()
@@ -280,7 +298,9 @@ func (c *Client) showSpinner(text string) func() {
 
 		stopped = true
 
-		timer.Stop()
+		if timer != nil {
+			timer.Stop()
+		}
 
 		if !starting {
 			return
@@ -291,6 +311,7 @@ func (c *Client) showSpinner(text string) func() {
 
 		if c.spinnerUsers--; c.spinnerUsers == 0 {
 			c.s.Stop()
+			c.spinnerStoppedAt = time.Now()
 		}
 	}
 }
