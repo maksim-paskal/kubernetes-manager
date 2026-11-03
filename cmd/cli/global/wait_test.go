@@ -83,7 +83,7 @@ func TestRequestAndWait(t *testing.T) {
 				requested, waited []string
 			)
 
-			err := global.RequestAndWait(newWaitCommand(t, tt.args...), ids,
+			err := global.RequestAndWait(newWaitCommand(t, tt.args...), global.DefaultWaitTimeout, ids,
 				func(id string) error {
 					if id == tt.failRequest {
 						return errors.New("request failed")
@@ -131,7 +131,7 @@ func TestRequestAndWaitInvalidID(t *testing.T) {
 
 	called := false
 
-	err := global.RequestAndWait(newWaitCommand(t, "--wait"), []string{"c:one", "nope"},
+	err := global.RequestAndWait(newWaitCommand(t, "--wait"), global.DefaultWaitTimeout, []string{"c:one", "nope"},
 		func(string) error {
 			called = true
 
@@ -152,7 +152,7 @@ func TestRequestAndWaitSharesTimeout(t *testing.T) {
 		deadlines []time.Time
 	)
 
-	err := global.RequestAndWait(newWaitCommand(t, "--wait", "--wait.timeout", "1h"), []string{"c:one", "c:two"},
+	err := global.RequestAndWait(newWaitCommand(t, "--wait"), time.Hour, []string{"c:one", "c:two"},
 		func(string) error { return nil },
 		func(ctx context.Context, _ string) error {
 			deadline, ok := ctx.Deadline()
@@ -182,7 +182,7 @@ func TestWaitIDsWithoutWaitFlag(t *testing.T) {
 
 	called := false
 
-	err := global.WaitIDs(newWaitCommand(t), []string{"c:one"}, func(context.Context, string) error {
+	err := global.WaitIDs(newWaitCommand(t), global.DefaultWaitTimeout, []string{"c:one"}, func(context.Context, string) error {
 		called = true
 
 		return nil
@@ -195,10 +195,57 @@ func TestWaitIDsWithoutWaitFlag(t *testing.T) {
 func TestWaitIDsReturnsWaitError(t *testing.T) {
 	t.Parallel()
 
-	err := global.WaitIDs(newWaitCommand(t, "--wait"), []string{"c:one"}, func(context.Context, string) error {
+	err := global.WaitIDs(newWaitCommand(t, "--wait"), global.DefaultWaitTimeout, []string{"c:one"}, func(context.Context, string) error {
 		return errors.New("stuck")
 	})
 	if err == nil || !strings.Contains(err.Error(), "1 of 1 failed") {
 		t.Fatalf("error = %v, want the failure count", err)
+	}
+}
+
+func TestWaitIDsDefaultTimeoutWithoutCommandTimeout(t *testing.T) {
+	t.Parallel()
+
+	var deadline time.Time
+
+	err := global.WaitIDs(newWaitCommand(t, "--wait"), time.Hour, []string{"c:one"}, func(ctx context.Context, _ string) error {
+		deadline, _ = ctx.Deadline()
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if left := time.Until(deadline); left < 59*time.Minute || left > time.Hour {
+		t.Fatalf("time left = %v, want the default of about one hour", left)
+	}
+}
+
+func TestWaitIDsKeepsCommandTimeout(t *testing.T) {
+	t.Parallel()
+
+	cmd := newWaitCommand(t, "--wait")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	cmd.SetContext(ctx)
+
+	want, _ := ctx.Deadline()
+
+	var got time.Time
+
+	err := global.WaitIDs(cmd, time.Hour, []string{"c:one"}, func(ctx context.Context, _ string) error {
+		got, _ = ctx.Deadline()
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !got.Equal(want) {
+		t.Fatalf("deadline = %v, want the deadline of --timeout %v", got, want)
 	}
 }

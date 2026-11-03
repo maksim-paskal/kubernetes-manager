@@ -36,7 +36,7 @@ var command = &cobra.Command{
 			return err
 		}
 
-		return global.RequestAndWait(cmd, args,
+		return global.RequestAndWait(cmd, global.DefaultWaitTimeout, args,
 			func(id string) error {
 				if err := client.PauseEnvironment(cmd.Context(), id); err != nil {
 					return err

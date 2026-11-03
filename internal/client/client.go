@@ -344,7 +344,7 @@ func (c *Client) call(req *http.Request) (*http.Response, error) {
 	}()
 
 	// the timeout of the HTTP client is a default for the requests without a deadline, a deadline of the command
-	// (--timeout, --wait.timeout) is the limit the user chose, so a server operation may take longer than a minute
+	// (--timeout or the wait of --wait) is the limit the user chose, so a server operation may take longer than a minute
 	httpClient := c.HTTPClient
 
 	if _, ok := req.Context().Deadline(); ok {
