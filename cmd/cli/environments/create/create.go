@@ -64,7 +64,7 @@ var command = &cobra.Command{
 		// the id is printed before the wait, so it is still known when the wait times out
 		global.Output(cmd, id)
 
-		return global.WaitIDs(cmd, []string{id}, func(ctx context.Context, id string) error {
+		return global.WaitIDs(cmd, defaultCreateWaitTimeout, []string{id}, func(ctx context.Context, id string) error {
 			if err := client.WaitEnvironmentStarted(ctx, id); err != nil {
 				return err
 			}
