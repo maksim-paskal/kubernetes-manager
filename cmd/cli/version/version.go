@@ -13,8 +13,6 @@ limitations under the License.
 package version
 
 import (
-	"runtime/debug"
-
 	"github.com/maksim-paskal/kubernetes-manager/cmd/cli/global"
 	"github.com/spf13/cobra"
 )
@@ -27,35 +25,6 @@ var command = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of the kubernetes manager CLI tool",
 	Run: func(cmd *cobra.Command, _ []string) {
-		global.Output(cmd, "kubernetes manager CLI tool version "+buildVersion())
+		global.Output(cmd, "kubernetes manager CLI tool version "+global.Version())
 	},
-}
-
-// gitCommit is the short git commit hash, set at build time with -ldflags.
-var gitCommit string
-
-// buildVersion returns the short git commit hash set at build time,
-// or the module version and the revision recorded by the Go toolchain when it is not set.
-func buildVersion() string {
-	if gitCommit != "" {
-		return gitCommit
-	}
-
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown"
-	}
-
-	version := info.Main.Version
-	if version == "" {
-		version = "(devel)"
-	}
-
-	for _, setting := range info.Settings {
-		if setting.Key == "vcs.revision" && setting.Value != "" {
-			return version + " (" + setting.Value + ")"
-		}
-	}
-
-	return version
 }

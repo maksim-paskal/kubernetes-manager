@@ -140,3 +140,26 @@ func TestCreateEnvironmentWithoutClusterAndName(t *testing.T) {
 		}
 	}
 }
+
+func TestUserAgent(t *testing.T) {
+	t.Parallel()
+
+	var userAgent string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userAgent = r.Header.Get("User-Agent")
+
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	cli := NewClient().WithBaseURL(server.URL).WithBasicAuth("login", "password").WithUserAgent("kubernetes-manager-cli/abc123 linux")
+
+	if err := cli.DeleteEnvironment(context.Background(), "cluster:namespace"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := userAgent, "kubernetes-manager-cli/abc123 linux"; got != want {
+		t.Fatalf("user agent sent %q, want %q", got, want)
+	}
+}

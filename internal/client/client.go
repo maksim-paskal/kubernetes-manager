@@ -81,6 +81,9 @@ type Client struct {
 	// DevUser is sent as the X-Auth-Request-User header, set only for local development
 	DevUser string
 
+	// UserAgent is sent as the User-Agent header, empty means the default of the Go HTTP client
+	UserAgent string
+
 	// PollInterval is how often the Wait methods check the environment, zero means the default
 	PollInterval time.Duration
 }
@@ -104,6 +107,12 @@ func (c *Client) WithBasicAuth(login, password string) *Client {
 
 func (c *Client) WithDevUser(user string) *Client {
 	c.DevUser = user
+
+	return c
+}
+
+func (c *Client) WithUserAgent(userAgent string) *Client {
+	c.UserAgent = userAgent
 
 	return c
 }
@@ -326,6 +335,10 @@ func (c *Client) call(req *http.Request) (*http.Response, error) {
 	defer c.showSpinner(text)()
 
 	req.SetBasicAuth(c.Auth.Login, c.Auth.Password)
+
+	if c.UserAgent != "" {
+		req.Header.Set("User-Agent", c.UserAgent)
+	}
 
 	if c.DevUser != "" {
 		slog.Debug("Setting development user header", "user", c.DevUser)
