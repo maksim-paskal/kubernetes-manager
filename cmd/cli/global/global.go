@@ -19,6 +19,8 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -47,6 +49,40 @@ func resolveValue(value string) string {
 	return value
 }
 
+// gitCommit is the short git commit hash, set at build time with -ldflags.
+var gitCommit string
+
+// Version returns the short git commit hash set at build time,
+// or the module version and the revision recorded by the Go toolchain when it is not set.
+func Version() string {
+	if gitCommit != "" {
+		return gitCommit
+	}
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+
+	version := info.Main.Version
+	if version == "" {
+		version = "(devel)"
+	}
+
+	for _, setting := range info.Settings {
+		if setting.Key == "vcs.revision" && setting.Value != "" {
+			return version + " (" + setting.Value + ")"
+		}
+	}
+
+	return version
+}
+
+// userAgent is the User-Agent of the requests to the server: kubernetes-manager-cli/<version> <os>.
+func userAgent() string {
+	return CLIName + "-cli/" + Version() + " " + runtime.GOOS
+}
+
 func Client(cmd *cobra.Command) (*client.Client, error) {
 	if debug, err := cmd.Flags().GetBool("debug"); err == nil && debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
@@ -61,7 +97,8 @@ func Client(cmd *cobra.Command) (*client.Client, error) {
 			resolveValue(viper.GetString("auth.login")),
 			resolveValue(viper.GetString("auth.password")),
 		).
-		WithDevUser(resolveValue(viper.GetString("dev_user")))
+		WithDevUser(resolveValue(viper.GetString("dev_user"))).
+		WithUserAgent(userAgent())
 
 	if err := cli.Validate(); err != nil {
 		// a config file that was given but does not exist is the most likely cause
