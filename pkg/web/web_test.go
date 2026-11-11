@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -84,5 +85,31 @@ func TestReplacer(t *testing.T) {
 		if result := replacer.Replace(test); result != want {
 			t.Fatal("want=" + want + "; got=" + result)
 		}
+	}
+}
+
+func TestHandlerResultWarning(t *testing.T) {
+	t.Parallel()
+
+	result := web.NewHandlerResult()
+
+	b, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Contains(string(b), "Warning") {
+		t.Fatalf("empty warning must be omitted, got %s", b)
+	}
+
+	result.Warning = "server is going to be updated"
+
+	b, err = json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(b), `"Warning":"server is going to be updated"`) {
+		t.Fatalf("warning must be in the response, got %s", b)
 	}
 }

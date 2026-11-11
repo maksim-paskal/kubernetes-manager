@@ -53,6 +53,7 @@ const (
 
 type HandlerResult struct {
 	Version string
+	Warning string `json:",omitempty"` //nolint:tagliatelle
 	headers map[string]string
 	output  HandlerResultOutput
 	cached  bool
