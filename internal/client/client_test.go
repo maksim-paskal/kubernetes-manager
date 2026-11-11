@@ -18,6 +18,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -161,5 +163,50 @@ func TestUserAgent(t *testing.T) {
 
 	if got, want := userAgent, "kubernetes-manager-cli/abc123 linux"; got != want {
 		t.Fatalf("user agent sent %q, want %q", got, want)
+	}
+}
+
+func TestWarningIsPrintedToStderr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		warnings []string
+		want     string
+	}{
+		{name: "empty", warnings: []string{"", "  "}, want: ""},
+		{name: "set once for repeated requests", warnings: []string{"server is going to be updated", "server is going to be updated"}, want: "WARNING: server is going to be updated\n"},
+		{name: "control characters stay on one line", warnings: []string{"first\nsecond"}, want: "WARNING: first second\n"},
+		{name: "distinct warnings", warnings: []string{"one", "two", "one"}, want: "WARNING: one\nWARNING: two\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var calls atomic.Int32
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				warning := tt.warnings[calls.Add(1)-1]
+
+				_ = json.NewEncoder(w).Encode(map[string]any{"Warning": warning, "Result": []string{"main"}})
+			}))
+			defer server.Close()
+
+			var out strings.Builder
+
+			c := NewClient().WithBaseURL(server.URL).WithBasicAuth("login", "password")
+			c.Stderr = &out
+
+			for range tt.warnings {
+				if _, err := c.get[[]string](context.Background(), "/api/project-refs", nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if out.String() != tt.want {
+				t.Fatalf("got %q, want %q", out.String(), tt.want)
+			}
+		})
 	}
 }

@@ -28,7 +28,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
+	"charm.land/lipgloss/v2"
 	"github.com/briandowns/spinner"
 	"github.com/maksim-paskal/kubernetes-manager/pkg/types"
 	api_user "github.com/maksim-paskal/kubernetes-manager/pkg/user"
@@ -74,6 +76,13 @@ type Client struct {
 	spinnerStoppedAt time.Time
 
 	HTTPClient *http.Client
+
+	// Stderr is where the warnings of the server are written, nil means os.Stderr
+	Stderr io.Writer
+
+	// warningsMu guards warningsSeen, a warning is written once per client
+	warningsMu   sync.Mutex
+	warningsSeen map[string]bool
 
 	BaseURL string
 	Auth    *BasicAuth
@@ -163,7 +172,53 @@ func (c *Client) post(ctx context.Context, name string, input any) ([]byte, erro
 		return nil, fmt.Errorf("unexpected status code: %d\n%s", resp.StatusCode, string(body))
 	}
 
+	// the body is not always an envelope, a warning is optional
+	var envelope struct {
+		Warning string
+	}
+
+	if json.Unmarshal(body, &envelope) == nil {
+		c.printWarning(envelope.Warning)
+	}
+
 	return body, nil
+}
+
+// printWarning writes the warning of the server to stderr in yellow. Blank warnings are skipped, control characters
+// become spaces to keep the warning on one line, and each distinct warning is written once per client.
+func (c *Client) printWarning(warning string) {
+	warning = strings.TrimSpace(strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return ' '
+		}
+
+		return r
+	}, warning))
+
+	if warning == "" {
+		return
+	}
+
+	c.warningsMu.Lock()
+	defer c.warningsMu.Unlock()
+
+	if c.warningsSeen[warning] {
+		return
+	}
+
+	if c.warningsSeen == nil {
+		c.warningsSeen = make(map[string]bool)
+	}
+
+	c.warningsSeen[warning] = true
+
+	out := c.Stderr
+	if out == nil {
+		out = os.Stderr
+	}
+
+	// lipgloss drops the colors when out is not a terminal and respects NO_COLOR
+	lipgloss.Fprintln(out, lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("WARNING: "+warning))
 }
 
 func (c *Client) get[T any](ctx context.Context, name string, params map[string]string) (T, error) {
@@ -209,12 +264,15 @@ func (c *Client) get[T any](ctx context.Context, name string, params map[string]
 	}
 
 	var envelope struct {
-		Result T
+		Warning string
+		Result  T
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
 		return zero, errors.Wrap(err, "failed to decode envelope")
 	}
+
+	c.printWarning(envelope.Warning)
 
 	return envelope.Result, nil
 }
