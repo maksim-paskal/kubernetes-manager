@@ -47,6 +47,7 @@ linters:
     - third_party$
     - builtin$
     - examples$
+    - front/node_modules
 issues:
   fix: true
 formatters:
@@ -61,3 +62,4 @@ formatters:
     - third_party$
     - builtin$
     - examples$
+    - front/node_modules
